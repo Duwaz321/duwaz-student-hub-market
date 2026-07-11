@@ -4,6 +4,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * CorsConfig is intentionally minimal here.
+ * The primary CORS configuration is handled inside SecurityConfig
+ * via CorsConfigurationSource, which takes precedence for secured endpoints.
+ * This class handles any non-security-filtered paths (e.g. static resources).
+ */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
@@ -17,8 +23,8 @@ public class CorsConfig implements WebMvcConfigurer {
                     "http://localhost:3000"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .exposedHeaders("Authorization")
-                .allowCredentials(true);
+                .allowedHeaders("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With")
+                .allowCredentials(false)
+                .maxAge(3600);
     }
 }

@@ -1,5 +1,6 @@
 package org.example.duwaz.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.example.duwaz.security.JwtAuthFilter;
 import org.example.duwaz.service.StudentUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -41,40 +41,33 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Return 401 JSON instead of redirecting to /error
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\": \"Forbidden\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
-                // ── Allow CORS preflight ───────────────────────────────────
+                // Permit Spring's error endpoint
+                .requestMatchers("/error").permitAll()
+                // Permit CORS preflight
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                // ── Public endpoints ───────────────────────────────────────
+                // Auth endpoints — fully public
                 .requestMatchers("/api/auth/**").permitAll()
-
-                // Public read-only access
+                // Public GET endpoints
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/businesses/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
-
-                // ── Protected endpoints ────────────────────────────────────
-                .requestMatchers(HttpMethod.POST, "/api/products/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/products/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/products/**").authenticated()
-
-                .requestMatchers(HttpMethod.POST, "/api/businesses/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/businesses/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/businesses/**").authenticated()
-
-                .requestMatchers(HttpMethod.POST, "/api/categories/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/categories/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/categories/**").authenticated()
-
-                .requestMatchers("/api/orders/**").authenticated()
-                .requestMatchers("/api/transactions/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-
-                .requestMatchers("/Student/**").authenticated()
-
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
@@ -85,20 +78,14 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:8081",
-            "http://localhost:3000"
-        ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
