@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import ImageWithFallback from './ImageWithFallback';
 
 interface ShopCardProps {
   id: string | number;
   name: string;
-  logo?: string;
+  logo?: string | null;
   productCount?: number;
   description: string;
   className?: string;
@@ -22,18 +23,20 @@ const ShopCard: React.FC<ShopCardProps> = ({
     <Link
       to={`/shop/${id}`}
       className={cn(
-        "block rounded-lg shadow-md bg-white transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px]",
+        'block rounded-lg shadow-md bg-white transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px]',
         className
       )}
     >
       <div className="flex p-4 items-center">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border bg-gray-100 flex items-center justify-center">
           {logo ? (
-            <img src={logo} alt={name} className="w-full h-full object-cover" />
+            <ImageWithFallback
+              src={logo}
+              alt={name}
+              className="w-full h-full rounded-full"
+            />
           ) : (
-            <span className="text-2xl font-bold text-gray-400">
-              {name.charAt(0)}
-            </span>
+            <span className="text-2xl font-bold text-gray-400">{name.charAt(0)}</span>
           )}
         </div>
         <div className="ml-4 flex-1">

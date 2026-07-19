@@ -53,6 +53,7 @@ const RegisterPage = () => {
         userId: response.userId,
         studentName: response.studentName,
         email: response.email,
+        role: (response.role ?? 'CUSTOMER') as any,
       });
 
       toast({ title: 'Account created!', description: `Welcome, ${response.studentName}!` });

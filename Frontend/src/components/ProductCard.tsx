@@ -1,13 +1,14 @@
-import { Link } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Link } from 'react-router-dom';
+import { ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import ImageWithFallback from './ImageWithFallback';
 
 interface ProductCardProps {
   id: number;
   name: string;
   price: number;
-  image?: string;
+  image?: string | null;
   shopName?: string;
   shopId?: string | number;
   onAddToCart?: () => void;
@@ -31,12 +32,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <Link to={`/product/${id}`} className={cn("product-card block", className)}>
-      <div className="aspect-square relative overflow-hidden">
-        <img
-          src={image ?? '/placeholder.svg'}
+    <Link to={`/product/${id}`} className={cn('product-card block', className)}>
+      <div className="aspect-square relative overflow-hidden bg-gray-100">
+        <ImageWithFallback
+          src={image}
           alt={name}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          className="w-full h-full transition-transform duration-300 hover:scale-105"
         />
       </div>
       <div className="p-4">

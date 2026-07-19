@@ -5,11 +5,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import HomePage from './pages/HomePage';
 import MarketplacePage from './pages/MarketplacePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ShopPage from './pages/ShopPage';
 import CreateShopPage from './pages/CreateShopPage';
+import ShopDashboardPage from './pages/ShopDashboardPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import DriverDashboardPage from './pages/DriverDashboardPage';
+import DriverLoginPage from './pages/DriverLoginPage';
+import MyOrdersPage from './pages/MyOrdersPage';
 import AboutPage from './pages/AboutPage';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
@@ -29,6 +35,17 @@ const App = () => (
           {/* Auth pages — no Layout wrapper (full-screen cards) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/driver/login" element={<DriverLoginPage />} />
+
+          {/* Driver dashboard — no marketplace Layout */}
+          <Route
+            path="/driver"
+            element={
+              <RoleProtectedRoute requiredRole="DRIVER">
+                <DriverDashboardPage />
+              </RoleProtectedRoute>
+            }
+          />
 
           {/* Main app — all inside Layout */}
           <Route path="/" element={<Layout />}>
@@ -53,6 +70,30 @@ const App = () => (
                 <ProtectedRoute>
                   <CreateShopPage />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="my-shop"
+              element={
+                <ProtectedRoute>
+                  <ShopDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="my-orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <RoleProtectedRoute requiredRole="ADMIN">
+                  <AdminDashboardPage />
+                </RoleProtectedRoute>
               }
             />
             <Route path="cart" element={<CartPage />} />

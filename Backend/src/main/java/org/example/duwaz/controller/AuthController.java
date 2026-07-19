@@ -52,10 +52,10 @@ public class AuthController {
         student = studentRepository.save(student);
 
         // Generate token
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId());
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), student.getRole().name());
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail()));
+                .body(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), student.getRole().name()));
     }
 
     @PostMapping("/login")
@@ -71,8 +71,8 @@ public class AuthController {
         Student student = studentRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId());
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), student.getRole().name());
 
-        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail()));
+        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), student.getRole().name()));
     }
 }

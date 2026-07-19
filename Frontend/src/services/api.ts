@@ -8,6 +8,11 @@ import type {
   Reward,
   Transaction,
   DeliveryDriver,
+  DeliveryAssignment,
+  DeliveryStatus,
+  DriverStatus,
+  StoreMessage,
+  MessageStatus,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
@@ -88,17 +93,24 @@ export const categoriesApi = {
 export const productsApi = {
   getAll: () => request<Product[]>('/api/products'),
   getById: (id: number) => request<Product>(`/api/products/${id}`),
+  getByBusiness: (businessId: number) => request<Product[]>(`/api/products/business/${businessId}`),
   create: (data: Omit<Product, 'id'>) =>
     request<Product>('/api/products', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<Product>) =>
     request<Product>(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<null>(`/api/products/${id}`, { method: 'DELETE' }),
+  adjustStock: (id: number, delta: number) =>
+    request<Product>(`/api/products/${id}/stock`, {
+      method: 'PUT',
+      body: JSON.stringify({ delta }),
+    }),
 };
 
 // ── Businesses (Shops) ────────────────────────────────────────────────────────
 export const businessesApi = {
   getAll: () => request<Business[]>('/api/businesses'),
   getById: (id: number) => request<Business>(`/api/businesses/${id}`),
+  getMyShop: () => request<Business>('/api/businesses/mine'),
   create: (data: Omit<Business, 'id'>) =>
     request<Business>('/api/businesses', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<Business>) =>
@@ -119,13 +131,118 @@ export const studentsApi = {
 
 // ── Orders ────────────────────────────────────────────────────────────────────
 export const ordersApi = {
-  getAll: () => request<Order[]>('/api/orders'),
+  // Customer
+  getMyOrders: () => request<Order[]>('/api/orders/my'),
+  cancelOrder: (id: number, reason?: string) =>
+    request<Order>(`/api/orders/${id}/cancel`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    }),
+  create: (data: Omit<Order, 'id'>) =>
+    request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Shop owner
+  getShopOrders: (page = 0, size = 20) =>
+    request<{ content: Order[]; totalElements: number; totalPages: number }>(
+      `/api/orders/shop?page=${page}&size=${size}`
+    ),
+
+  // Admin
+  getAll: (page = 0, size = 20) =>
+    request<{ content: Order[]; totalElements: number; totalPages: number }>(
+      `/api/orders?page=${page}&size=${size}`
+    ),
   getById: (id: number) => request<Order>(`/api/orders/${id}`),
   getByStudent: (studentId: number) => request<Order[]>(`/api/orders/student/${studentId}`),
   getByStatus: (status: string) => request<Order[]>(`/api/orders/status/${status}`),
-  create: (data: Omit<Order, 'id'>) =>
-    request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(data) }),
+  updateStatus: (id: number, status: string, reason?: string) =>
+    request<Order>(`/api/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, reason }),
+    }),
   delete: (id: number) => request<null>(`/api/orders/${id}`, { method: 'DELETE' }),
+};
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const adminApi = {
+  getStats: () =>
+    request<{
+      totalUsers: number;
+      totalShops: number;
+      totalProducts: number;
+      totalOrders: number;
+      pendingOrders: number;
+      confirmedOrders: number;
+      preparingOrders: number;
+      deliveredOrders: number;
+      cancelledOrders: number;
+      totalRevenue: number;
+      totalDrivers: number;
+      availableDrivers: number;
+      busyDrivers: number;
+      outForDelivery: number;
+      readyForPickup: number;
+    }>('/api/admin/stats'),
+  getUsers: () => request<Student[]>('/api/admin/users'),
+  updateUserRole: (id: number, role: string) =>
+    request<Student>(`/api/admin/users/${id}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    }),
+};
+
+// ── Shop Stats ────────────────────────────────────────────────────────────────
+export interface ShopStats {
+  totalProducts: number;
+  availableProducts: number;
+  outOfStockProducts: number;
+  discontinuedProducts: number;
+  lowStockProducts: number;
+  pendingOrders: number;
+  confirmedOrders: number;
+  preparingOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  totalOrders: number;
+  totalRevenue: number;
+}
+
+export const shopApi = {
+  getStats: () => request<ShopStats>('/api/shops/stats'),
+};
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+export const messagesApi = {
+  // Shop owner
+  send: (subject: string, content: string) =>
+    request<StoreMessage>('/api/messages/send', { method: 'POST', body: JSON.stringify({ subject, content }) }),
+  requestDelivery: (orderId: number) =>
+    request<StoreMessage>(`/api/messages/request-delivery/${orderId}`, { method: 'POST' }),
+  getMyMessages: () => request<StoreMessage[]>('/api/messages/mine'),
+
+  // Driver
+  getMyDriverMessages: () => request<StoreMessage[]>('/api/messages/driver/mine'),
+  getDriverUnreadCount: () => request<{ unreadCount: number }>('/api/messages/driver/unread-count'),
+  driverReply: (id: number, replyContent: string) =>
+    request<StoreMessage>(`/api/messages/driver/${id}/reply`, { method: 'PUT', body: JSON.stringify({ replyContent }) }),
+  driverMarkRead: (id: number) =>
+    request<StoreMessage>(`/api/messages/driver/${id}/read`, { method: 'PUT' }),
+
+  // Admin
+  getAll: (status?: string) =>
+    request<StoreMessage[]>(`/api/messages${status && status !== 'ALL' ? `?status=${status}` : ''}`),
+  getUnreadCount: () => request<{ unreadCount: number }>('/api/messages/unread-count'),
+  markRead: (id: number) => request<StoreMessage>(`/api/messages/${id}/read`, { method: 'PUT' }),
+  reply: (id: number, replyContent: string) =>
+    request<StoreMessage>(`/api/messages/${id}/reply`, { method: 'PUT', body: JSON.stringify({ replyContent }) }),
+  resolve: (id: number) => request<StoreMessage>(`/api/messages/${id}/resolve`, { method: 'PUT' }),
+  sendToDriver: (driverId: number, subject: string, content: string, orderId?: number) =>
+    request<StoreMessage>('/api/messages/send-to-driver', {
+      method: 'POST',
+      body: JSON.stringify({ driverId, subject, content, ...(orderId ? { orderId } : {}) }),
+    }),
+  forwardToDriver: (messageId: number, driverId: number) =>
+    request<StoreMessage>(`/api/messages/${messageId}/forward-to-driver/${driverId}`, { method: 'POST' }),
 };
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
@@ -162,7 +279,80 @@ export const transactionsApi = {
   delete: (id: number) => request<null>(`/api/transactions/${id}`, { method: 'DELETE' }),
 };
 
-// ── Delivery Drivers ──────────────────────────────────────────────────────────
+// ── Driver Auth ───────────────────────────────────────────────────────────────
+export interface DriverAuthResponse {
+  token: string;
+  driverId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+export const driverAuthApi = {
+  login: (data: { email: string; password: string }) =>
+    request<DriverAuthResponse>('/api/auth/driver/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  register: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    contactNumber: string;
+    vehicleType: string;
+    licenseNumber: string;
+    emergencyContact?: string;
+  }) =>
+    request<DriverAuthResponse>('/api/auth/driver/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Deliveries ────────────────────────────────────────────────────────────────
+export const deliveriesApi = {
+  // Admin
+  getAllDrivers: () => request<DeliveryDriver[]>('/api/deliveries/drivers'),
+  getAvailableDrivers: () => request<DeliveryDriver[]>('/api/deliveries/drivers/available'),
+  assignDriver: (orderId: number, driverId: number) =>
+    request<DeliveryAssignment>('/api/deliveries/assign', {
+      method: 'POST',
+      body: JSON.stringify({ orderId, driverId }),
+    }),
+  getAllAssignments: () => request<DeliveryAssignment[]>('/api/deliveries'),
+  getAssignmentByOrder: (orderId: number) =>
+    request<DeliveryAssignment>(`/api/deliveries/order/${orderId}`),
+
+  // Driver
+  getMyDeliveries: () => request<DeliveryAssignment[]>('/api/deliveries/my'),
+  getMyActiveDeliveries: () => request<DeliveryAssignment[]>('/api/deliveries/my/active'),
+  updateDeliveryStatus: (id: number, status: DeliveryStatus, notes?: string, proofOfDelivery?: string) =>
+    request<DeliveryAssignment>(`/api/deliveries/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes, proofOfDelivery }),
+    }),
+  verifyOtp: (id: number, otp: string) =>
+    request<DeliveryAssignment>(`/api/deliveries/${id}/verify-otp`, {
+      method: 'POST',
+      body: JSON.stringify({ otp }),
+    }),
+  updateMyStatus: (status: DriverStatus) =>
+    request<DeliveryDriver>('/api/deliveries/status', {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
+  getMyProfile: () => request<DeliveryDriver>('/api/deliveries/profile'),
+  updateMyProfile: (data: Partial<DeliveryDriver> & { profileImage?: string }) =>
+    request<DeliveryDriver>('/api/deliveries/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Delivery Drivers (legacy CRUD) ────────────────────────────────────────────
 export const driversApi = {
   getAll: () => request<DeliveryDriver[]>('/api/delivery-drivers'),
   getById: (id: number) => request<DeliveryDriver>(`/api/delivery-drivers/${id}`),

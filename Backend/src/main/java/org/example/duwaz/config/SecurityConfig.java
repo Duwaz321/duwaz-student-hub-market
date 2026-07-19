@@ -61,10 +61,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Auth endpoints — fully public
                 .requestMatchers("/api/auth/**").permitAll()
-                // Public GET endpoints
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/businesses/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/businesses").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/businesses/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
                 // Everything else requires authentication

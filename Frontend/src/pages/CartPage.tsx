@@ -26,14 +26,38 @@ const CartPage = () => {
       return;
     }
     setIsCheckingOut(true);
-    setTimeout(() => {
-      toast({
-        title: 'Order placed successfully!',
-        description: 'Thank you for your purchase.',
-      });
-      clearCart();
-      setIsCheckingOut(false);
-    }, 2000);
+
+    // Group items by shop (businessId) — create one order per shop
+    const businessGroups: Record<string, typeof items> = {};
+    items.forEach(item => {
+      const key = String(item.shopId ?? 'unknown');
+      if (!businessGroups[key]) businessGroups[key] = [];
+      businessGroups[key].push(item);
+    });
+
+    // For simplicity, create a single consolidated order
+    const orderPayload = {
+      totalAmount: subtotal,
+      status: 'PENDING',
+      items: items.map(item => ({
+        product: { id: item.id },
+        quantity: item.quantity,
+        unitPrice: item.price,
+      })),
+    } as any;
+
+    import('@/services/api').then(({ ordersApi }) => {
+      ordersApi.create(orderPayload)
+        .then(() => {
+          toast({ title: 'Order placed successfully!', description: 'Thank you for your purchase.' });
+          clearCart();
+          navigate('/my-orders');
+        })
+        .catch((err: any) => {
+          toast({ title: 'Checkout failed', description: err.message, variant: 'destructive' });
+        })
+        .finally(() => setIsCheckingOut(false));
+    });
   };
 
   return (

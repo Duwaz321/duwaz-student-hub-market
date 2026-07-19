@@ -1,15 +1,23 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-interface User {
+export type UserRole = 'CUSTOMER' | 'ADMIN' | 'DRIVER';
+
+export interface User {
   userId: number;
-  studentName: string;
+  studentName: string; // for students; firstName+lastName for drivers
   email: string;
+  role: UserRole;
+  // Driver-specific (only set when role === 'DRIVER')
+  driverId?: number;
+  driverStatus?: string;
 }
 
 interface AuthContextValue {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isDriver: boolean;
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
@@ -26,17 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const storedToken = localStorage.getItem(TOKEN_KEY);
     const storedUser = localStorage.getItem(USER_KEY);
-    
     if (storedToken && storedUser) {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
-      } catch (e) {
-        // Invalid data — clear storage
+      } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
       }
@@ -52,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback((token: string, user: User) => {
-    // Same as login
     login(token, user);
   }, [login]);
 
@@ -69,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         token,
         isAuthenticated: !!user && !!token,
+        isAdmin: user?.role === 'ADMIN',
+        isDriver: user?.role === 'DRIVER',
         isLoading,
         login,
         logout,

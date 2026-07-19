@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, User, Menu, X, LogOut } from 'lucide-react';
+import { ShoppingBag, User, Menu, X, LogOut, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useMyShop } from '@/hooks/useBusinesses';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,8 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { totalItems } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isAdmin } = useAuth();
+  const { data: myShop } = useMyShop();
   const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
@@ -45,7 +47,12 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         <nav className="hidden md:flex space-x-8">
           <NavLink to="/">Home</NavLink>
           <NavLink to="/marketplace">Marketplace</NavLink>
-          <NavLink to="/create-shop">Create Shop</NavLink>
+          {isAuthenticated
+            ? myShop
+              ? <NavLink to="/my-shop">My Shop</NavLink>
+              : <NavLink to="/create-shop">Create Shop</NavLink>
+            : <NavLink to="/create-shop">Create Shop</NavLink>
+          }
           <NavLink to="/about">About</NavLink>
         </nav>
 
@@ -70,12 +77,29 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user?.studentName}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">Admin Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/account">My Account</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/create-shop">Create Shop</Link>
+                  <Link to="/my-orders">My Orders</Link>
                 </DropdownMenuItem>
+                {myShop ? (
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-shop">
+                      <Store className="mr-2 h-4 w-4" />
+                      My Shop
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link to="/create-shop">Create Shop</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -120,9 +144,12 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
           <MobileNavLink to="/marketplace" onClick={toggleMobileMenu}>
             Marketplace
           </MobileNavLink>
-          <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>
-            Create Shop
-          </MobileNavLink>
+          {isAuthenticated
+            ? myShop
+              ? <MobileNavLink to="/my-shop" onClick={toggleMobileMenu}>My Shop</MobileNavLink>
+              : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
+            : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
+          }
           <MobileNavLink to="/about" onClick={toggleMobileMenu}>
             About
           </MobileNavLink>

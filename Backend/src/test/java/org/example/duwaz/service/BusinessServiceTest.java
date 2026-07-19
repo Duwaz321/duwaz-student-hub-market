@@ -74,7 +74,7 @@ class BusinessServiceTest {
     void testUpdateBusiness() {
         saved.setName("UpdatedName");
 
-        Business updated = businessService.updateBusiness(saved);
+        Business updated = businessService.updateBusiness(saved.getId(), saved);
 
         assertEquals("UpdatedName", updated.getBusinessName());
 

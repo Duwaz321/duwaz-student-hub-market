@@ -11,15 +11,22 @@ export interface Business {
   id: number;
   businessName: string;
   description: string;
+  logoUrl?: string;
   student?: Student;
 }
+
+export type ProductStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
 
 export interface Product {
   id: number;
   name: string;
   description: string;
   price: number;
+  imageUrl?: string;
+  stockQuantity?: number;
+  productStatus?: ProductStatus;
   category?: Category;
+  business?: Business;
 }
 
 export interface Student {
@@ -29,12 +36,34 @@ export interface Student {
   businesses?: Business[];
 }
 
+export type OrderStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PREPARING'
+  | 'READY_FOR_PICKUP'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REFUNDED';
+
+export interface OrderItem {
+  id: number;
+  product?: Product;
+  quantity: number;
+  unitPrice: number;
+  subtotal?: number;
+}
+
 export interface Order {
   id: number;
-  studentId: number;
+  student?: Student;
+  business?: Business;
+  items?: OrderItem[];
   totalAmount: number;
-  orderDate: string;   // ISO date string from backend
-  status: string;
+  orderDate: string;
+  status: OrderStatus;
+  deliveryAddress?: string;
+  cancellationReason?: string;
 }
 
 export interface Review {
@@ -79,6 +108,63 @@ export interface DeliveryDriver {
   licenseNumber: string;
   deliveryCount: number;
   rating: number;
+  status?: DriverStatus;
+  active?: boolean;
+  profileImage?: string;
+  emergencyContact?: string;
+}
+
+export type DriverStatus =
+  | 'AVAILABLE'
+  | 'BUSY'
+  | 'OFFLINE'
+  | 'ON_BREAK';
+
+export type DeliveryStatus =
+  | 'PENDING_ASSIGNMENT'
+  | 'ASSIGNED'
+  | 'DRIVER_ACCEPTED'
+  | 'TRAVELLING_TO_SHOP'
+  | 'PICKED_UP'
+  | 'TRAVELLING_TO_CUSTOMER'
+  | 'ARRIVED'
+  | 'DELIVERED'
+  | 'DELIVERY_FAILED'
+  | 'CANCELLED';
+
+export interface DeliveryAssignment {
+  id: number;
+  order?: Order;
+  driver?: DeliveryDriver;
+  deliveryStatus: DeliveryStatus;
+  assignedAt: string;
+  acceptedAt?: string;
+  pickedUpAt?: string;
+  deliveredAt?: string;
+  deliveryNotes?: string;
+  failureReason?: string;
+  proofOfDelivery?: string;
+  otpCode?: string;
+  otpVerified?: boolean;
+}
+
+export type MessageType = 'MESSAGE' | 'DELIVERY_REQUEST' | 'ADMIN_REPLY' | 'DRIVER_MESSAGE' | 'DRIVER_REPLY';
+export type MessageStatus = 'UNREAD' | 'READ' | 'REPLIED' | 'RESOLVED';
+
+export interface StoreMessage {
+  id: number;
+  business?: Business;
+  driver?: DeliveryDriver;
+  order?: Order;
+  messageType: MessageType;
+  status: MessageStatus;
+  subject?: string;
+  content: string;
+  replyContent?: string;
+  sentAt: string;
+  readAt?: string;
+  repliedAt?: string;
+  fromAdmin: boolean;
 }
 
 // ── Frontend-only types ────────────────────────────────────────────────────────

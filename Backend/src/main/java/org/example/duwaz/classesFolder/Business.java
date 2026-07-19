@@ -30,9 +30,12 @@ public class Business {
     @Column(name = "description")
     private String description;
 
-    @ManyToOne
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
+    @ManyToOne(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "student_id")
-    @JsonIgnoreProperties("businesses")
+    @JsonIgnoreProperties({"businesses", "password", "hibernateLazyInitializer", "handler"})
     private Student student;
 
     public void setName(String doas) {

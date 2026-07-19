@@ -1,10 +1,15 @@
 package org.example.duwaz.classesFolder;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "delivery_drivers")
 public class DeliverDriver {
+
+    public enum DriverStatus {
+        AVAILABLE, BUSY, OFFLINE, ON_BREAK
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,107 +28,83 @@ public class DeliverDriver {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
+    @Column(name = "password")
+    private String password;
+
     @Column(name = "vehicle_type", nullable = false)
-    private String vehicleType;  // Type of vehicle the driver uses (e.g., car, motorbike, bicycle)
+    private String vehicleType;
 
     @Column(name = "license_number", nullable = false, unique = true)
-    private String licenseNumber;  // Driver's license number
+    private String licenseNumber;
 
     @Column(name = "delivery_count", nullable = false)
-    private int deliveryCount;  // Number of deliveries completed by the driver
+    private int deliveryCount = 0;
 
     @Column(name = "rating")
-    private float rating;  // Average rating of the driver by customers
+    private float rating = 0f;
 
-    // Constructors, getters, and setters
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private DriverStatus status = DriverStatus.OFFLINE;
 
-    public DeliverDriver() {
-    }
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 
-    public DeliverDriver(String firstName, String lastName, String contactNumber, String email, String vehicleType, String licenseNumber, int deliveryCount, float rating) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.contactNumber = contactNumber;
-        this.email = email;
-        this.vehicleType = vehicleType;
-        this.licenseNumber = licenseNumber;
-        this.deliveryCount = deliveryCount;
-        this.rating = rating;
-    }
+    @Column(name = "profile_image", columnDefinition = "TEXT")
+    private String profileImage;
 
-    public Long getDeliveryDriverId() {
-        return deliveryDriverId;
-    }
+    @Column(name = "emergency_contact")
+    private String emergencyContact;
 
-    public void setDeliveryDriverId(Long deliveryDriverId) {
-        this.deliveryDriverId = deliveryDriverId;
-    }
+    public DeliverDriver() {}
 
-    public String getFirstName() {
-        return firstName;
-    }
+    // ── Getters & Setters ──────────────────────────────────────────────────────
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+    public Long getDeliveryDriverId() { return deliveryDriverId; }
+    public void setDeliveryDriverId(Long deliveryDriverId) { this.deliveryDriverId = deliveryDriverId; }
 
-    public String getLastName() {
-        return lastName;
-    }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public String getContactNumber() {
-        return contactNumber;
-    }
+    public String getFullName() { return firstName + " " + lastName; }
 
-    public void setContactNumber(String contactNumber) {
-        this.contactNumber = contactNumber;
-    }
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public String getVehicleType() {
-        return vehicleType;
-    }
+    public String getVehicleType() { return vehicleType; }
+    public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
 
-    public void setVehicleType(String vehicleType) {
-        this.vehicleType = vehicleType;
-    }
+    public String getLicenseNumber() { return licenseNumber; }
+    public void setLicenseNumber(String licenseNumber) { this.licenseNumber = licenseNumber; }
 
-    public String getLicenseNumber() {
-        return licenseNumber;
-    }
+    public int getDeliveryCount() { return deliveryCount; }
+    public void setDeliveryCount(int deliveryCount) { this.deliveryCount = deliveryCount; }
 
-    public void setLicenseNumber(String licenseNumber) {
-        this.licenseNumber = licenseNumber;
-    }
+    public float getRating() { return rating; }
+    public void setRating(float rating) { this.rating = rating; }
 
-    public int getDeliveryCount() {
-        return deliveryCount;
-    }
+    public DriverStatus getStatus() { return status; }
+    public void setStatus(DriverStatus status) { this.status = status; }
 
-    public void setDeliveryCount(int deliveryCount) {
-        this.deliveryCount = deliveryCount;
-    }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
-    public float getRating() {
-        return rating;
-    }
+    public String getProfileImage() { return profileImage; }
+    public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
 
-    public void setRating(float rating) {
-        this.rating = rating;
-    }
+    public String getEmergencyContact() { return emergencyContact; }
+    public void setEmergencyContact(String emergencyContact) { this.emergencyContact = emergencyContact; }
 
-    public void setId(Long id) {
-
-    }
+    // Legacy setId used by controller
+    public void setId(Long id) { this.deliveryDriverId = id; }
 }

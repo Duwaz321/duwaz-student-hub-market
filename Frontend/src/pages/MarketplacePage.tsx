@@ -189,6 +189,7 @@ const MarketplacePage = () => {
                   key={shop.id}
                   id={shop.id}
                   name={shop.businessName}
+                  logo={shop.logoUrl}
                   description={shop.description ?? ''}
                 />
               ))}

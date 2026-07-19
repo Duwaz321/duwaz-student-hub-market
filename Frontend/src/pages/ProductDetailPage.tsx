@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useProduct } from '@/hooks/useProducts';
 import { useProductReviews } from '@/hooks/useReviews';
 import { useCart } from '@/context/CartContext';
+import ImageWithFallback from '@/components/ImageWithFallback';
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,8 +25,8 @@ const ProductDetailPage = () => {
         id: product.id,
         name: product.name,
         price: Number(product.price),
-        image: '/placeholder.svg',
-        shopName: product.category?.name ?? '',
+        image: product.imageUrl ?? '/placeholder.svg',
+        shopName: product.business?.businessName ?? product.category?.name ?? '',
       });
     }
     toast({
@@ -84,11 +85,11 @@ const ProductDetailPage = () => {
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Product Image */}
-        <div className="bg-white rounded-lg overflow-hidden shadow-md">
-          <img
-            src="/placeholder.svg"
+        <div className="bg-white rounded-lg overflow-hidden shadow-md aspect-square">
+          <ImageWithFallback
+            src={product.imageUrl}
             alt={product.name}
-            className="w-full h-auto object-cover"
+            className="w-full h-full"
           />
         </div>
 

@@ -10,6 +10,10 @@ import java.util.List;
 @Entity
 public class Student {
 
+    public enum Role {
+        CUSTOMER, ADMIN
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter
@@ -32,9 +36,15 @@ public class Student {
 
     @Getter
     @Setter
-    @JsonIgnore  // never send password hash to the frontend
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
+
+    @Getter
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.CUSTOMER;
 
     @JsonIgnore
     @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
@@ -51,5 +61,9 @@ public class Student {
     public Student setId(long l) {
         this.id = l;
         return this;
+    }
+
+    public boolean isAdmin() {
+        return Role.ADMIN.equals(this.role);
     }
 }
