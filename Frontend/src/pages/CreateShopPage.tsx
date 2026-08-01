@@ -82,7 +82,7 @@ const CreateShopPage = () => {
             title: 'Shop created successfully!',
             description: 'Your shop is now live in the marketplace.',
           });
-          navigate(`/shop/${createdShop.id}`);
+          navigate('/my-shop');
         },
         onError: (err) => {
           toast({

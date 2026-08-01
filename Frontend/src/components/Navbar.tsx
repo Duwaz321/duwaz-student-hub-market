@@ -85,9 +85,6 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                 <DropdownMenuItem asChild>
                   <Link to="/account">My Account</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/my-orders">My Orders</Link>
-                </DropdownMenuItem>
                 {myShop ? (
                   <DropdownMenuItem asChild>
                     <Link to="/my-shop">

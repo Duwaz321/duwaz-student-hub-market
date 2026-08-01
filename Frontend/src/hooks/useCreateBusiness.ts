@@ -7,8 +7,10 @@ export function useCreateBusiness() {
   return useMutation({
     mutationFn: (data: Omit<Business, 'id'>) => businessesApi.create(data),
     onSuccess: () => {
-      // Invalidate businesses list so marketplace refreshes
+      // Invalidate both the businesses list AND the my-shop cache
+      // so the Navbar immediately switches "Create Shop" → "My Shop"
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['businesses', 'my-shop'] });
     },
   });
 }

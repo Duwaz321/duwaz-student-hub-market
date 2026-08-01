@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { businessesApi } from '@/services/api';
 import type { Business } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 export function useBusinesses() {
   return useQuery({
@@ -18,10 +19,19 @@ export function useBusiness(id: number) {
 }
 
 export function useMyShop() {
+  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['businesses', 'my-shop'],
-    queryFn: businessesApi.getMyShop,
-    retry: false, // 404 means no shop — don't retry
+    queryFn: async () => {
+      try {
+        return await businessesApi.getMyShop();
+      } catch {
+        return null; // 404 means no shop — return null instead of throwing
+      }
+    },
+    enabled: isAuthenticated,
+    staleTime: 0,           // always re-fetch when invalidated
+    retry: false,
   });
 }
 

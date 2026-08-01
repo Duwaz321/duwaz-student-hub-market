@@ -15,7 +15,6 @@ import ShopDashboardPage from './pages/ShopDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import DriverDashboardPage from './pages/DriverDashboardPage';
 import DriverLoginPage from './pages/DriverLoginPage';
-import MyOrdersPage from './pages/MyOrdersPage';
 import AboutPage from './pages/AboutPage';
 import AccountPage from './pages/AccountPage';
 import CartPage from './pages/CartPage';
@@ -77,14 +76,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ShopDashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="my-orders"
-              element={
-                <ProtectedRoute>
-                  <MyOrdersPage />
                 </ProtectedRoute>
               }
             />
