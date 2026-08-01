@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreateBusiness } from '@/hooks/useCreateBusiness';
 import { useAuth } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useShopContext } from '@/context/ShopContext';
 
 const CreateShopPage = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const CreateShopPage = () => {
   const { mutate: createBusiness, isPending } = useCreateBusiness();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { setMyShop } = useShopContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -80,13 +82,14 @@ const CreateShopPage = () => {
       },
       {
         onSuccess: (createdShop) => {
+          // Store in context immediately — no re-fetch needed
+          setMyShop(createdShop);
+          queryClient.removeQueries({ queryKey: ['businesses', 'my-shop'] });
+          queryClient.invalidateQueries({ queryKey: ['businesses'] });
           toast({
             title: 'Shop created successfully!',
             description: 'Your shop is now live in the marketplace.',
           });
-          // Remove the my-shop cache entirely so it re-fetches fresh on next render
-          queryClient.removeQueries({ queryKey: ['businesses', 'my-shop'] });
-          queryClient.invalidateQueries({ queryKey: ['businesses'] });
           navigate('/my-shop');
         },
         onError: (err) => {

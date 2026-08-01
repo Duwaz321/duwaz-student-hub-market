@@ -23,6 +23,7 @@ import { useBusinessProducts, useCreateProduct, useUpdateProduct, useDeleteProdu
 import { useCategories } from '@/hooks/useCategories';
 import { shopApi, ordersApi, messagesApi } from '@/services/api';
 import { getStatusBadge, NEXT_STATUSES, ORDER_STATUS_LABELS } from '@/lib/orderUtils';
+import { useShopContext } from '@/context/ShopContext';
 import type { Product, OrderStatus, ProductStatus, StoreMessage } from '@/types';
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
@@ -77,9 +78,17 @@ const emptyForm: ProductFormData = {
 const ShopDashboardPage = () => {
   const { toast } = useToast();
   const qc = useQC();
+  const { myShop: contextShop, setMyShop } = useShopContext();
 
-  // Data
-  const { data: shop, isLoading: shopLoading } = useMyShop();
+  // Primary: use context shop (set immediately after creation)
+  // Fallback: fetch from API (handles page refresh)
+  const { data: fetchedShop, isLoading: shopLoading } = useMyShop();
+  const shop = contextShop ?? fetchedShop;
+
+  // Keep context in sync when fetched from API
+  if (fetchedShop && !contextShop) {
+    setMyShop(fetchedShop);
+  }
   const { data: products = [], isLoading: productsLoading } = useBusinessProducts(shop?.id ?? 0);
   const { data: categories = [] } = useCategories();
   const { data: stats, isLoading: statsLoading } = useQuery({

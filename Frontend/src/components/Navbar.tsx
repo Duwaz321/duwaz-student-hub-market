@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { useMyShop } from '@/hooks/useBusinesses';
+import { useShopContext } from '@/context/ShopContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { totalItems } = useCart();
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
-  const { data: myShop } = useMyShop();
+  const { myShop, clearShop } = useShopContext();
   const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
@@ -31,6 +31,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   };
 
   const handleLogout = () => {
+    clearShop(); // clear shop context on logout
     logout();
     navigate('/');
   };
