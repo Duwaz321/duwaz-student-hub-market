@@ -35,22 +35,26 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
     navigate('/');
   };
 
-  // The nav link to show for shop management
-  const shopNavItem = isAuthenticated
+  // The nav link to show for shop management — hidden for admins
+  const shopNavItem = isAuthenticated && !isAdmin
     ? isLoadingShop
       ? null
       : hasShops
         ? <NavLink to="/my-shops">Manage Shops</NavLink>
         : <NavLink to="/create-shop">Create Shop</NavLink>
-    : <NavLink to="/create-shop">Create Shop</NavLink>;
+    : !isAuthenticated
+      ? <NavLink to="/create-shop">Create Shop</NavLink>
+      : null;
 
-  const shopMobileItem = isAuthenticated
+  const shopMobileItem = isAuthenticated && !isAdmin
     ? isLoadingShop
       ? null
       : hasShops
         ? <MobileNavLink to="/my-shops" onClick={toggleMobileMenu}>Manage Shops</MobileNavLink>
         : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
-    : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>;
+    : !isAuthenticated
+      ? <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
+      : null;
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -106,7 +110,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                 <DropdownMenuItem asChild>
                   <Link to="/account">My Account</Link>
                 </DropdownMenuItem>
-                {!isLoadingShop && (
+                {!isAdmin && !isLoadingShop && (
                   hasShops ? (
                     <DropdownMenuItem asChild>
                       <Link to="/my-shops">
