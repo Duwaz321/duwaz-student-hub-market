@@ -31,6 +31,10 @@ public class BusinessService {
         return businessRepository.findByStudentId(studentId);
     }
 
+    public List<Business> findAllByStudentId(Long studentId) {
+        return businessRepository.findAllByStudentId(studentId);
+    }
+
     public List<Business> getAllBusiness() {
         return businessRepository.findAll();
     }

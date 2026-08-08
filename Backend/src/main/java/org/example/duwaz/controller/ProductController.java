@@ -36,7 +36,7 @@ public class ProductController {
     // ── Helper ────────────────────────────────────────────────────────────────
     private Optional<Business> getOwnerBusiness(Authentication auth) {
         if (auth == null) return Optional.empty();
-        return businessRepository.findByStudentEmail(auth.getName());
+        return businessRepository.findFirstByStudentEmail(auth.getName());
     }
 
     // ── Public endpoints ──────────────────────────────────────────────────────

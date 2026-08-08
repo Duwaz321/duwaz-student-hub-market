@@ -38,7 +38,7 @@ public class ShopStatsController {
      */
     @GetMapping("/stats")
     public ResponseEntity<?> getShopStats(Authentication auth) {
-        Optional<Business> bizOpt = businessRepository.findByStudentEmail(auth.getName());
+        Optional<Business> bizOpt = businessRepository.findFirstByStudentEmail(auth.getName());
         if (bizOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You don't own a shop");
         }

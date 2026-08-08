@@ -64,8 +64,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/businesses").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/businesses/{id}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/businesses/{id}").permitAll()                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
                 // Everything else requires authentication
                 .anyRequest().authenticated()

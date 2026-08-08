@@ -6,11 +6,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
+import ShopLoader from './components/ShopLoader';
 import HomePage from './pages/HomePage';
 import MarketplacePage from './pages/MarketplacePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ShopPage from './pages/ShopPage';
 import CreateShopPage from './pages/CreateShopPage';
+import MyShopsPage from './pages/MyShopsPage';
 import ShopDashboardPage from './pages/ShopDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import DriverDashboardPage from './pages/DriverDashboardPage';
@@ -30,6 +32,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ShopLoader />
         <Routes>
           {/* Auth pages — no Layout wrapper (full-screen cards) */}
           <Route path="/login" element={<LoginPage />} />
@@ -71,11 +74,30 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            {/* All shops list */}
+            <Route
+              path="my-shops"
+              element={
+                <ProtectedRoute>
+                  <MyShopsPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Individual shop dashboard — /my-shop/:id */}
+            <Route
+              path="my-shop/:shopId"
+              element={
+                <ProtectedRoute>
+                  <ShopDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Legacy /my-shop → redirect to list */}
             <Route
               path="my-shop"
               element={
                 <ProtectedRoute>
-                  <ShopDashboardPage />
+                  <MyShopsPage />
                 </ProtectedRoute>
               }
             />

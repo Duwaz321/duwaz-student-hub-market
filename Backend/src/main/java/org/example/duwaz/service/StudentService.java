@@ -29,7 +29,20 @@ public class StudentService {
     }
 
     public Student updateStudent(Student student) {
-        return studentRepository.save(student);
+        // Load existing record so we never overwrite password, email, or role
+        Student existing = studentRepository.findById(student.getId())
+                .orElseThrow(() -> new RuntimeException("Student not found with id " + student.getId()));
+
+        // Only update safe profile fields
+        if (student.getStudentName() != null) existing.setStudentName(student.getStudentName());
+        if (student.getStudentNumber() != null) existing.setStudentNumber(student.getStudentNumber());
+        if (student.getLocationAddress() != null) existing.setLocationAddress(student.getLocationAddress());
+        // Allow clearing profileImage by passing empty string, or setting a new one
+        if (student.getProfileImage() != null) {
+            existing.setProfileImage(student.getProfileImage().isEmpty() ? null : student.getProfileImage());
+        }
+
+        return studentRepository.save(existing);
     }
 
     public void deleteStudentById(Long id) {

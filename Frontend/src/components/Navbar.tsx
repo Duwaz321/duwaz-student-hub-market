@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, User, Menu, X, LogOut, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -23,18 +24,33 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { totalItems } = useCart();
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
-  const { myShop, clearShop } = useShopContext();
+  const { hasShops, isLoadingShop, clearShops } = useShopContext();
   const navigate = useNavigate();
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const handleLogout = () => {
-    clearShop(); // clear shop context on logout
+    clearShops();
     logout();
     navigate('/');
   };
+
+  // The nav link to show for shop management
+  const shopNavItem = isAuthenticated
+    ? isLoadingShop
+      ? null
+      : hasShops
+        ? <NavLink to="/my-shops">Manage Shops</NavLink>
+        : <NavLink to="/create-shop">Create Shop</NavLink>
+    : <NavLink to="/create-shop">Create Shop</NavLink>;
+
+  const shopMobileItem = isAuthenticated
+    ? isLoadingShop
+      ? null
+      : hasShops
+        ? <MobileNavLink to="/my-shops" onClick={toggleMobileMenu}>Manage Shops</MobileNavLink>
+        : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
+    : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>;
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -48,12 +64,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         <nav className="hidden md:flex space-x-8">
           <NavLink to="/">Home</NavLink>
           <NavLink to="/marketplace">Marketplace</NavLink>
-          {isAuthenticated
-            ? myShop
-              ? <NavLink to="/my-shop">My Shop</NavLink>
-              : <NavLink to="/create-shop">Create Shop</NavLink>
-            : <NavLink to="/create-shop">Create Shop</NavLink>
-          }
+          {shopNavItem}
           <NavLink to="/about">About</NavLink>
         </nav>
 
@@ -71,8 +82,17 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="rounded-full p-0 h-9 w-9 overflow-hidden">
+                  <Avatar className="h-9 w-9">
+                    {user?.profileImage && (
+                      <AvatarImage src={user.profileImage} alt={user.studentName} className="object-cover" />
+                    )}
+                    <AvatarFallback className="bg-duwaz-brown text-white text-sm font-semibold">
+                      {user?.studentName
+                        ? user.studentName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                        : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -86,17 +106,22 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                 <DropdownMenuItem asChild>
                   <Link to="/account">My Account</Link>
                 </DropdownMenuItem>
-                {myShop ? (
-                  <DropdownMenuItem asChild>
-                    <Link to="/my-shop">
-                      <Store className="mr-2 h-4 w-4" />
-                      My Shop
-                    </Link>
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem asChild>
-                    <Link to="/create-shop">Create Shop</Link>
-                  </DropdownMenuItem>
+                {!isLoadingShop && (
+                  hasShops ? (
+                    <DropdownMenuItem asChild>
+                      <Link to="/my-shops">
+                        <Store className="mr-2 h-4 w-4" />
+                        Manage Shops
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-shop">
+                        <Store className="mr-2 h-4 w-4" />
+                        Create Shop
+                      </Link>
+                    </DropdownMenuItem>
+                  )
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
@@ -136,40 +161,22 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         )}
       >
         <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-          <MobileNavLink to="/" onClick={toggleMobileMenu}>
-            Home
-          </MobileNavLink>
-          <MobileNavLink to="/marketplace" onClick={toggleMobileMenu}>
-            Marketplace
-          </MobileNavLink>
-          {isAuthenticated
-            ? myShop
-              ? <MobileNavLink to="/my-shop" onClick={toggleMobileMenu}>My Shop</MobileNavLink>
-              : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
-            : <MobileNavLink to="/create-shop" onClick={toggleMobileMenu}>Create Shop</MobileNavLink>
-          }
-          <MobileNavLink to="/about" onClick={toggleMobileMenu}>
-            About
-          </MobileNavLink>
+          <MobileNavLink to="/" onClick={toggleMobileMenu}>Home</MobileNavLink>
+          <MobileNavLink to="/marketplace" onClick={toggleMobileMenu}>Marketplace</MobileNavLink>
+          {shopMobileItem}
+          <MobileNavLink to="/about" onClick={toggleMobileMenu}>About</MobileNavLink>
           {isAuthenticated ? (
             <>
-              <MobileNavLink to="/account" onClick={toggleMobileMenu}>
-                My Account
-              </MobileNavLink>
+              <MobileNavLink to="/account" onClick={toggleMobileMenu}>My Account</MobileNavLink>
               <button
-                onClick={() => {
-                  handleLogout();
-                  toggleMobileMenu();
-                }}
+                onClick={() => { handleLogout(); toggleMobileMenu(); }}
                 className="text-duwaz-black hover:text-duwaz-brown transition-colors block py-2 font-medium text-left"
               >
                 Sign Out
               </button>
             </>
           ) : (
-            <MobileNavLink to="/login" onClick={toggleMobileMenu}>
-              Sign In
-            </MobileNavLink>
+            <MobileNavLink to="/login" onClick={toggleMobileMenu}>Sign In</MobileNavLink>
           )}
         </div>
       </div>
@@ -177,35 +184,29 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   );
 };
 
-// NavLink component for desktop
 interface NavLinkProps {
   to: string;
   children: React.ReactNode;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ to, children }) => {
-  return (
-    <Link to={to} className="text-duwaz-black hover:text-duwaz-brown transition-colors font-medium">
-      {children}
-    </Link>
-  );
-};
+const NavLink: React.FC<NavLinkProps> = ({ to, children }) => (
+  <Link to={to} className="text-duwaz-black hover:text-duwaz-brown transition-colors font-medium">
+    {children}
+  </Link>
+);
 
-// NavLink component for mobile
 interface MobileNavLinkProps extends NavLinkProps {
   onClick: () => void;
 }
 
-const MobileNavLink: React.FC<MobileNavLinkProps> = ({ to, onClick, children }) => {
-  return (
-    <Link
-      to={to}
-      className="text-duwaz-black hover:text-duwaz-brown transition-colors block py-2 font-medium"
-      onClick={onClick}
-    >
-      {children}
-    </Link>
-  );
-};
+const MobileNavLink: React.FC<MobileNavLinkProps> = ({ to, onClick, children }) => (
+  <Link
+    to={to}
+    className="text-duwaz-black hover:text-duwaz-brown transition-colors block py-2 font-medium"
+    onClick={onClick}
+  >
+    {children}
+  </Link>
+);
 
 export default Navbar;

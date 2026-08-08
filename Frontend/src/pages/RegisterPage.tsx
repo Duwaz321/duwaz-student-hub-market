@@ -19,6 +19,7 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    locationAddress: '',
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,6 +48,7 @@ const RegisterPage = () => {
         studentNumber: formData.studentNumber,
         email: formData.email,
         password: formData.password,
+        locationAddress: formData.locationAddress || undefined,
       });
 
       register(response.token, {
@@ -137,6 +139,19 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="locationAddress">Location Address</Label>
+              <Input
+                id="locationAddress"
+                name="locationAddress"
+                placeholder="e.g. Room 204, Res Block B, DUT Campus"
+                value={formData.locationAddress}
+                onChange={handleChange}
+              />
+              <p className="text-xs text-muted-foreground">
+                Used as your default delivery address. You can update it later.
+              </p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

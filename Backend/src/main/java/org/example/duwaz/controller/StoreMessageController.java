@@ -45,7 +45,7 @@ public class StoreMessageController {
     }
 
     private Optional<Business> getOwnerBusiness(Authentication auth) {
-        return businessRepository.findByStudentEmail(auth.getName());
+        return businessRepository.findFirstByStudentEmail(auth.getName());
     }
 
     private Optional<DeliverDriver> getDriverFromAuth(Authentication auth) {

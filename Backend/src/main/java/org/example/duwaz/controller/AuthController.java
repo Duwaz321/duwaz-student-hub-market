@@ -32,9 +32,13 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    /** Safely get role name — falls back to CUSTOMER if role is NULL in DB */
+    private String roleName(Student student) {
+        return student.getRole() != null ? student.getRole().name() : "CUSTOMER";
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        // Validate
         if (studentRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body("Email already registered");
         }
@@ -42,20 +46,21 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Student number already registered");
         }
 
-        // Create student
         Student student = new Student();
         student.setStudentName(request.getStudentName());
         student.setStudentNumber(request.getStudentNumber());
         student.setEmail(request.getEmail());
         student.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getLocationAddress() != null && !request.getLocationAddress().isBlank()) {
+            student.setLocationAddress(request.getLocationAddress());
+        }
 
         student = studentRepository.save(student);
 
-        // Generate token
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), student.getRole().name());
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), student.getRole().name()));
+                .body(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student)));
     }
 
     @PostMapping("/login")
@@ -71,8 +76,8 @@ public class AuthController {
         Student student = studentRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), student.getRole().name());
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
 
-        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), student.getRole().name()));
+        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student)));
     }
 }

@@ -21,8 +21,8 @@ const CartPage = () => {
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: '/cart' } } });
-      toast({ title: 'Please sign in', description: 'You need to be logged in to checkout.' });
+      navigate('/register', { state: { from: { pathname: '/cart' } } });
+      toast({ title: 'Create an account first', description: 'You need an account to make a payment.' });
       return;
     }
     setIsCheckingOut(true);
@@ -51,7 +51,7 @@ const CartPage = () => {
         .then(() => {
           toast({ title: 'Order placed successfully!', description: 'Thank you for your purchase.' });
           clearCart();
-          navigate('/my-orders');
+          navigate('/account');
         })
         .catch((err: any) => {
           toast({ title: 'Checkout failed', description: err.message, variant: 'destructive' });
@@ -153,10 +153,16 @@ const CartPage = () => {
               ) : (
                 <>
                   <ShoppingBag className="mr-2 h-4 w-4" />
-                  Checkout
+                  {isAuthenticated ? 'Make Payment' : 'Make Payment'}
                 </>
               )}
             </Button>
+
+            {!isAuthenticated && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                You'll be asked to create an account before paying.
+              </p>
+            )}
 
             <p className="text-xs text-gray-500 mt-4 text-center">
               By completing this purchase, you agree to our terms and conditions.

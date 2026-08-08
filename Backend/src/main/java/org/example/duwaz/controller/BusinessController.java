@@ -41,7 +41,19 @@ public class BusinessController {
     // ── Authenticated endpoints ───────────────────────────────────────────────
 
     /**
-     * Returns the business owned by the currently authenticated student.
+     * Returns ALL businesses owned by the currently authenticated student.
+     * Returns empty list if they have none.
+     */
+    @GetMapping("/mine/all")
+    public ResponseEntity<List<Business>> getMyShops(Authentication auth) {
+        String email = auth.getName();
+        return studentRepository.findByEmail(email)
+                .map(student -> ResponseEntity.ok(businessService.findAllByStudentId(student.getId())))
+                .orElse(ResponseEntity.ok(List.of()));
+    }
+
+    /**
+     * Returns the FIRST business owned by the currently authenticated student.
      * Returns 404 if the student doesn't own a shop yet.
      */
     @GetMapping("/mine")

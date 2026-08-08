@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,14 +25,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   className,
 }) => {
+  const navigate = useNavigate();
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (onAddToCart) onAddToCart();
   };
 
+  const handleShopClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (shopId) navigate(`/shop/${shopId}`);
+  };
+
   return (
-    <Link to={`/product/${id}`} className={cn('product-card block', className)}>
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate(`/product/${id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/product/${id}`)}
+      className={cn('product-card block cursor-pointer rounded-lg overflow-hidden', className)}
+    >
       <div className="aspect-square relative overflow-hidden bg-gray-100">
         <ImageWithFallback
           src={image}
@@ -43,13 +57,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-4">
         <h3 className="font-medium text-lg line-clamp-1">{name}</h3>
         {shopName && (
-          <Link
-            to={shopId ? `/shop/${shopId}` : '#'}
-            className="text-sm text-muted-foreground hover:text-duwaz-brown transition-colors"
-            onClick={(e) => e.stopPropagation()}
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={handleShopClick}
+            onKeyDown={(e) => e.key === 'Enter' && handleShopClick(e as any)}
+            className="text-sm text-muted-foreground hover:text-duwaz-brown transition-colors cursor-pointer"
           >
             {shopName}
-          </Link>
+          </span>
         )}
         <div className="flex items-center justify-between mt-2">
           <p className="font-bold">R{Number(price).toFixed(2)}</p>
@@ -63,7 +79,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </Button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

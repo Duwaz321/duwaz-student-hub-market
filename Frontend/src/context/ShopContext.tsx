@@ -2,49 +2,71 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { Business } from '@/types';
 
 interface ShopContextValue {
-  myShop: Business | null;
+  myShops: Business[];          // all shops owned by the logged-in user
   isLoadingShop: boolean;
-  setMyShop: (shop: Business | null) => void;
-  clearShop: () => void;
+  setMyShops: (shops: Business[]) => void;
+  setLoadingShop: (loading: boolean) => void;
+  clearShops: () => void;
+  // convenience — true if user owns at least one shop
+  hasShops: boolean;
 }
 
 const ShopContext = createContext<ShopContextValue | null>(null);
 
-const SHOP_KEY = 'duwaz_my_shop';
+const SHOPS_KEY = 'duwaz_my_shops';
 
 export function ShopProvider({ children }: { children: React.ReactNode }) {
-  const [myShop, setMyShopState] = useState<Business | null>(null);
+  const [myShops, setMyShopsState] = useState<Business[]>([]);
   const [isLoadingShop, setIsLoadingShop] = useState(true);
 
-  // Load from localStorage on mount
+  // Seed from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(SHOP_KEY);
+    const stored = localStorage.getItem(SHOPS_KEY);
     if (stored) {
       try {
-        setMyShopState(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setMyShopsState(parsed);
+          setIsLoadingShop(false);
+        }
       } catch {
-        localStorage.removeItem(SHOP_KEY);
+        localStorage.removeItem(SHOPS_KEY);
       }
     }
-    setIsLoadingShop(false);
+    // if nothing in cache, keep isLoadingShop=true until ShopLoader resolves
   }, []);
 
-  const setMyShop = useCallback((shop: Business | null) => {
-    setMyShopState(shop);
-    if (shop) {
-      localStorage.setItem(SHOP_KEY, JSON.stringify(shop));
+  const setMyShops = useCallback((shops: Business[]) => {
+    setMyShopsState(shops);
+    setIsLoadingShop(false);
+    if (shops.length > 0) {
+      localStorage.setItem(SHOPS_KEY, JSON.stringify(shops));
     } else {
-      localStorage.removeItem(SHOP_KEY);
+      localStorage.removeItem(SHOPS_KEY);
     }
   }, []);
 
-  const clearShop = useCallback(() => {
-    setMyShopState(null);
-    localStorage.removeItem(SHOP_KEY);
+  const setLoadingShop = useCallback((loading: boolean) => {
+    setIsLoadingShop(loading);
+  }, []);
+
+  const clearShops = useCallback(() => {
+    setMyShopsState([]);
+    setIsLoadingShop(true);
+    localStorage.removeItem(SHOPS_KEY);
   }, []);
 
   return (
-    <ShopContext.Provider value={{ myShop, isLoadingShop, setMyShop, clearShop }}>
+    <ShopContext.Provider
+      value={{
+        myShops,
+        isLoadingShop,
+        setMyShops,
+        setLoadingShop,
+        clearShops,
+        hasShops: myShops.length > 0,
+      }}
+    >
       {children}
     </ShopContext.Provider>
   );

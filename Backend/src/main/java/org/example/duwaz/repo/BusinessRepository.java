@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface BusinessRepository extends JpaRepository<Business, Long> {
     Business findBusinessById(Long id);
     Optional<Business> findByStudentId(Long studentId);
-    Optional<Business> findByStudentEmail(String email);
+    Optional<Business> findFirstByStudentEmail(String email);
+    List<Business> findAllByStudentEmail(String email);
     List<Business> findAllByStudentId(Long studentId);
 }

@@ -72,6 +72,7 @@ export const authApi = {
     studentNumber: string;
     email: string;
     password: string;
+    locationAddress?: string;
   }) => request<AuthResponse>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
 
   login: (data: { email: string; password: string }) =>

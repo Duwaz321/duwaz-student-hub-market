@@ -12,6 +12,9 @@ export interface Business {
   businessName: string;
   description: string;
   logoUrl?: string;
+  shopCategory?: string;
+  phoneNumber?: string;
+  operatingHours?: string;
   student?: Student;
 }
 
@@ -33,6 +36,8 @@ export interface Student {
   id: number;
   studentName: string;
   studentNumber: string;
+  locationAddress?: string;
+  profileImage?: string;
   businesses?: Business[];
 }
 

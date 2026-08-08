@@ -33,6 +33,18 @@ public class Business {
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
+    /** Shop category e.g. "Food & Drinks", "Clothing", "Electronics" */
+    @Column(name = "shop_category")
+    private String shopCategory;
+
+    /** Owner / contact phone number */
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    /** Free-text operating hours e.g. "Mon–Fri 08:00–17:00, Sat 09:00–13:00" */
+    @Column(name = "operating_hours")
+    private String operatingHours;
+
     @ManyToOne(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "student_id")
     @JsonIgnoreProperties({"businesses", "password", "hibernateLazyInitializer", "handler"})

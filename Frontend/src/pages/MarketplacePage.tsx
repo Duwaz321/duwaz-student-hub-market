@@ -30,8 +30,8 @@ const MarketplacePage = () => {
       id: product.id,
       name: product.name,
       price: Number(product.price),
-      image: '/placeholder.svg',
-      shopName: product.category?.name ?? '',
+      image: product.imageUrl ?? '/placeholder.svg',
+      shopName: product.business?.businessName ?? product.category?.name ?? '',
     });
     toast({
       title: 'Added to cart',
@@ -155,6 +155,9 @@ const MarketplacePage = () => {
                   id={product.id}
                   name={product.name}
                   price={Number(product.price)}
+                  image={product.imageUrl}
+                  shopName={product.business?.businessName ?? product.category?.name}
+                  shopId={product.business?.id}
                   onAddToCart={() => handleAddToCart(product)}
                 />
               ))}

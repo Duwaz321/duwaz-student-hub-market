@@ -90,7 +90,7 @@ public class OrderController {
             @RequestParam(defaultValue = "20") int size,
             Authentication auth) {
         String email = auth.getName();
-        Optional<Business> biz = businessRepository.findByStudentEmail(email);
+        Optional<Business> biz = businessRepository.findFirstByStudentEmail(email);
         if (biz.isEmpty()) return ResponseEntity.ok(List.of());
         Page<Order> orders = orderService.getOrdersByBusinessIdPaged(
                 biz.get().getId(),

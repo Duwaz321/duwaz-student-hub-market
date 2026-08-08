@@ -46,6 +46,16 @@ public class Student {
     @Column(nullable = false)
     private Role role = Role.CUSTOMER;
 
+    @Getter
+    @Setter
+    @Column(name = "location_address")
+    private String locationAddress;
+
+    @Getter
+    @Setter
+    @Column(name = "profile_image", columnDefinition = "TEXT")
+    private String profileImage;
+
     @JsonIgnore
     @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
     private List<Business> businesses;

@@ -6,7 +6,6 @@ import ProductCard from '@/components/ProductCard';
 import ShopCard from '@/components/ShopCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { slideData } from '@/data/mockData';
 import { useCategories } from '@/hooks/useCategories';
 import { useProducts } from '@/hooks/useProducts';
 import { useBusinesses } from '@/hooks/useBusinesses';
@@ -27,13 +26,35 @@ const HomePage = () => {
   const featuredProducts = products.slice(0, 4);
   const featuredShops = businesses.slice(0, 3);
 
+  // Build slides from products that have images, fall back to shop logos, then placeholder
+  const slides = (() => {
+    const withImages = products.filter((p) => p.imageUrl);
+    const sources = withImages.length >= 3 ? withImages : products;
+    const pool = sources.slice(0, 6);
+
+    if (pool.length === 0) {
+      return [
+        { image: '/placeholder.svg', title: 'Welcome to Duwaz', description: 'Student marketplace — buy and sell on campus' },
+      ];
+    }
+
+    return pool.map((p) => ({
+      image: p.imageUrl ?? p.business?.logoUrl ?? '/placeholder.svg',
+      title: p.name,
+      description: p.business?.businessName
+        ? `By ${p.business.businessName} · R${Number(p.price).toFixed(2)}`
+        : `R${Number(p.price).toFixed(2)}`,
+      linkTo: `/product/${p.id}`,
+    }));
+  })();
+
   const handleAddToCart = (product: Product) => {
     addItem({
       id: product.id,
       name: product.name,
       price: Number(product.price),
-      image: '/placeholder.svg',
-      shopName: product.category?.name ?? '',
+      image: product.imageUrl ?? '/placeholder.svg',
+      shopName: product.business?.businessName ?? product.category?.name ?? '',
     });
     toast({
       title: 'Added to cart',
@@ -46,7 +67,7 @@ const HomePage = () => {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="w-full h-[50vh] md:h-[60vh]">
-        <Slideshow slides={slideData} className="h-full" />
+        <Slideshow slides={slides} className="h-full" />
       </section>
 
       {/* Categories Section */}
@@ -86,6 +107,9 @@ const HomePage = () => {
                     id={product.id}
                     name={product.name}
                     price={Number(product.price)}
+                    image={product.imageUrl}
+                    shopName={product.business?.businessName ?? product.category?.name}
+                    shopId={product.business?.id}
                     onAddToCart={() => handleAddToCart(product)}
                   />
                 ))}

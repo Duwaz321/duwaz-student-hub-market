@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient as useQC } from '@tanstack/react-query';
 import {
   Plus, Pencil, Trash2, Store, Upload, X, ExternalLink,
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useMyShop, useUpdateBusiness } from '@/hooks/useBusinesses';
+import { useUpdateBusiness } from '@/hooks/useBusinesses';
 import { useBusinessProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useAdjustStock } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { shopApi, ordersApi, messagesApi } from '@/services/api';
@@ -78,17 +78,20 @@ const emptyForm: ProductFormData = {
 const ShopDashboardPage = () => {
   const { toast } = useToast();
   const qc = useQC();
-  const { myShop: contextShop, setMyShop } = useShopContext();
+  const { shopId } = useParams<{ shopId: string }>();
+  const { myShops } = useShopContext();
 
-  // Primary: use context shop (set immediately after creation)
-  // Fallback: fetch from API (handles page refresh)
-  const { data: fetchedShop, isLoading: shopLoading } = useMyShop();
-  const shop = contextShop ?? fetchedShop;
+  // Load shop: prefer the already-loaded context data, fallback to API fetch
+  const { data: fetchedShop, isLoading: shopLoading } = useQuery({
+    queryKey: ['businesses', shopId],
+    queryFn: () => fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}/api/businesses/${shopId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('duwaz_token')}` },
+    }).then(r => r.json()),
+    enabled: !!shopId,
+  });
 
-  // Keep context in sync when fetched from API
-  if (fetchedShop && !contextShop) {
-    setMyShop(fetchedShop);
-  }
+  // Use context data if available (avoids extra fetch), else use fetched
+  const shop = myShops.find(s => String(s.id) === shopId) ?? fetchedShop;
   const { data: products = [], isLoading: productsLoading } = useBusinessProducts(shop?.id ?? 0);
   const { data: categories = [] } = useCategories();
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -563,7 +566,7 @@ const ShopDashboardPage = () => {
 
       {/* ── Edit Shop Dialog ── */}
       <Dialog open={editShopOpen} onOpenChange={setEditShopOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader><DialogTitle>Edit Shop</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-4">
@@ -589,7 +592,7 @@ const ShopDashboardPage = () => {
 
       {/* ── Add/Edit Product Dialog ── */}
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add Product'}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
             <div className="flex items-center gap-4">
@@ -619,7 +622,7 @@ const ShopDashboardPage = () => {
 
       {/* ── Stock Adjust Dialog ── */}
       <Dialog open={!!stockDialogProduct} onOpenChange={open => !open && setStockDialogProduct(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>Adjust Stock — {stockDialogProduct?.name}</DialogTitle></DialogHeader>
           <div className="py-2 space-y-3">
             <p className="text-sm text-gray-500">Current stock: <span className="font-bold">{stockDialogProduct?.stockQuantity ?? 0}</span></p>
@@ -642,7 +645,7 @@ const ShopDashboardPage = () => {
 
       {/* ── Compose Message Dialog ── */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>New Message to Admin</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1"><Label>Subject</Label><Input placeholder="e.g. Pricing query, Product issue..." value={composeSubject} onChange={e => setComposeSubject(e.target.value)} /></div>
@@ -675,7 +678,7 @@ const ShopDashboardPage = () => {
 
       {/* ── Message Detail Dialog ── */}
       <Dialog open={!!selectedMessage} onOpenChange={open => !open && setSelectedMessage(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>{selectedMessage?.subject ?? 'Message'}</DialogTitle></DialogHeader>
           {selectedMessage && (
             <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto">
