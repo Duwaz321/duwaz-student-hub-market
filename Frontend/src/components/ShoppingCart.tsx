@@ -2,6 +2,8 @@ import { X, ShoppingBag, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ShoppingCartProps {
   isOpen: boolean;
@@ -10,6 +12,17 @@ interface ShoppingCartProps {
 
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) => {
   const { items, subtotal, removeItem, updateQuantity } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    onClose();
+    if (!isAuthenticated) {
+      navigate('/register', { state: { from: { pathname: '/cart' } } });
+    } else {
+      navigate('/cart');
+    }
+  };
 
   return (
     <div
@@ -97,9 +110,18 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) =
               <span>R{subtotal.toFixed(2)}</span>
             </div>
           </div>
-          <Button className="w-full bg-duwaz-brown hover:bg-duwaz-brown/90">
-            Checkout
+          <Button
+            className="w-full bg-duwaz-brown hover:bg-duwaz-brown/90"
+            onClick={handleCheckout}
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Make Payment
           </Button>
+          {!isAuthenticated && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              You'll be asked to create an account first.
+            </p>
+          )}
         </div>
       )}
     </div>
