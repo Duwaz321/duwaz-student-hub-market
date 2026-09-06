@@ -1,0 +1,405 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --brand-brown:       25 60% 36%;
+    --brand-brown-mid:   25 45% 48%;
+    --brand-brown-light: 30 50% 70%;
+    --brand-cream:       35 40% 95%;
+    --brand-parchment:   33 35% 91%;
+    --brand-warm-white:  30 20% 98%;
+
+    --background:        35 40% 97%;
+    --foreground:        20 15% 10%;
+
+    --card:              0 0% 100%;
+    --card-foreground:   20 15% 10%;
+
+    --popover:           0 0% 100%;
+    --popover-foreground: 20 15% 10%;
+
+    --primary:           25 60% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary:         33 35% 91%;
+    --secondary-foreground: 20 15% 25%;
+
+    --muted:             35 30% 94%;
+    --muted-foreground:  20 8% 45%;
+
+    --accent:            30 50% 70%;
+    --accent-foreground: 20 15% 10%;
+
+    --destructive:       0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:            30 20% 88%;
+    --input:             30 20% 88%;
+    --ring:              25 60% 36%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 35 40% 97%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* ── Dark mode tokens — high contrast, warm dark ── */
+  .dark {
+    --background:        20 14% 9%;        /* #181210 deep warm dark */
+    --foreground:        33 25% 92%;       /* #EDE8E0 warm near-white — HIGH CONTRAST */
+
+    --card:              20 14% 13%;       /* #22190F slightly lighter surface */
+    --card-foreground:   33 25% 92%;       /* same high contrast white */
+
+    --popover:           20 14% 13%;
+    --popover-foreground: 33 25% 92%;
+
+    --primary:           25 65% 55%;       /* brighter brown for dark bg */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary:         20 14% 18%;
+    --secondary-foreground: 33 20% 85%;   /* clearly visible */
+
+    --muted:             20 14% 18%;
+    --muted-foreground:  30 12% 68%;       /* visible grey — was 58%, boosted to 68% */
+
+    --accent:            20 14% 22%;
+    --accent-foreground: 33 25% 92%;
+
+    --destructive:       0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:            20 14% 24%;       /* slightly brighter borders */
+    --input:             20 14% 24%;
+    --ring:              25 65% 55%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* ── Global Base Styles ─────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    /* Ensure headings inherit the foreground colour */
+    color: hsl(var(--foreground));
+  }
+
+  h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  p, span, li, td, th, label {
+    color: inherit;
+  }
+}
+
+/* ── Component Utility Classes ──────────────────────────────────────────────── */
+@layer components {
+
+  /* ── Cards — use CSS variables so they adapt to dark mode ── */
+  .card-premium {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    @apply rounded-2xl border border-border/60 shadow-sm
+           transition-all duration-300
+           hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  .card-flat {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    @apply rounded-2xl border border-border/60;
+  }
+
+  /* ── Product card ── */
+  .product-card {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    @apply rounded-2xl overflow-hidden border border-border/50
+           cursor-pointer transition-all duration-300
+           hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* ── Category card ── */
+  .category-card {
+    background-color: hsl(var(--card));
+    @apply rounded-2xl shadow-sm overflow-hidden
+           transition-all duration-300 cursor-pointer
+           hover:shadow-md hover:-translate-y-1;
+  }
+
+  /* ── Section headings ── */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-muted-foreground;
+  }
+
+  .section-heading {
+    font-family: 'DM Serif Display', Georgia, serif;
+    @apply text-3xl md:text-4xl leading-tight;
+    color: hsl(var(--foreground));
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-[hsl(var(--primary))] text-white
+           px-6 py-2.5 rounded-full text-sm font-semibold
+           shadow-sm transition-all duration-200
+           hover:opacity-90 hover:shadow-md active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent border border-[hsl(var(--primary))]
+           text-[hsl(var(--primary))]
+           px-6 py-2.5 rounded-full text-sm font-semibold
+           transition-all duration-200
+           hover:bg-[hsl(var(--primary))] hover:text-white
+           active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-[hsl(var(--primary))]
+           px-6 py-2.5 rounded-full text-sm font-semibold
+           transition-all duration-200
+           hover:bg-[hsl(var(--primary))]/10
+           active:scale-95;
+  }
+
+  /* ── Inputs ── */
+  .input-premium {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    @apply w-full rounded-xl border border-border px-4 py-2.5
+           text-sm placeholder:text-muted-foreground
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/30
+           focus:border-[hsl(var(--primary))];
+  }
+
+  /* ── Section backgrounds — dark-aware ── */
+  .bg-cream {
+    background-color: hsl(35, 40%, 95%);
+  }
+  .dark .bg-cream {
+    background-color: hsl(20, 14%, 14%);
+  }
+
+  .bg-parchment {
+    background-color: hsl(33, 35%, 91%);
+  }
+  .dark .bg-parchment {
+    background-color: hsl(20, 14%, 16%);
+  }
+
+  /* ── Hover lift ── */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1;
+  }
+
+  /* ── Glass — dark-aware ── */
+  .glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .dark .glass {
+    background: rgba(30, 20, 14, 0.88);
+  }
+
+  /* ── Pill tabs ── */
+  .pill-tab {
+    @apply px-5 py-2 rounded-full text-sm font-medium cursor-pointer
+           transition-all duration-200;
+  }
+  .pill-tab-active {
+    @apply bg-[hsl(var(--primary))] text-white shadow-sm;
+  }
+  .pill-tab-inactive {
+    @apply text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--muted))];
+  }
+
+  /* ── Dividers ── */
+  .divider {
+    @apply border-t border-border/60;
+  }
+}
+
+/* ── Dark mode: force text visibility on common patterns ── */
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: hsl(33, 20%, 78%) !important;
+}
+
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: hsl(30, 10%, 62%) !important;
+}
+
+.dark .text-gray-300 {
+  color: hsl(30, 10%, 72%) !important;
+}
+
+/* Ensure white backgrounds become card colour in dark mode */
+.dark .bg-white {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground));
+}
+
+.dark .bg-gray-50 {
+  background-color: hsl(20, 14%, 14%) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: hsl(20, 14%, 16%) !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: hsl(20, 14%, 20%) !important;
+}
+
+/* Borders in dark mode */
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Navbar dark mode — nav links must be visible */
+.dark header a,
+.dark header nav a,
+.dark header button {
+  color: hsl(33, 20%, 82%);
+}
+.dark header a:hover,
+.dark header nav a:hover {
+  color: hsl(var(--foreground));
+}
+
+/* Page header sections that use duwaz-cream bg */
+.dark .bg-duwaz-cream\/40,
+.dark [class*="bg-duwaz-cream"] {
+  background-color: hsl(20, 14%, 14%) !important;
+}
+
+/* Muted text — make more readable in dark */
+.dark .text-muted-foreground {
+  color: hsl(30, 12%, 68%) !important;
+}
+
+/* Skeleton/pulse animations in dark mode */
+.dark .animate-pulse {
+  background-color: hsl(20, 14%, 18%) !important;
+}
+
+/* Inputs in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+/* Placeholder text */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: hsl(30, 10%, 50%);
+}
+
+/* shadcn Card component */
+.dark [class*="rounded"][class*="border"] {
+  color: hsl(var(--foreground));
+}
+
+/* Tab triggers */
+.dark [role="tablist"] {
+  background-color: hsl(20, 14%, 14%);
+}
+.dark [role="tab"][data-state="active"] {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+.dark [role="tab"][data-state="inactive"] {
+  color: hsl(30, 12%, 62%);
+}
+
+/* Dropdown menus */
+.dark [role="menu"],
+.dark [data-radix-popper-content-wrapper] > div {
+  background-color: hsl(20, 14%, 13%);
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+/* Badges with hardcoded green */
+.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.12) !important; }
+.dark .text-green-700 { color: rgb(134, 239, 172) !important; }
+.dark .border-green-200 { border-color: rgba(34, 197, 94, 0.25) !important; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+.dark .text-amber-700 { color: rgb(252, 211, 77) !important; }
+.dark .text-amber-600 { color: rgb(252, 211, 77) !important; }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.25) !important; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.1) !important; }
+.dark .text-red-500 { color: rgb(252, 129, 129) !important; }
+.dark .text-red-600 { color: rgb(252, 129, 129) !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(25, 30%, 70%); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(25, 45%, 55%); }
+.dark ::-webkit-scrollbar-thumb { background: hsl(25, 20%, 35%); }
+
+/* ── Selection ── */
+::selection { background: hsl(25, 60%, 36%, 0.2); color: hsl(20, 15%, 10%); }
+.dark ::selection { background: hsl(25, 60%, 50%, 0.3); color: hsl(33, 25%, 92%); }
+
+/* ── Focus ── */
+:focus-visible { outline: 2px solid hsl(25, 60%, 36%); outline-offset: 2px; }
+.dark :focus-visible { outline-color: hsl(25, 65%, 55%); }
