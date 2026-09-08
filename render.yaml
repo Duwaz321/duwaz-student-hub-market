@@ -2,8 +2,9 @@ services:
   - type: web
     name: duwaz-backend
     runtime: java
-    buildCommand: cd Backend && ./mvnw clean package -DskipTests
-    startCommand: java -jar Backend/target/DUWAZ-0.0.1-SNAPSHOT.jar
+    rootDir: Backend
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/DUWAZ-0.0.1-SNAPSHOT.jar
     envVars:
       - key: JAVA_VERSION
-        value: 21
+        value: "21"
