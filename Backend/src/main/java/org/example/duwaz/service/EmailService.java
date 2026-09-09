@@ -21,6 +21,49 @@ public class EmailService {
     }
 
     /**
+     * Sends a registration verification OTP to the user's email.
+     * Runs asynchronously so it never blocks the HTTP response.
+     */
+    @Async
+    public void sendRegistrationOtpEmail(String toEmail, String userName, String otpCode) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Verify your Duwaz account");
+
+            String html = """
+                    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+                      <h2 style="color:#7c3f2a;margin-bottom:4px;">Duwaz</h2>
+                      <p style="color:#6b7280;font-size:14px;margin-top:0;">Student Hub Market</p>
+                      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;">
+                      <p style="font-size:16px;">Hi <strong>%s</strong>,</p>
+                      <p style="font-size:15px;color:#374151;">
+                        Use the code below to verify your email address and complete your registration.
+                        This code expires in <strong>10 minutes</strong>.
+                      </p>
+                      <div style="background:#fef3c7;border:2px dashed #f59e0b;border-radius:10px;padding:20px;text-align:center;margin:24px 0;">
+                        <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;letter-spacing:1px;">VERIFICATION CODE</p>
+                        <p style="margin:8px 0 0;font-size:42px;font-weight:900;letter-spacing:10px;color:#7c3f2a;font-family:monospace;">%s</p>
+                      </div>
+                      <p style="font-size:13px;color:#9ca3af;">
+                        If you did not create a Duwaz account, you can safely ignore this email.
+                      </p>
+                      <p style="font-size:13px;color:#9ca3af;margin-bottom:0;">— The Duwaz Team</p>
+                    </div>
+                    """.formatted(userName, otpCode);
+
+            helper.setText(html, true);
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            System.err.println("[EmailService] Failed to send registration OTP to " + toEmail + ": " + e.getMessage());
+        }
+    }
+
+    /**
      * Sends the delivery OTP to the customer's email address.
      * Runs asynchronously so it never blocks the HTTP response.
      */

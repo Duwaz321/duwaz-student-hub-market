@@ -73,7 +73,19 @@ export const authApi = {
     email: string;
     password: string;
     locationAddress?: string;
-  }) => request<AuthResponse>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  }) => request<{ message: string; email: string; otpExpiresInSeconds: number }>(
+    '/api/auth/register', { method: 'POST', body: JSON.stringify(data) }
+  ),
+
+  verifyOtp: (data: { email: string; otp: string }) =>
+    request<AuthResponse & { locationAddress?: string }>(
+      '/api/auth/verify-otp', { method: 'POST', body: JSON.stringify(data) }
+    ),
+
+  resendOtp: (email: string) =>
+    request<{ message: string; otpExpiresInSeconds: number }>(
+      '/api/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email }) }
+    ),
 
   login: (data: { email: string; password: string }) =>
     request<AuthResponse & { locationAddress?: string }>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),

@@ -13,6 +13,10 @@ ALTER TABLE student ADD COLUMN IF NOT EXISTS email            VARCHAR(255);
 ALTER TABLE student ADD COLUMN IF NOT EXISTS password         VARCHAR(255);
 ALTER TABLE student ADD COLUMN IF NOT EXISTS location_address VARCHAR(255);
 ALTER TABLE student ADD COLUMN IF NOT EXISTS profile_image   TEXT;
+ALTER TABLE student ADD COLUMN IF NOT EXISTS email_verified  BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Mark existing accounts as already verified (they registered before OTP was introduced)
+UPDATE student SET email_verified = TRUE WHERE email_verified = FALSE;
 
 -- 2. store_messages — add all columns the entity expects
 ALTER TABLE store_messages ADD COLUMN IF NOT EXISTS message_type  VARCHAR(30)  NOT NULL DEFAULT 'MESSAGE';

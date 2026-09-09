@@ -5,6 +5,8 @@ import org.example.duwaz.dto.AuthRequest;
 import org.example.duwaz.dto.AuthResponse;
 import org.example.duwaz.dto.RegisterRequest;
 import org.example.duwaz.repo.StudentRepository;
+import org.example.duwaz.service.EmailService;
+import org.example.duwaz.service.OtpService;
 import org.example.duwaz.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,28 +17,25 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:8081", "http://localhost:3000"})
+@CrossOrigin(origins = "*")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private StudentRepository studentRepository;
+    @Autowired private JwtUtil jwtUtil;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private EmailService emailService;
+    @Autowired private OtpService otpService;
 
-    @Autowired
-    private StudentRepository studentRepository;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    /** Safely get role name — falls back to CUSTOMER if role is NULL in DB */
-    private String roleName(Student student) {
-        return student.getRole() != null ? student.getRole().name() : "CUSTOMER";
+    private String roleName(Student s) {
+        return s.getRole() != null ? s.getRole().name() : "CUSTOMER";
     }
 
+    // ── Step 1: validate fields, save as unverified, send OTP ────────────────
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (studentRepository.existsByEmail(request.getEmail())) {
@@ -46,23 +45,104 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Student number already registered");
         }
 
+        // Save account in unverified state — cannot log in yet
         Student student = new Student();
         student.setStudentName(request.getStudentName());
         student.setStudentNumber(request.getStudentNumber());
         student.setEmail(request.getEmail());
         student.setPassword(passwordEncoder.encode(request.getPassword()));
+        student.setEmailVerified(false);
         if (request.getLocationAddress() != null && !request.getLocationAddress().isBlank()) {
             student.setLocationAddress(request.getLocationAddress());
         }
+        studentRepository.save(student);
 
-        student = studentRepository.save(student);
+        // Generate OTP and send email (async — never blocks response)
+        try {
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendRegistrationOtpEmail(request.getEmail(), request.getStudentName(), otp);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(429).body(e.getMessage());
+        }
 
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
-
+        // Return only what the frontend needs to show the OTP screen — NO token yet
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+                .body(Map.of(
+                        "message", "OTP sent to " + request.getEmail(),
+                        "email", request.getEmail(),
+                        "otpExpiresInSeconds", otpService.secondsRemaining(request.getEmail())
+                ));
     }
 
+    // ── Step 2: verify OTP → activate account → return JWT ───────────────────
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String otp   = body.get("otp");
+
+        if (email == null || otp == null || email.isBlank() || otp.isBlank()) {
+            return ResponseEntity.badRequest().body("Email and OTP are required");
+        }
+
+        Student student = studentRepository.findByEmail(email).orElse(null);
+        if (student == null) {
+            return ResponseEntity.badRequest().body("Account not found");
+        }
+        if (student.isEmailVerified()) {
+            // Already verified — just return a token (handles page refresh edge case)
+            String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
+            return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+        }
+
+        boolean valid;
+        try {
+            valid = otpService.verifyOtp(email, otp);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(400).body(e.getMessage());
+        }
+
+        if (!valid) {
+            return ResponseEntity.status(400).body("Incorrect OTP. Please try again.");
+        }
+
+        // Activate the account
+        student.setEmailVerified(true);
+        studentRepository.save(student);
+
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
+        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+    }
+
+    // ── Resend OTP ────────────────────────────────────────────────────────────
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body("Email is required");
+        }
+
+        Student student = studentRepository.findByEmail(email).orElse(null);
+        if (student == null) {
+            return ResponseEntity.badRequest().body("Account not found");
+        }
+        if (student.isEmailVerified()) {
+            return ResponseEntity.ok(Map.of("message", "Account already verified"));
+        }
+
+        try {
+            String otp = otpService.generateOtp(email);
+            emailService.sendRegistrationOtpEmail(email, student.getStudentName(), otp);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(429).body(e.getMessage());
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "New OTP sent",
+                "otpExpiresInSeconds", otpService.secondsRemaining(email)
+        ));
+    }
+
+    // ── Login — blocked for unverified accounts ───────────────────────────────
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
@@ -76,8 +156,12 @@ public class AuthController {
         Student student = studentRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
+        if (!student.isEmailVerified()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Please verify your email before logging in");
+        }
 
+        String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
         return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
     }
 }

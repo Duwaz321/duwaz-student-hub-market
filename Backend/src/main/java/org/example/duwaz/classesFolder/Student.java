@@ -56,6 +56,11 @@ public class Student {
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;
 
+    @Getter
+    @Setter
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @JsonIgnore
     @OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
     private List<Business> businesses;
