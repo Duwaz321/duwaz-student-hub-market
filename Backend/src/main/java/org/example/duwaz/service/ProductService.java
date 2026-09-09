@@ -63,6 +63,10 @@ public class ProductService {
         if (product.getImageUrl() != null) {
             existing.setImageUrl(product.getImageUrl());
         }
+        // Always update additional images (null clears them, which is intentional)
+        existing.setImageUrl2(product.getImageUrl2());
+        existing.setImageUrl3(product.getImageUrl3());
+        existing.setImageUrl4(product.getImageUrl4());
         return productRepository.save(existing);
     }
 

@@ -35,6 +35,15 @@ public class Product {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "image_url2", columnDefinition = "TEXT")
+    private String imageUrl2;
+
+    @Column(name = "image_url3", columnDefinition = "TEXT")
+    private String imageUrl3;
+
+    @Column(name = "image_url4", columnDefinition = "TEXT")
+    private String imageUrl4;
+
     @Column(name = "stock_quantity", nullable = false)
     private int stockQuantity = 0;
 
@@ -70,6 +79,15 @@ public class Product {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getImageUrl2() { return imageUrl2; }
+    public void setImageUrl2(String imageUrl2) { this.imageUrl2 = imageUrl2; }
+
+    public String getImageUrl3() { return imageUrl3; }
+    public void setImageUrl3(String imageUrl3) { this.imageUrl3 = imageUrl3; }
+
+    public String getImageUrl4() { return imageUrl4; }
+    public void setImageUrl4(String imageUrl4) { this.imageUrl4 = imageUrl4; }
 
     public int getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(int stockQuantity) {

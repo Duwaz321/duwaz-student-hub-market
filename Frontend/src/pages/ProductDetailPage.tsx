@@ -13,6 +13,7 @@ const ProductDetailPage = () => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
 
   const productId = Number(id);
   const { data: product, isLoading, isError } = useProduct(productId);
@@ -22,13 +23,26 @@ const ProductDetailPage = () => {
     ? reviews.reduce((s, r) => s + Number(r.rating), 0) / reviews.length
     : 0;
 
+  // Collect all non-null images in order
+  const allImages = product
+    ? [
+        product.imageUrl,
+        (product as any).imageUrl2,
+        (product as any).imageUrl3,
+        (product as any).imageUrl4,
+      ].filter(Boolean) as string[]
+    : [];
+
+  const displayImage = allImages[activeImage] ?? '/placeholder.svg';
+
   const handleAddToCart = () => {
     if (!product) return;
     for (let i = 0; i < quantity; i++) {
       addItem({
-        id: product.id, name: product.name,
+        id: product.id,
+        name: product.name,
         price: Number(product.price),
-        image: product.imageUrl ?? '/placeholder.svg',
+        image: allImages[0] ?? '/placeholder.svg',
         shopName: product.business?.businessName ?? product.category?.name ?? '',
         shopId: product.business?.id,
       });
@@ -44,7 +58,7 @@ const ProductDetailPage = () => {
           <div className="aspect-square rounded-2xl bg-duwaz-cream/50 animate-pulse" />
           <div className="space-y-4">
             {[80, 50, 30, 60].map((w, i) => (
-              <div key={i} className={`h-5 bg-duwaz-cream/50 rounded-full animate-pulse w-${w > 60 ? 'full' : w + '%'}`} />
+              <div key={i} className={`h-5 bg-duwaz-cream/50 rounded-full animate-pulse`} style={{ width: `${w}%` }} />
             ))}
           </div>
         </div>
@@ -74,18 +88,40 @@ const ProductDetailPage = () => {
 
         <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
 
-          {/* Image */}
-          <div className="rounded-2xl overflow-hidden bg-duwaz-cream/30 aspect-square border border-border/40 shadow-sm">
-            <ImageWithFallback
-              src={product.imageUrl}
-              alt={product.name}
-              className="w-full h-full"
-            />
+          {/* ── Image gallery ── */}
+          <div className="flex flex-col gap-3">
+            {/* Main image */}
+            <div className="rounded-2xl overflow-hidden bg-duwaz-cream/30 aspect-square border border-border/40 shadow-sm">
+              <ImageWithFallback
+                src={displayImage}
+                alt={product.name}
+                className="w-full h-full"
+              />
+            </div>
+
+            {/* Thumbnails — only shown when there are 2+ images */}
+            {allImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {allImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(i)}
+                    aria-label={`View image ${i + 1}`}
+                    className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                      activeImage === i
+                        ? 'border-duwaz-brown shadow-md scale-105'
+                        : 'border-border/40 opacity-70 hover:opacity-100 hover:border-border'
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} view ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Details */}
+          {/* ── Details ── */}
           <div className="flex flex-col">
-            {/* Category */}
             {product.category && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                 <Tag className="h-3.5 w-3.5" />
@@ -149,13 +185,13 @@ const ProductDetailPage = () => {
 
             {/* Quantity + CTA */}
             <div className="flex flex-col gap-3 mt-auto">
-              {/* Qty */}
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-foreground/70">Quantity</span>
                 <div className="flex items-center gap-1 bg-muted/50 rounded-full border border-border/60 px-1.5">
                   <button
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
+                    aria-label="Decrease quantity"
                     className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 transition-colors"
                   >
                     <Minus className="h-3.5 w-3.5" />
@@ -163,6 +199,7 @@ const ProductDetailPage = () => {
                   <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
                   <button
                     onClick={() => setQuantity(q => q + 1)}
+                    aria-label="Increase quantity"
                     className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -170,7 +207,6 @@ const ProductDetailPage = () => {
                 </div>
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={handleAddToCart}
@@ -181,10 +217,10 @@ const ProductDetailPage = () => {
                 </button>
                 <button
                   onClick={() => setWished(v => !v)}
-                  aria-label="Wishlist"
+                  aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
                   className={`h-12 w-12 rounded-2xl border flex items-center justify-center flex-shrink-0 transition-all duration-200 ${wished ? 'bg-red-500 border-red-500 text-white' : 'border-border/60 text-muted-foreground hover:text-red-500 hover:border-red-200'}`}
                 >
-                  <Heart className={`h-4.5 w-4.5 ${wished ? 'fill-current' : ''}`} />
+                  <Heart className={`h-4 w-4 ${wished ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>

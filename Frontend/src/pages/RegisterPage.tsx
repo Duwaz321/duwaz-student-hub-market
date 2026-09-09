@@ -5,6 +5,34 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/services/api';
 
+// ── Field component defined OUTSIDE RegisterPage to prevent remounting on every render ──
+interface FieldProps {
+  label: string;
+  name: string;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const Field: React.FC<FieldProps> = ({ label, name, type = 'text', placeholder, required = false, value, onChange }) => (
+  <div>
+    <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    <input
+      name={name}
+      type={type}
+      placeholder={placeholder}
+      required={required}
+      value={value}
+      onChange={onChange}
+      className="w-full h-11 px-4 rounded-xl border border-border bg-background dark:bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all"
+    />
+  </div>
+);
+
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -56,19 +84,6 @@ const RegisterPage = () => {
     }
   };
 
-  const Field = ({ label, name, type = 'text', placeholder, required = false, children }: any) => (
-    <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
-      {children ?? (
-        <input
-          name={name} type={type} placeholder={placeholder} required={required}
-          value={(formData as any)[name]} onChange={handleChange}
-          className="w-full h-11 px-4 rounded-xl border border-border bg-background dark:bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all"
-        />
-      )}
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex bg-duwaz-cream/30">
       {/* Decorative left panel */}
@@ -105,9 +120,9 @@ const RegisterPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="Full Name" name="studentName" placeholder="Sipho Mabaso" required />
-            <Field label="Student Number" name="studentNumber" placeholder="ST12345678" required />
-            <Field label="Email" name="email" type="email" placeholder="you@university.ac.za" required />
+            <Field label="Full Name" name="studentName" placeholder="Sipho Mabaso" required value={formData.studentName} onChange={handleChange} />
+            <Field label="Student Number" name="studentNumber" placeholder="ST12345678" required value={formData.studentNumber} onChange={handleChange} />
+            <Field label="Email" name="email" type="email" placeholder="you@university.ac.za" required value={formData.email} onChange={handleChange} />
 
             {/* Password */}
             <div>
@@ -120,6 +135,7 @@ const RegisterPage = () => {
                   className="w-full h-11 px-4 pr-11 rounded-xl border border-border bg-background dark:bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all"
                 />
                 <button type="button" onClick={() => setShowPwd(v => !v)}
+                  aria-label={showPwd ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -143,6 +159,7 @@ const RegisterPage = () => {
                   className="w-full h-11 px-4 pr-11 rounded-xl border border-border bg-background dark:bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all"
                 />
                 <button type="button" onClick={() => setShowConfirm(v => !v)}
+                  aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

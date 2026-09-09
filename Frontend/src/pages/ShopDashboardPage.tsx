@@ -64,14 +64,14 @@ interface ProductFormData {
   description: string;
   price: string;
   categoryId: string;
-  imageBase64: string | null;
+  images: (string | null)[];   // up to 4 base64 images; index 0 = primary
   stockQuantity: string;
   productStatus: ProductStatus;
 }
 
 const emptyForm: ProductFormData = {
   name: '', description: '', price: '', categoryId: '',
-  imageBase64: null, stockQuantity: '0', productStatus: 'AVAILABLE',
+  images: [null, null, null, null], stockQuantity: '0', productStatus: 'AVAILABLE',
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -176,8 +176,12 @@ const ShopDashboardPage = () => {
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState<ProductFormData>(emptyForm);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-  const productImageRef = useRef<HTMLInputElement>(null);
+  const productImageRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
   const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
   const [stockDialogProduct, setStockDialogProduct] = useState<Product | null>(null);
   const [stockDelta, setStockDelta] = useState('');
@@ -212,35 +216,81 @@ const ShopDashboardPage = () => {
     });
   };
 
-  const openAddProduct = () => { setEditingProduct(null); setProductForm(emptyForm); setProductImagePreview(null); setProductDialogOpen(true); };
-  const openEditProduct = (p: Product) => {
-    setEditingProduct(p);
-    setProductForm({ name: p.name, description: p.description ?? '', price: String(p.price), categoryId: p.category ? String(p.category.id) : '', imageBase64: null, stockQuantity: String(p.stockQuantity ?? 0), productStatus: (p.productStatus as ProductStatus) ?? 'AVAILABLE' });
-    setProductImagePreview(p.imageUrl ?? null);
+  const openAddProduct = () => {
+    setEditingProduct(null);
+    setProductForm(emptyForm);
     setProductDialogOpen(true);
   };
-  const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const openEditProduct = (p: Product) => {
+    setEditingProduct(p);
+    setProductForm({
+      name: p.name,
+      description: p.description ?? '',
+      price: String(p.price),
+      categoryId: p.category ? String(p.category.id) : '',
+      images: [
+        p.imageUrl ?? null,
+        (p as any).imageUrl2 ?? null,
+        (p as any).imageUrl3 ?? null,
+        (p as any).imageUrl4 ?? null,
+      ],
+      stockQuantity: String(p.stockQuantity ?? 0),
+      productStatus: (p.productStatus as ProductStatus) ?? 'AVAILABLE',
+    });
+    setProductDialogOpen(true);
+  };
+  const handleProductImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast({ title: 'Max 2MB', variant: 'destructive' }); return; }
+    if (file.size > 2 * 1024 * 1024) { toast({ title: 'Max 2MB per image', variant: 'destructive' }); return; }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) { toast({ title: 'Only JPG, PNG, WebP or GIF allowed', variant: 'destructive' }); return; }
     const reader = new FileReader();
-    reader.onloadend = () => { const b64 = reader.result as string; setProductImagePreview(b64); setProductForm(p => ({ ...p, imageBase64: b64 })); };
+    reader.onloadend = () => {
+      const b64 = reader.result as string;
+      setProductForm(p => {
+        const imgs = [...p.images];
+        imgs[index] = b64;
+        return { ...p, images: imgs };
+      });
+    };
     reader.readAsDataURL(file);
   };
+  const removeProductImage = (index: number) => {
+    setProductForm(p => {
+      const imgs = [...p.images];
+      imgs[index] = null;
+      return { ...p, images: imgs };
+    });
+  };
   const handleSaveProduct = () => {
-    if (!shop || !productForm.name.trim() || !productForm.price) { toast({ title: 'Name and price required', variant: 'destructive' }); return; }
+    if (!shop || !productForm.name.trim() || !productForm.price) {
+      toast({ title: 'Name and price required', variant: 'destructive' }); return;
+    }
+    const [img1, img2, img3, img4] = productForm.images;
     const payload: Omit<Product, 'id'> = {
-      name: productForm.name, description: productForm.description, price: Number(productForm.price),
+      name: productForm.name,
+      description: productForm.description,
+      price: Number(productForm.price),
       business: { id: shop.id } as any,
       stockQuantity: Number(productForm.stockQuantity),
       productStatus: productForm.productStatus,
       ...(productForm.categoryId ? { category: { id: Number(productForm.categoryId) } as any } : {}),
-      ...(productForm.imageBase64 ? { imageUrl: productForm.imageBase64 } : {}),
-    };
+      ...(img1 ? { imageUrl: img1 } : {}),
+      ...(img2 !== undefined ? { imageUrl2: img2 } : {}),
+      ...(img3 !== undefined ? { imageUrl3: img3 } : {}),
+      ...(img4 !== undefined ? { imageUrl4: img4 } : {}),
+    } as any;
     if (editingProduct) {
-      updateProduct({ id: editingProduct.id, data: payload }, { onSuccess: () => { toast({ title: 'Product updated!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); }, onError: (err) => toast({ title: 'Failed to update product', description: err.message, variant: 'destructive' }) });
+      updateProduct({ id: editingProduct.id, data: payload }, {
+        onSuccess: () => { toast({ title: 'Product updated!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); },
+        onError: (err) => toast({ title: 'Failed to update product', description: err.message, variant: 'destructive' }),
+      });
     } else {
-      createProduct(payload, { onSuccess: () => { toast({ title: 'Product added!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); }, onError: (err) => toast({ title: 'Failed to add product', description: err.message, variant: 'destructive' }) });
+      createProduct(payload, {
+        onSuccess: () => { toast({ title: 'Product added!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); },
+        onError: (err) => toast({ title: 'Failed to add product', description: err.message, variant: 'destructive' }),
+      });
     }
   };
   const confirmDelete = () => {
@@ -325,11 +375,8 @@ const ShopDashboardPage = () => {
       {/* Revenue split info banner */}
       {shopRevenue && Number(shopRevenue.shopRevenue) > 0 && (
         <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-xs flex flex-wrap gap-4">
-          <span className="font-semibold text-emerald-700">💰 Revenue Split per order:</span>
-          <span className="text-gray-600">You (shop) <strong className="text-emerald-700">85%</strong></span>
-          <span className="text-gray-600">Driver <strong className="text-amber-700">10%</strong></span>
-          <span className="text-gray-600">Duwaz platform <strong className="text-blue-700">5%</strong></span>
-          <span className="text-gray-400">· Delivery fee charged separately to customer</span>
+          <span className="font-semibold text-emerald-700">💰 Pricing note:</span>
+          <span className="text-gray-600">Set your product price to include delivery costs. Customers pay only the listed price — no extra fees at checkout.</span>
         </div>
       )}
 
@@ -642,40 +689,76 @@ const ShopDashboardPage = () => {
         <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add Product'}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20 flex-shrink-0">
-                {productImagePreview ? (<><img src={productImagePreview} alt="product" className="w-20 h-20 rounded-lg object-cover border" /><button type="button" onClick={() => { setProductImagePreview(null); setProductForm(p => ({ ...p, imageBase64: null })); }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5"><X className="h-3 w-3" /></button></>) : (<button type="button" onClick={() => productImageRef.current?.click()} className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 flex flex-col items-center justify-center"><Upload className="h-5 w-5 text-gray-400" /><span className="text-xs text-gray-400">Image</span></button>)}
+
+            {/* ── Image uploader — up to 4 images ── */}
+            <div>
+              <Label className="mb-2 block">
+                Product Images <span className="text-muted-foreground font-normal text-xs">(up to 4 · max 2MB each · JPG/PNG/WebP)</span>
+              </Label>
+              <div className="grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="relative aspect-square">
+                    {productForm.images[i] ? (
+                      <>
+                        <img
+                          src={productForm.images[i]!}
+                          alt={`Product image ${i + 1}`}
+                          className="w-full h-full rounded-lg object-cover border border-border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeProductImage(i)}
+                          aria-label={`Remove image ${i + 1}`}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 shadow"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] bg-duwaz-brown/80 text-white rounded-b-lg py-0.5">
+                            Main
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => productImageRefs[i].current?.click()}
+                        disabled={i > 0 && !productForm.images[i - 1]}
+                        aria-label={`Upload image ${i + 1}`}
+                        className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-1"
+                      >
+                        <Upload className="h-4 w-4 text-gray-400" />
+                        <span className="text-[10px] text-gray-400">{i === 0 ? 'Main' : `Photo ${i + 1}`}</span>
+                      </button>
+                    )}
+                    <input
+                      ref={productImageRefs[i]}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={e => handleProductImageChange(i, e)}
+                    />
+                  </div>
+                ))}
               </div>
-              <input ref={productImageRef} type="file" accept="image/*" className="hidden" onChange={handleProductImageChange} />
-              <p className="text-sm text-gray-500">Optional. Max 2MB.</p>
             </div>
+
             <div className="space-y-1"><Label>Name <span className="text-red-500">*</span></Label><Input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Cheese Chips" /></div>
             <div className="space-y-1"><Label>Description</Label><Textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="min-h-[60px]" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Price (R) <span className="text-red-500">*</span></Label>
                 <Input type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(p => ({ ...p, price: e.target.value }))} />
-                {/* Live fee preview */}
                 {productForm.price && Number(productForm.price) > 0 && (
                   <div className="rounded-md bg-amber-50 border border-amber-200 p-2 space-y-1 text-xs">
-                    <p className="font-semibold text-amber-700">💡 Price breakdown for buyers:</p>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Your product price</span>
+                    <p className="font-semibold text-amber-700">💡 Price tip:</p>
+                    <p className="text-gray-600">
+                      Set your price to include the delivery cost. Customers pay exactly what you list — no extra fees are added at checkout.
+                    </p>
+                    <div className="flex justify-between font-semibold text-duwaz-brown border-t pt-1">
+                      <span>Customer pays</span>
                       <span>R{Number(productForm.price).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Duwaz platform fee (5%)</span>
-                      <span className="text-red-500">−R{(Number(productForm.price) * 0.05).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Delivery fee (10% to rider)</span>
-                      <span className="text-amber-600">+R{(Number(productForm.price) * 0.10).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-semibold text-duwaz-brown border-t pt-1">
-                      <span>You receive (after Duwaz 5%)</span>
-                      <span>R{(Number(productForm.price) * 0.95).toFixed(2)}</span>
-                    </div>
-                    <p className="text-gray-400 text-xs">The delivery fee is charged separately to the customer on top of your price.</p>
                   </div>
                 )}
               </div>

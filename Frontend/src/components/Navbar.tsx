@@ -70,12 +70,12 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         ? 'bg-white/95 dark:bg-[hsl(20,14%,9%)]/95 backdrop-blur-md shadow-sm border-b border-border/50'
         : 'bg-white/90 dark:bg-[hsl(20,14%,9%)]/90 backdrop-blur-sm border-b border-transparent'
     )}>
-      <div className="container mx-auto px-4 lg:px-6 flex items-center justify-between h-16">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between h-16 min-w-0">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 flex-shrink-0">
-          <span className="font-serif text-2xl text-duwaz-brown leading-none">Duwaz</span>
-          <span className="text-duwaz-brown text-2xl font-light leading-none">.</span>
+        <Link to="/" className="flex items-center gap-1 flex-shrink-0 mr-2">
+          <span className="font-serif text-xl sm:text-2xl text-duwaz-brown leading-none">Duwaz</span>
+          <span className="text-duwaz-brown text-xl sm:text-2xl font-light leading-none">.</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -194,13 +194,19 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
           )}
         </div>
 
-        {/* Mobile: cart + hamburger */}
-        <div className="flex items-center gap-1 md:hidden">
-          <Button
-            variant="ghost" size="icon"
-            className="rounded-full relative"
+        {/* Mobile: search + cart + hamburger — visible below md breakpoint */}
+        <div className="flex items-center gap-0.5 md:hidden">
+          <button
+            onClick={() => (window.location.href = '/marketplace')}
+            aria-label="Search"
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
             onClick={onCartClick}
             aria-label="Open cart"
+            className="p-2 rounded-full relative text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
           >
             <ShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
@@ -208,15 +214,14 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
                 {totalItems}
               </span>
             )}
-          </Button>
-          <Button
-            variant="ghost" size="icon"
-            className="rounded-full"
+          </button>
+          <button
             onClick={() => setIsMobileMenuOpen(v => !v)}
             aria-label="Toggle menu"
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          </button>
         </div>
       </div>
 

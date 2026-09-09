@@ -72,8 +72,8 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) =
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {items.length > 0 ? items.map((item) => (
             <div key={item.id} className="flex gap-3 p-3 rounded-2xl bg-muted/30 border border-border/40 hover:border-border/70 transition-colors">
-              {/* Thumbnail */}
-              <div className="w-18 h-18 flex-shrink-0 rounded-xl overflow-hidden bg-duwaz-cream/50 border border-border/30">
+              {/* Thumbnail — fixed 56×56 to prevent it consuming space */}
+              <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-duwaz-cream/50 border border-border/30">
                 <img
                   src={item.image ?? '/placeholder.svg'}
                   alt={item.name}
@@ -149,7 +149,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) =
               <span className="text-sm text-muted-foreground">Subtotal</span>
               <span className="font-bold text-lg text-foreground">R{subtotal.toFixed(2)}</span>
             </div>
-            <p className="text-xs text-muted-foreground -mt-2">Delivery fee calculated at checkout</p>
+            <p className="text-xs text-muted-foreground -mt-2">Delivery included in product prices</p>
 
             {/* CTA */}
             <button
