@@ -149,7 +149,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) =
               <span className="text-sm text-muted-foreground">Subtotal</span>
               <span className="font-bold text-lg text-foreground">R{subtotal.toFixed(2)}</span>
             </div>
-            <p className="text-xs text-muted-foreground -mt-2">Delivery included in product prices</p>
+            <p className="text-xs text-muted-foreground -mt-2">🚚 Free delivery</p>
 
             {/* CTA */}
             <button

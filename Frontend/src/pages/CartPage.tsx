@@ -220,14 +220,15 @@ const CartPage = () => {
                   <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span>
                   <span>R{subtotal.toFixed(2)}</span>
                 </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>🚚 Delivery</span>
+                  <span className="text-green-600 font-medium">Free</span>
+                </div>
                 <div className="pt-2 border-t flex justify-between font-bold text-lg">
                   <span>Total</span>
                   <span>R{total.toFixed(2)}</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mb-4">
-                Delivery is included in product prices. No extra fees at checkout.
-              </p>
 
               <Button
                 className="w-full bg-duwaz-brown hover:bg-duwaz-brown/90"
