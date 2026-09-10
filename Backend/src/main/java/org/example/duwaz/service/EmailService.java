@@ -1,37 +1,27 @@
 package org.example.duwaz.service;
 
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
 
-    @Value("${spring.mail.username}")
-    private String fromAddress;
-
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
-    /**
-     * Sends a registration verification OTP to the user's email.
-     * Synchronous so failures are visible in logs.
-     */
+    // ── Registration OTP (via Resend API — works on all hosting platforms) ────
     public void sendRegistrationOtpEmail(String toEmail, String userName, String otpCode) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            System.err.println("[EmailService] RESEND_API_KEY not configured — cannot send OTP email");
+            throw new RuntimeException("Email service not configured. Please contact support.");
+        }
 
-            helper.setFrom(fromAddress);
-            helper.setTo(toEmail);
-            helper.setSubject("Verify your Duwaz account");
+        try {
+            Resend resend = new Resend(resendApiKey);
 
             String html = """
                     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
@@ -54,30 +44,31 @@ public class EmailService {
                     </div>
                     """.formatted(userName, otpCode);
 
-            helper.setText(html, true);
-            mailSender.send(message);
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from("Duwaz <onboarding@resend.dev>")
+                    .to(toEmail)
+                    .subject("Verify your Duwaz account")
+                    .html(html)
+                    .build();
 
-        } catch (Exception e) {
-            System.err.println("[EmailService] Failed to send registration OTP to " + toEmail + ": " + e.getMessage());
-            e.printStackTrace();
+            CreateEmailResponse response = resend.emails().send(params);
+            System.out.println("[EmailService] Registration OTP sent to " + toEmail + " — id: " + response.getId());
+
+        } catch (ResendException e) {
+            System.err.println("[EmailService] Resend error for " + toEmail + ": " + e.getMessage());
             throw new RuntimeException("Failed to send verification email: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Sends the delivery OTP to the customer's email address.
-     * Runs asynchronously so it never blocks the HTTP response.
-     */
-    @Async
-    public void sendOtpEmail(String toEmail, String customerName,
-                              String otpCode, Long orderId) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+    // ── Delivery OTP (also via Resend) ────────────────────────────────────────
+    public void sendOtpEmail(String toEmail, String customerName, String otpCode, Long orderId) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            System.err.println("[EmailService] RESEND_API_KEY not configured — skipping delivery OTP email");
+            return;
+        }
 
-            helper.setFrom(fromAddress);
-            helper.setTo(toEmail);
-            helper.setSubject("Your Delivery OTP — Order #" + orderId);
+        try {
+            Resend resend = new Resend(resendApiKey);
 
             String html = """
                     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
@@ -100,12 +91,17 @@ public class EmailService {
                     </div>
                     """.formatted(customerName, orderId, otpCode);
 
-            helper.setText(html, true);
-            mailSender.send(message);
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from("Duwaz <onboarding@resend.dev>")
+                    .to(toEmail)
+                    .subject("Your Delivery OTP — Order #" + orderId)
+                    .html(html)
+                    .build();
 
-        } catch (Exception e) {
-            // Log but never throw — email failure must not break the delivery assignment
-            System.err.println("[EmailService] Failed to send OTP email to " + toEmail + ": " + e.getMessage());
+            resend.emails().send(params);
+
+        } catch (ResendException e) {
+            System.err.println("[EmailService] Failed to send delivery OTP to " + toEmail + ": " + e.getMessage());
         }
     }
 }
