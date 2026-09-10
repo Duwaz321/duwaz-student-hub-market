@@ -1,4 +1,5 @@
 FROM eclipse-temurin:21-jdk AS build
+# cache-bust: otp-email-v1
 WORKDIR /app
 COPY Backend/ .
 RUN ./mvnw clean package -DskipTests
