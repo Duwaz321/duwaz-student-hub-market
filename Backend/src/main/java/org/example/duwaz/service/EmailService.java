@@ -22,9 +22,8 @@ public class EmailService {
 
     /**
      * Sends a registration verification OTP to the user's email.
-     * Runs asynchronously so it never blocks the HTTP response.
+     * Synchronous so failures are visible in logs.
      */
-    @Async
     public void sendRegistrationOtpEmail(String toEmail, String userName, String otpCode) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -60,6 +59,8 @@ public class EmailService {
 
         } catch (Exception e) {
             System.err.println("[EmailService] Failed to send registration OTP to " + toEmail + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to send verification email: " + e.getMessage(), e);
         }
     }
 
