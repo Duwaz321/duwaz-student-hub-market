@@ -70,7 +70,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         ? 'bg-white/95 dark:bg-[hsl(20,14%,9%)]/95 backdrop-blur-md shadow-sm border-b border-border/50'
         : 'bg-white/90 dark:bg-[hsl(20,14%,9%)]/90 backdrop-blur-sm border-b border-transparent'
     )}>
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between h-16 min-w-0">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between h-16 min-w-0 relative">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-1 flex-shrink-0 mr-2">
@@ -78,8 +78,8 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
           <span className="text-duwaz-brown text-xl sm:text-2xl font-light leading-none">.</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
+        {/* Desktop Navigation — absolutely centered so logo/actions don't affect it */}
+        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
           <NavLink to="/" active={location.pathname === '/'}>Home</NavLink>
           <NavLink to="/marketplace" active={location.pathname === '/marketplace'}>Marketplace</NavLink>
           {shopNavItem}

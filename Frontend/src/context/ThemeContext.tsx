@@ -14,10 +14,10 @@ const THEME_KEY = 'duwaz_theme';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Read from localStorage on mount, fall back to system preference
+    // Read from localStorage on mount, default to light (never follow system dark preference)
     const stored = localStorage.getItem(THEME_KEY) as Theme | null;
     if (stored === 'dark' || stored === 'light') return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   });
 
   // Apply/remove 'dark' class on <html> whenever theme changes
