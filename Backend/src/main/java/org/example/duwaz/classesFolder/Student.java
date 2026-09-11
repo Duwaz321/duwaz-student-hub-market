@@ -53,6 +53,11 @@ public class Student {
 
     @Getter
     @Setter
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Getter
+    @Setter
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;
 

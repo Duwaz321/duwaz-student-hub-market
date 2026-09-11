@@ -64,7 +64,7 @@ const RegisterPage = () => {
 
   const [formData, setFormData] = useState({
     studentName: '', studentNumber: '', email: '',
-    password: '', confirmPassword: '', locationAddress: '',
+    password: '', confirmPassword: '', locationAddress: '', phoneNumber: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
@@ -105,6 +105,7 @@ const RegisterPage = () => {
         studentNumber: formData.studentNumber,
         email: formData.email,
         password: formData.password,
+        phoneNumber: formData.phoneNumber,
         locationAddress: formData.locationAddress || undefined,
       });
       setPendingEmail(formData.email);
@@ -112,7 +113,7 @@ const RegisterPage = () => {
       countdown.start(res.otpExpiresInSeconds ?? 600);
       setResendDisabled(true);
       setStep('otp');
-      toast({ title: 'Check your email', description: `A 6-digit code was sent to ${formData.email}` });
+      toast({ title: 'Check your phone', description: `A 6-digit code was sent to ${res.phone ?? formData.phoneNumber}` });
     } catch (err: any) {
       toast({ title: 'Registration failed', description: err.message || 'Could not create account', variant: 'destructive' });
     } finally {
@@ -201,9 +202,9 @@ const RegisterPage = () => {
               <div className="w-14 h-14 rounded-full bg-duwaz-brown/10 flex items-center justify-center mx-auto mb-4">
                 <Mail className="h-7 w-7 text-duwaz-brown" />
               </div>
-              <h1 className="font-serif text-3xl text-foreground mb-1">Check your email</h1>
+              <h1 className="font-serif text-3xl text-foreground mb-1">Check your phone</h1>
               <p className="text-sm text-muted-foreground">
-                We sent a 6-digit code to <strong className="text-foreground">{pendingEmail}</strong>
+                We sent a 6-digit code via SMS to <strong className="text-foreground">{pendingName}'s number</strong>
               </p>
             </div>
 
@@ -282,6 +283,7 @@ const RegisterPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field label="Full Name" name="studentName" placeholder="Sipho Mabaso" required value={formData.studentName} onChange={handleChange} />
             <Field label="Student Number" name="studentNumber" placeholder="ST12345678" required value={formData.studentNumber} onChange={handleChange} />
+            <Field label="Phone Number" name="phoneNumber" type="tel" placeholder="+27821234567 or 0821234567" required value={formData.phoneNumber} onChange={handleChange} />
             <Field label="Email" name="email" type="email" placeholder="you@university.ac.za" required value={formData.email} onChange={handleChange} />
 
             {/* Password */}
