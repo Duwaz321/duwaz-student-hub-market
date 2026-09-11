@@ -7,7 +7,6 @@ import org.example.duwaz.dto.RegisterRequest;
 import org.example.duwaz.repo.StudentRepository;
 import org.example.duwaz.service.EmailService;
 import org.example.duwaz.service.OtpService;
-import org.example.duwaz.service.SmsService;
 import org.example.duwaz.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,13 +30,12 @@ public class AuthController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private EmailService emailService;
     @Autowired private OtpService otpService;
-    @Autowired private SmsService smsService;
 
     private String roleName(Student s) {
         return s.getRole() != null ? s.getRole().name() : "CUSTOMER";
     }
 
-    // ── Step 1: validate fields, save as unverified, send OTP via SMS ──────────
+    // ── Step 1: validate, save as unverified, send OTP to email ──────────────
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (studentRepository.existsByEmail(request.getEmail())) {
@@ -46,30 +44,21 @@ public class AuthController {
         if (studentRepository.existsByStudentNumber(request.getStudentNumber())) {
             return ResponseEntity.badRequest().body("Student number already registered");
         }
-        if (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) {
-            return ResponseEntity.badRequest().body("Phone number is required for verification");
-        }
 
-        // Normalize phone number to international format
-        String phone = normalizePhone(request.getPhoneNumber());
-
-        // Save account in unverified state
         Student student = new Student();
         student.setStudentName(request.getStudentName());
         student.setStudentNumber(request.getStudentNumber());
         student.setEmail(request.getEmail());
         student.setPassword(passwordEncoder.encode(request.getPassword()));
-        student.setPhoneNumber(phone);
         student.setEmailVerified(false);
         if (request.getLocationAddress() != null && !request.getLocationAddress().isBlank()) {
             student.setLocationAddress(request.getLocationAddress());
         }
         studentRepository.save(student);
 
-        // Generate OTP keyed by phone and send SMS
         try {
-            String otp = otpService.generateOtp(phone);
-            smsService.sendOtpSms(phone, otp);
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendRegistrationOtpEmail(request.getEmail(), request.getStudentName(), otp);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(429).body(e.getMessage());
         } catch (RuntimeException e) {
@@ -78,13 +67,13 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
-                        "message", "OTP sent to " + maskPhone(phone),
-                        "phone", maskPhone(phone),
-                        "otpExpiresInSeconds", otpService.secondsRemaining(phone)
+                        "message", "OTP sent to " + request.getEmail(),
+                        "email", request.getEmail(),
+                        "otpExpiresInSeconds", otpService.secondsRemaining(request.getEmail())
                 ));
     }
 
-    // ── Step 2: verify OTP → activate account → return JWT ───────────────────
+    // ── Step 2: verify OTP → activate → return JWT ───────────────────────────
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         String email = body.get("email");
@@ -102,12 +91,9 @@ public class AuthController {
             return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
         }
 
-        String phone = student.getPhoneNumber();
-        if (phone == null) return ResponseEntity.badRequest().body("No phone number on record");
-
         boolean valid;
         try {
-            valid = otpService.verifyOtp(phone, otp);
+            valid = otpService.verifyOtp(email, otp);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
@@ -131,12 +117,9 @@ public class AuthController {
         if (student == null) return ResponseEntity.badRequest().body("Account not found");
         if (student.isEmailVerified()) return ResponseEntity.ok(Map.of("message", "Account already verified"));
 
-        String phone = student.getPhoneNumber();
-        if (phone == null) return ResponseEntity.badRequest().body("No phone number on record");
-
         try {
-            String otp = otpService.generateOtp(phone);
-            smsService.sendOtpSms(phone, otp);
+            String otp = otpService.generateOtp(email);
+            emailService.sendRegistrationOtpEmail(email, student.getStudentName(), otp);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(429).body(e.getMessage());
         } catch (RuntimeException e) {
@@ -144,8 +127,8 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(Map.of(
-                "message", "New OTP sent to " + maskPhone(phone),
-                "otpExpiresInSeconds", otpService.secondsRemaining(phone)
+                "message", "New OTP sent to " + email,
+                "otpExpiresInSeconds", otpService.secondsRemaining(email)
         ));
     }
 
@@ -165,23 +148,10 @@ public class AuthController {
 
         if (!student.isEmailVerified()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Please verify your phone number before logging in");
+                    .body("Please verify your email before logging in");
         }
 
         String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
         return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    private String normalizePhone(String phone) {
-        phone = phone.replaceAll("\\s+", "").replaceAll("-", "");
-        if (phone.startsWith("0")) phone = "+27" + phone.substring(1);
-        if (!phone.startsWith("+")) phone = "+" + phone;
-        return phone;
-    }
-
-    private String maskPhone(String phone) {
-        if (phone == null || phone.length() < 7) return phone;
-        return phone.substring(0, phone.length() - 4).replaceAll("\\d", "*") + phone.substring(phone.length() - 4);
     }
 }

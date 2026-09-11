@@ -73,18 +73,11 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
-        <!-- Resend email API (replaces SMTP for OTP sending) -->
+        <!-- Resend email API -->
         <dependency>
             <groupId>com.resend</groupId>
             <artifactId>resend-java</artifactId>
             <version>3.1.0</version>
-        </dependency>
-
-        <!-- Africa's Talking SMS -->
-        <dependency>
-            <groupId>com.africastalking</groupId>
-            <artifactId>core</artifactId>
-            <version>3.4.5</version>
         </dependency>
 
         <!-- JWT -->
