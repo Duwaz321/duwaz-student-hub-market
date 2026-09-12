@@ -54,7 +54,13 @@ public class AuthController {
         if (request.getLocationAddress() != null && !request.getLocationAddress().isBlank()) {
             student.setLocationAddress(request.getLocationAddress());
         }
-        studentRepository.save(student);
+        try {
+            studentRepository.save(student);
+        } catch (Exception e) {
+            System.err.println("[AuthController] Failed to save student: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to create account: " + e.getMessage());
+        }
 
         try {
             String otp = otpService.generateOtp(request.getEmail());
@@ -62,6 +68,8 @@ public class AuthController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(429).body(e.getMessage());
         } catch (RuntimeException e) {
+            System.err.println("[AuthController] Registration error for " + request.getEmail() + ": " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body(e.getMessage());
         }
 
