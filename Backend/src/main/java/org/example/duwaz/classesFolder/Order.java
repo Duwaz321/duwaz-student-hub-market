@@ -16,6 +16,10 @@ public class Order {
         OUT_FOR_DELIVERY, DELIVERED, CANCELLED, REFUNDED
     }
 
+    public enum PaymentStatus {
+        PENDING, PAID, FAILED, REFUNDED
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,6 +53,14 @@ public class Order {
 
     @Column(name = "cancellation_reason")
     private String cancellationReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    /** Yoco checkoutId — used to match the webhook back to this order */
+    @Column(name = "yoco_checkout_id")
+    private String yocoCheckoutId;
 
     /** The delivery fee component (charged separately, goes to driver + ops) */
     @Column(name = "delivery_fee", precision = 10, scale = 2)
@@ -95,6 +107,12 @@ public class Order {
 
     public String getCancellationReason() { return cancellationReason; }
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public PaymentStatus getPaymentStatus() { return paymentStatus != null ? paymentStatus : PaymentStatus.PENDING; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public String getYocoCheckoutId() { return yocoCheckoutId; }
+    public void setYocoCheckoutId(String yocoCheckoutId) { this.yocoCheckoutId = yocoCheckoutId; }
 
     public BigDecimal getDeliveryFee() { return deliveryFee != null ? deliveryFee : BigDecimal.ZERO; }
     public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }

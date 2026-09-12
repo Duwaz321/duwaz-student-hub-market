@@ -376,6 +376,32 @@ export const deliveriesApi = {
     }),
 };
 
+// ── Payment (Yoco) ────────────────────────────────────────────────────────────
+export interface PaymentInitiateRequest {
+  totalAmount: number;
+  deliveryAddress: string;
+  businessId: number;
+  items: { productId: number; quantity: number; unitPrice: number }[];
+}
+
+export interface PaymentInitiateResponse {
+  orderId: number;
+  checkoutId: string;
+  redirectUrl: string;
+}
+
+export const paymentApi = {
+  initiate: (data: PaymentInitiateRequest) =>
+    request<PaymentInitiateResponse>('/api/payment/initiate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getStatus: (orderId: number) =>
+    request<{ orderId: number; paymentStatus: string; orderStatus: string }>(
+      `/api/payment/status/${orderId}`
+    ),
+};
+
 // ── Tracking (customer-facing) ────────────────────────────────────────────────
 export interface TrackingResponse {
   // Order

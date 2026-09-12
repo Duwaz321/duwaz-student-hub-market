@@ -63,35 +63,33 @@ const CartPage = () => {
       return;
     }
 
-    import('@/services/api').then(({ ordersApi }) => {
-      const orderPromises = shopIds.map(shopId => {
-        const shopItems = businessGroups[shopId];
-        // Total = product prices × quantities only — no delivery fee added
-        const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-        const payload = {
-          totalAmount: shopTotal,
-          status: 'PENDING',
-          deliveryAddress: effectiveAddress.trim(),
-          business: { id: Number(shopId) },
-          items: shopItems.map(item => ({
-            product: { id: item.id },
-            quantity: item.quantity,
-            unitPrice: item.price,
-          })),
-        } as any;
-        return ordersApi.create(payload);
-      });
+    // Use first shop — most orders are single-shop
+    import('@/services/api').then(({ paymentApi }) => {
+      const shopId = shopIds[0];
+      const shopItems = businessGroups[shopId];
+      const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-      Promise.all(orderPromises)
-        .then((createdOrders: any[]) => {
-          toast({ title: 'Order placed!', description: 'Track your delivery in real time.' });
+      paymentApi.initiate({
+        totalAmount: shopTotal,
+        deliveryAddress: effectiveAddress.trim(),
+        businessId: Number(shopId),
+        items: shopItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          unitPrice: item.price,
+        })),
+      })
+        .then((res) => {
+          // Remember orderId so the success page can redirect to tracking
+          sessionStorage.setItem('duwaz_pending_order', String(res.orderId));
           clearCart();
-          navigate(`/order/${createdOrders[0].id}/track`);
+          // Send customer to Yoco hosted payment page
+          window.location.href = res.redirectUrl;
         })
         .catch((err: any) => {
-          toast({ title: 'Checkout failed', description: err.message, variant: 'destructive' });
-        })
-        .finally(() => setIsCheckingOut(false));
+          toast({ title: 'Payment initiation failed', description: err.message, variant: 'destructive' });
+          setIsCheckingOut(false);
+        });
     });
   };
 

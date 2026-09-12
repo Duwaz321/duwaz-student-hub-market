@@ -25,6 +25,8 @@ import RegisterPage from './pages/RegisterPage';
 import NotFound from './pages/NotFound';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import MyOrdersPage from './pages/MyOrdersPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,10 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/driver/login" element={<DriverLoginPage />} />
+
+          {/* Payment redirect pages — no Layout (full-screen feedback) */}
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/cancel"  element={<PaymentCancelPage />} />
 
           {/* Driver dashboard — no marketplace Layout */}
           <Route
