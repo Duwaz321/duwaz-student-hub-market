@@ -45,7 +45,7 @@ public class EmailService {
                     """.formatted(userName, otpCode);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from("Duwaz <onboarding@resend.dev>")
+                    .from("Duwaz <noreply@duwaz.co.za>")
                     .to(toEmail)
                     .subject("Verify your Duwaz account")
                     .html(html)
