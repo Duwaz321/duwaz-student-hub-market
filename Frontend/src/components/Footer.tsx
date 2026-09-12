@@ -22,7 +22,7 @@ const Footer = () => {
                 href="mailto:info@duwaz.co.za"
                 className="flex items-center gap-1.5 text-xs text-white/50 hover:text-duwaz-light-brown transition-colors"
               >
-                <Mail className="h-3.5 w-3.5" />info@duwaz.co.za
+                <Mail className="h-3.5 w-3.5" />duwaz2026@gmail.com
               </a>
             </div>
           </div>
@@ -52,11 +52,11 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-white/55">
                 <Mail className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />
-                info@duwaz.co.za
+                duwaz2026@gmail.com
               </li>
               <li className="flex items-start gap-2 text-sm text-white/55">
                 <Phone className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />
-                +27 12 345 6789
+                +27 83 670 2391
               </li>
               <li className="flex items-start gap-2 text-sm text-white/55">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />

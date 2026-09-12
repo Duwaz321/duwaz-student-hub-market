@@ -5,19 +5,56 @@ import { useToast } from '@/hooks/use-toast';
 import { useProduct } from '@/hooks/useProducts';
 import { useProductReviews } from '@/hooks/useReviews';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { reviewsApi } from '@/services/api';
 import ImageWithFallback from '@/components/ImageWithFallback';
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { addItem } = useCart();
+  const { isAuthenticated, user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
 
+  // Review form state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
   const productId = Number(id);
   const { data: product, isLoading, isError } = useProduct(productId);
-  const { data: reviews = [] } = useProductReviews(productId);
+  const { data: reviews = [], refetch: refetchReviews } = useProductReviews(productId);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reviewRating === 0) {
+      toast({ title: 'Please select a star rating', variant: 'destructive' }); return;
+    }
+    if (!reviewComment.trim()) {
+      toast({ title: 'Please write a comment', variant: 'destructive' }); return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      await reviewsApi.create({
+        studentId: user!.userId,
+        productId,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+        reviewDate: new Date().toISOString(),
+      });
+      toast({ title: 'Review submitted!', description: 'Thank you for your feedback.' });
+      setReviewRating(0);
+      setReviewComment('');
+      refetchReviews();
+    } catch (err: any) {
+      toast({ title: 'Failed to submit review', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const averageRating = reviews.length > 0
     ? reviews.reduce((s, r) => s + Number(r.rating), 0) / reviews.length
@@ -233,6 +270,71 @@ const ProductDetailPage = () => {
             Reviews
             <span className="ml-2 text-sm font-normal text-muted-foreground">({reviews.length})</span>
           </h2>
+
+          {/* ── Write a review ── */}
+          {isAuthenticated ? (
+            <div className="bg-duwaz-cream/20 rounded-2xl border border-border/40 p-5 mb-8">
+              <h3 className="font-semibold text-base mb-4">Write a Review</h3>
+              <form onSubmit={handleSubmitReview} className="space-y-4">
+                {/* Star selector */}
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Your rating</p>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        className="p-0.5 transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`h-7 w-7 transition-colors ${
+                            star <= (hoverRating || reviewRating)
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-border hover:text-amber-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {reviewRating > 0 && (
+                      <span className="ml-2 text-sm text-muted-foreground self-center">
+                        {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewRating]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comment */}
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1.5">Your comment</label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={e => setReviewComment(e.target.value)}
+                    placeholder="Share your experience with this product..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingReview}
+                  className="px-6 py-2.5 rounded-xl bg-duwaz-brown text-white text-sm font-semibold hover:bg-duwaz-brown/90 active:scale-[0.98] transition-all disabled:opacity-60"
+                >
+                  {isSubmittingReview ? 'Submitting…' : 'Submit Review'}
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-duwaz-cream/20 rounded-2xl border border-border/40 p-5 mb-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                <Link to="/login" className="text-duwaz-brown font-medium hover:underline">Sign in</Link> to write a review
+              </p>
+            </div>
+          )}
 
           {reviews.length === 0 ? (
             <div className="py-10 text-center bg-duwaz-cream/20 rounded-2xl border border-border/40">
