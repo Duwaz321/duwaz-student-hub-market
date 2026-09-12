@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -19,7 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { trackingApi, type TrackingResponse } from '@/services/api';
+import { trackingApi, reviewsApi, type TrackingResponse } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -338,10 +339,134 @@ const DriverCard = ({ tracking }: { tracking: TrackingResponse }) => {
   );
 };
 
+// ── Delivery Rating Modal (mandatory after delivery) ─────────────────────────
+const DeliveryRatingModal = ({
+  orderId,
+  onDone,
+}: {
+  orderId: number;
+  onDone: () => void;
+}) => {
+  const { user } = useAuth();
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) { setError('Please select a star rating.'); return; }
+    setError('');
+    setIsSubmitting(true);
+    try {
+      // Store as a review on the order's product — using orderId as productId
+      // to represent the overall service rating
+      await reviewsApi.create({
+        studentId: user!.userId,
+        productId: orderId, // repurposed as service/order rating
+        rating,
+        comment: comment.trim() || `Delivery service rated ${rating}/5`,
+        reviewDate: new Date().toISOString(),
+      });
+      onDone();
+    } catch {
+      // If review fails (e.g. already reviewed), still allow to proceed
+      onDone();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const labels = ['', 'Very Poor', 'Poor', 'Good', 'Very Good', 'Excellent'];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+        {/* Header */}
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="h-8 w-8 text-green-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Order Delivered! 🎉</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            How was your delivery experience? Your rating helps us improve.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Stars */}
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-gray-700">Rate your experience</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHover(star)}
+                  onMouseLeave={() => setHover(0)}
+                  aria-label={`${star} star`}
+                  className="transition-transform hover:scale-125 active:scale-95"
+                >
+                  <Star
+                    className={`h-9 w-9 transition-colors ${
+                      star <= (hover || rating)
+                        ? 'text-amber-400 fill-amber-400'
+                        : 'text-gray-300'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            {(hover || rating) > 0 && (
+              <p className="text-sm font-semibold text-duwaz-brown">
+                {labels[hover || rating]}
+              </p>
+            )}
+          </div>
+
+          {/* Comment */}
+          <div>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder="Tell us more about your experience (optional)..."
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown resize-none"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isSubmitting || rating === 0}
+            className="w-full py-3 rounded-xl bg-duwaz-brown text-white font-semibold text-sm hover:bg-duwaz-brown/90 active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {isSubmitting ? 'Submitting…' : 'Submit Rating'}
+          </button>
+
+          <p className="text-center text-xs text-gray-400">
+            Rating is required to continue
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 const OrderTrackingPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const id = Number(orderId);
+  const navigate = useNavigate();
+
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [hasRated, setHasRated] = useState(() => {
+    // Restore from localStorage so it persists across refreshes
+    return !!localStorage.getItem(`duwaz_rated_${orderId}`);
+  });
 
   const {
     data: tracking,
@@ -359,6 +484,13 @@ const OrderTrackingPage = () => {
 
   const isDelivered = tracking?.orderStatus === 'DELIVERED' || tracking?.deliveryStatus === 'DELIVERED';
   const isFailed    = tracking?.deliveryStatus === 'DELIVERY_FAILED' || tracking?.orderStatus === 'CANCELLED';
+
+  // Show rating modal as soon as delivery is confirmed and user hasn't rated yet
+  useEffect(() => {
+    if (isDelivered && !hasRated) {
+      setShowRatingModal(true);
+    }
+  }, [isDelivered, hasRated]);
 
   const openInGoogleMaps = () => {
     if (tracking?.driverLatitude && tracking?.driverLongitude) {
@@ -410,6 +542,19 @@ const OrderTrackingPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-lg space-y-5">
+      {/* Mandatory delivery rating modal — blocks navigation until submitted */}
+      {showRatingModal && (
+        <DeliveryRatingModal
+          orderId={id}
+          onDone={() => {
+            setShowRatingModal(false);
+            setHasRated(true);
+            localStorage.setItem(`duwaz_rated_${orderId}`, '1');
+            navigate('/');
+          }}
+        />
+      )}
+
       {/* Back nav */}
       <div className="flex items-center justify-between">
         <Link
@@ -615,9 +760,17 @@ const OrderTrackingPage = () => {
           {tracking.deliveryNotes && (
             <p className="text-xs text-gray-500 italic">{tracking.deliveryNotes}</p>
           )}
-          <Button asChild size="sm" className="mt-2">
-            <Link to="/account">Back to Orders</Link>
-          </Button>
+          {/* Only show "Back to Orders" if user has already rated */}
+          {hasRated && (
+            <Button asChild size="sm" className="mt-2">
+              <Link to="/account">Back to Orders</Link>
+            </Button>
+          )}
+          {!hasRated && (
+            <p className="text-xs text-amber-700 font-medium mt-2">
+              Please rate your delivery experience to continue.
+            </p>
+          )}
         </div>
       )}
 
