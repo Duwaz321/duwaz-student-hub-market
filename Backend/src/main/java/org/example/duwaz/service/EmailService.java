@@ -92,7 +92,7 @@ public class EmailService {
                     """.formatted(customerName, orderId, otpCode);
 
             CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from("Duwaz <onboarding@resend.dev>")
+                    .from("Duwaz <noreply@duwaz.co.za>")
                     .to(toEmail)
                     .subject("Your Delivery OTP — Order #" + orderId)
                     .html(html)
