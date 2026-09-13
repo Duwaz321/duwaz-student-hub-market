@@ -63,6 +63,16 @@ const HomePage = () => {
     return acc;
   }, {});
 
+  // Collect up to 4 product images per category for the card slideshow
+  const imagesByCategory = products.reduce<Record<number, string[]>>((acc, p) => {
+    if (p.category?.id && p.imageUrl) {
+      const list = acc[p.category.id] ?? [];
+      if (list.length < 4) list.push(p.imageUrl);
+      acc[p.category.id] = list;
+    }
+    return acc;
+  }, {});
+
   // Only show categories that have at least one product
   const activeCategories = categories.filter(cat => (productCountByCategory[cat.id] ?? 0) > 0);
 
@@ -138,6 +148,7 @@ const HomePage = () => {
                     key={cat.id}
                     id={cat.id}
                     name={cat.name}
+                    images={imagesByCategory[cat.id] ?? []}
                     productCount={productCountByCategory[cat.id] ?? 0}
                   />
                 ))}
