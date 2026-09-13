@@ -202,6 +202,16 @@ export const adminApi = {
       method: 'PUT',
       body: JSON.stringify({ role }),
     }),
+  // Shop approval
+  getAllShops: () => request<Business[]>('/api/admin/shops/all'),
+  getPendingShops: () => request<Business[]>('/api/admin/shops/pending'),
+  approveShop: (id: number) =>
+    request<Business>(`/api/admin/shops/${id}/approve`, { method: 'PUT' }),
+  rejectShop: (id: number, reason: string) =>
+    request<Business>(`/api/admin/shops/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    }),
 };
 
 // ── Shop Stats ────────────────────────────────────────────────────────────────

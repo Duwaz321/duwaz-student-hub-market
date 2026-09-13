@@ -7,6 +7,8 @@ export interface Category {
   description: string;
 }
 
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface Business {
   id: number;
   businessName: string;
@@ -15,6 +17,8 @@ export interface Business {
   shopCategory?: string;
   phoneNumber?: string;
   operatingHours?: string;
+  approvalStatus?: ApprovalStatus;
+  rejectionReason?: string;
   student?: Student;
 }
 
