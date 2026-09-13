@@ -55,6 +55,17 @@ const HomePage = () => {
   const featuredProducts = products.slice(0, 8);
   const featuredShops = businesses.slice(0, 4);
 
+  // Build a map of categoryId → product count so we can filter empty categories
+  const productCountByCategory = products.reduce<Record<number, number>>((acc, p) => {
+    if (p.category?.id) {
+      acc[p.category.id] = (acc[p.category.id] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  // Only show categories that have at least one product
+  const activeCategories = categories.filter(cat => (productCountByCategory[cat.id] ?? 0) > 0);
+
   // Build slides from products with images
   const slides = (() => {
     const withImages = products.filter(p => p.imageUrl);
@@ -114,10 +125,21 @@ const HomePage = () => {
             href="/marketplace"
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-            {categoriesLoading
+            {categoriesLoading || productsLoading
               ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-              : categories.slice(0, 8).map(cat => (
-                  <CategoryCard key={cat.id} id={cat.id} name={cat.name} />
+              : activeCategories.length === 0
+              ? (
+                <p className="col-span-full text-center text-sm text-muted-foreground py-8">
+                  No categories with products yet.
+                </p>
+              )
+              : activeCategories.slice(0, 8).map(cat => (
+                  <CategoryCard
+                    key={cat.id}
+                    id={cat.id}
+                    name={cat.name}
+                    productCount={productCountByCategory[cat.id] ?? 0}
+                  />
                 ))}
           </div>
         </div>
