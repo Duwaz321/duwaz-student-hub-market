@@ -18,6 +18,7 @@ export interface Business {
   phoneNumber?: string;
   operatingHours?: string;
   isOpen?: boolean;
+  open?: boolean;
   approvalStatus?: ApprovalStatus;
   rejectionReason?: string;
   student?: Student;

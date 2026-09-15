@@ -98,12 +98,12 @@ const ShopPage = () => {
                   <h1 className="font-semibold text-xl text-foreground leading-tight">{shop.businessName}</h1>
                   {/* Open / Closed badge */}
                   <span className={`inline-flex items-center gap-1 mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    (shop.isOpen ?? true)
+                    (shop.open ?? true)
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                       : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${(shop.isOpen ?? true) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    {(shop.isOpen ?? true) ? 'Open now' : 'Currently closed'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${(shop.open ?? true) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                    {(shop.open ?? true) ? 'Open now' : 'Currently closed'}
                   </span>
                   {shop.operatingHours && (
                     <p className="text-xs text-muted-foreground mt-1">🕐 {shop.operatingHours}</p>

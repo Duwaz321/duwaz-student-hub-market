@@ -59,8 +59,8 @@ const MarketplacePage = () => {
     )
     // Open shops first, then closed
     .sort((a, b) => {
-      if ((a.isOpen ?? true) === (b.isOpen ?? true)) return 0;
-      return (a.isOpen ?? true) ? -1 : 1;
+      if ((a.open ?? true) === (b.open ?? true)) return 0;
+      return (a.open ?? true) ? -1 : 1;
     });
 
   useEffect(() => {
@@ -244,14 +244,14 @@ const MarketplacePage = () => {
           ) : filteredBusinesses.length > 0 ? (
             <div className="space-y-6">
               {/* Open shops */}
-              {filteredBusinesses.some(s => s.isOpen ?? true) && (
+              {filteredBusinesses.some(s => s.open ?? true) && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-3 flex items-center gap-1.5">
                     <span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
                     Open Now
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredBusinesses.filter(s => s.isOpen ?? true).map(shop => (
+                    {filteredBusinesses.filter(s => s.open ?? true).map(shop => (
                       <ShopCard
                         key={shop.id}
                         id={shop.id}
@@ -266,14 +266,14 @@ const MarketplacePage = () => {
                 </div>
               )}
               {/* Closed shops */}
-              {filteredBusinesses.some(s => !(s.isOpen ?? true)) && (
+              {filteredBusinesses.some(s => !(s.open ?? true)) && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
                     <span className="w-2 h-2 bg-gray-400 rounded-full inline-block" />
                     Closed
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredBusinesses.filter(s => !(s.isOpen ?? true)).map(shop => (
+                    {filteredBusinesses.filter(s => !(s.open ?? true)).map(shop => (
                       <ShopCard
                         key={shop.id}
                         id={shop.id}

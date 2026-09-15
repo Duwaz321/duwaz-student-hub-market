@@ -47,11 +47,10 @@ public class Business {
 
     /**
      * Manual open/closed toggle set by the shop owner.
-     * true  = open (default)
-     * false = closed / temporarily unavailable
+     * Uses Boolean (not primitive boolean) so existing DB rows with NULL default to true.
      */
-    @Column(name = "is_open", nullable = false)
-    private boolean isOpen = true;
+    @Column(name = "is_open")
+    private Boolean open = true;
 
     @ManyToOne(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "student_id")
