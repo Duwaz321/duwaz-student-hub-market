@@ -129,6 +129,8 @@ export const businessesApi = {
   update: (id: number, data: Partial<Business>) =>
     request<Business>(`/api/businesses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<null>(`/api/businesses/${id}`, { method: 'DELETE' }),
+  toggleOpen: (id: number) =>
+    request<Business>(`/api/businesses/${id}/toggle-open`, { method: 'PUT' }),
 };
 
 // ── Students ──────────────────────────────────────────────────────────────────

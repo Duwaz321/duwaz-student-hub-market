@@ -45,6 +45,14 @@ public class Business {
     @Column(name = "operating_hours")
     private String operatingHours;
 
+    /**
+     * Manual open/closed toggle set by the shop owner.
+     * true  = open (default)
+     * false = closed / temporarily unavailable
+     */
+    @Column(name = "is_open", nullable = false)
+    private boolean isOpen = true;
+
     @ManyToOne(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "student_id")
     @JsonIgnoreProperties({"businesses", "password", "hibernateLazyInitializer", "handler"})

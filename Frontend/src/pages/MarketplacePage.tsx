@@ -52,10 +52,16 @@ const MarketplacePage = () => {
       return 0;
     });
 
-  const filteredBusinesses = businesses.filter(b =>
-    b.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (b.description ?? '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBusinesses = businesses
+    .filter(b =>
+      b.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (b.description ?? '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    // Open shops first, then closed
+    .sort((a, b) => {
+      if ((a.isOpen ?? true) === (b.isOpen ?? true)) return 0;
+      return (a.isOpen ?? true) ? -1 : 1;
+    });
 
   useEffect(() => {
     if (selectedCategory === 'all') searchParams.delete('category');
@@ -236,16 +242,51 @@ const MarketplacePage = () => {
               ))}
             </div>
           ) : filteredBusinesses.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredBusinesses.map(shop => (
-                <ShopCard
-                  key={shop.id}
-                  id={shop.id}
-                  name={shop.businessName}
-                  logo={shop.logoUrl}
-                  description={shop.description ?? ''}
-                />
-              ))}
+            <div className="space-y-6">
+              {/* Open shops */}
+              {filteredBusinesses.some(s => s.isOpen ?? true) && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-3 flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" />
+                    Open Now
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredBusinesses.filter(s => s.isOpen ?? true).map(shop => (
+                      <ShopCard
+                        key={shop.id}
+                        id={shop.id}
+                        name={shop.businessName}
+                        logo={shop.logoUrl}
+                        description={shop.description ?? ''}
+                        isOpen={true}
+                        operatingHours={shop.operatingHours}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Closed shops */}
+              {filteredBusinesses.some(s => !(s.isOpen ?? true)) && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full inline-block" />
+                    Closed
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredBusinesses.filter(s => !(s.isOpen ?? true)).map(shop => (
+                      <ShopCard
+                        key={shop.id}
+                        id={shop.id}
+                        name={shop.businessName}
+                        logo={shop.logoUrl}
+                        description={shop.description ?? ''}
+                        isOpen={false}
+                        operatingHours={shop.operatingHours}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-20">

@@ -106,4 +106,22 @@ public class BusinessController {
         businessService.deleteBusinessById(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * PUT /api/businesses/{id}/toggle-open
+     * Toggles the shop's open/closed status. Owner only.
+     */
+    @PutMapping("/{id}/toggle-open")
+    public ResponseEntity<?> toggleOpen(@PathVariable Long id, Authentication auth) {
+        String email = auth.getName();
+        Business existing = businessService.findBusinessById(id);
+
+        if (existing.getStudent() == null ||
+            !existing.getStudent().getEmail().equals(email)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the owner of this shop");
+        }
+
+        existing.setIsOpen(!existing.isOpen());
+        return ResponseEntity.ok(businessService.saveBusiness(existing));
+    }
 }

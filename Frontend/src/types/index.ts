@@ -17,6 +17,7 @@ export interface Business {
   shopCategory?: string;
   phoneNumber?: string;
   operatingHours?: string;
+  isOpen?: boolean;
   approvalStatus?: ApprovalStatus;
   rejectionReason?: string;
   student?: Student;

@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUpdateBusiness } from '@/hooks/useBusinesses';
 import { useBusinessProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useAdjustStock } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
-import { shopApi, ordersApi, messagesApi, transactionsApi } from '@/services/api';
+import { shopApi, ordersApi, messagesApi, transactionsApi, businessesApi } from '@/services/api';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useShopContext } from '@/context/ShopContext';
 import type { Product, OrderStatus, ProductStatus, StoreMessage } from '@/types';
@@ -352,6 +352,27 @@ const ShopDashboardPage = () => {
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0">
+          {/* Open / Closed toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            className={shop.isOpen ?? true
+              ? 'border-green-300 text-green-700 hover:bg-green-50'
+              : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+            }
+            onClick={() => {
+              businessesApi.toggleOpen(shop.id)
+                .then(() => {
+                  qc.invalidateQueries({ queryKey: ['businesses', shop.id] });
+                  qc.invalidateQueries({ queryKey: ['businesses'] });
+                  toast({ title: (shop.isOpen ?? true) ? '🔴 Shop marked as Closed' : '🟢 Shop marked as Open' });
+                })
+                .catch(() => toast({ title: 'Failed to update status', variant: 'destructive' }));
+            }}
+          >
+            <span className={`w-2 h-2 rounded-full mr-1.5 inline-block ${(shop.isOpen ?? true) ? 'bg-green-500' : 'bg-gray-400'}`} />
+            {(shop.isOpen ?? true) ? 'Open' : 'Closed'}
+          </Button>
           <Button variant="outline" size="sm" onClick={openEditShop}><Pencil className="h-4 w-4 mr-1" />Edit Shop</Button>
           <Button variant="outline" size="sm" asChild><Link to={`/shop/${shop.id}`}><ExternalLink className="h-4 w-4 mr-1" />Public Page</Link></Button>
         </div>
