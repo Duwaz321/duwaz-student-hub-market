@@ -32,7 +32,7 @@ class StudentServiceTest {
     void setUp() {
         student = new Student();
         student.setId(1L);
-        student.setName("Test Student");
+        student.setStudentName("Test Student");
         // Set other necessary student fields
     }
 
@@ -46,7 +46,7 @@ class StudentServiceTest {
 
         // Assert
         assertNotNull(savedStudent, "Saved student should not be null");
-        assertEquals(student.getName(), savedStudent.getName());
+        assertEquals(student.getStudentName(), savedStudent.getStudentName());
         assertEquals(student.getId(), savedStudent.getId());
 
         // Verify
@@ -64,7 +64,7 @@ class StudentServiceTest {
         // Assert
         assertNotNull(found, "Found student should not be null");
         assertEquals(student.getId(), found.getId());
-        assertEquals(student.getName(), found.getName());
+        assertEquals(student.getStudentName(), found.getStudentName());
 
         // Verify
         verify(studentRepository, times(1)).findById(1L);
@@ -99,7 +99,7 @@ class StudentServiceTest {
         // Assert
         assertNotNull(students, "Students list should not be null");
         assertEquals(2, students.size(), "Should return 2 students");
-        assertEquals(student.getName(), students.get(0).getName());
+        assertEquals(student.getStudentName(), students.get(0).getStudentName());
 
         // Verify
         verify(studentRepository, times(1)).findAll();
@@ -121,7 +121,7 @@ class StudentServiceTest {
     private Student createStudent(Long id, String name) {
         Student newStudent = new Student();
         newStudent.setId(id);
-        newStudent.setName(name);
+        newStudent.setStudentName(name);
         return newStudent;
     }
 }
