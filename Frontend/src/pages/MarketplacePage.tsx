@@ -30,8 +30,9 @@ const MarketplacePage = () => {
       name: product.name,
       price: Number(product.price),
       image: product.imageUrl ?? '/placeholder.svg',
-      shopName: product.business?.businessName ?? product.category?.name ?? '',
-      shopId: product.business?.id,
+      // Support both flat DTO (businessName/businessId) and nested (business.*)
+      shopName: product.business?.businessName ?? product.businessName ?? product.category?.name ?? product.categoryName ?? '',
+      shopId: product.business?.id ?? product.businessId,
     });
     toast({ title: 'Added to cart', description: `${product.name} added.`, duration: 2000 });
   };
@@ -206,8 +207,8 @@ const MarketplacePage = () => {
                   name={p.name}
                   price={Number(p.price)}
                   image={p.imageUrl}
-                  shopName={p.business?.businessName ?? p.category?.name}
-                  shopId={p.business?.id}
+                  shopName={p.business?.businessName ?? p.businessName ?? p.category?.name ?? p.categoryName}
+                  shopId={p.business?.id ?? p.businessId}
                   onAddToCart={() => handleAddToCart(p)}
                 />
               ))}

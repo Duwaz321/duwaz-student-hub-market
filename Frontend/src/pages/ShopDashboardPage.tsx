@@ -22,7 +22,7 @@ import { useUpdateBusiness } from '@/hooks/useBusinesses';
 import { useBusinessProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useAdjustStock } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { shopApi, ordersApi, messagesApi, transactionsApi } from '@/services/api';
-import { getStatusBadge, NEXT_STATUSES, ORDER_STATUS_LABELS } from '@/lib/orderUtils';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useShopContext } from '@/context/ShopContext';
 import type { Product, OrderStatus, ProductStatus, StoreMessage } from '@/types';
 
@@ -157,9 +157,14 @@ const ShopDashboardPage = () => {
 
   const unreadReplies = myMessages.filter(m => m.replyContent && m.status === 'REPLIED').length;
 
+  // 🔔 Loud notifications for new orders and messages
+  useNotifications({
+    newOrderCount:   shopOrders.filter(o => o.status === 'PENDING').length,
+    newMessageCount: unreadReplies,
+  });
+
   // Track which orders already have a delivery request sent to Admin
-  const forwardedOrderIds = new Set<number>(
-    (myMessages as any[])
+  const forwardedOrderIds = new Set<number>(    (myMessages as any[])
       .filter(m => m.messageType === 'DELIVERY_REQUEST' && m.order?.id)
       .map(m => Number(m.order.id))
   );
@@ -527,7 +532,19 @@ const ShopDashboardPage = () => {
                         <div>
                           <p className="font-semibold text-sm">Order #{order.id}</p>
                           <p className="text-xs text-gray-500">{order.student?.studentName ?? 'Customer'} · {new Date(order.orderDate).toLocaleDateString()}</p>
-                          {order.deliveryAddress && <p className="text-xs text-gray-400 mt-0.5">📍 {order.deliveryAddress}</p>}
+                          {order.deliveryAddress && order.deliveryAddress !== 'COLLECTION' && <p className="text-xs text-gray-400 mt-0.5">📍 {order.deliveryAddress}</p>}
+                          {/* Payment method badge */}
+                          {order.paymentMethod && (
+                            <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                              order.paymentMethod === 'COLLECTION' ? 'bg-blue-100 text-blue-700' :
+                              order.paymentMethod === 'CASH'       ? 'bg-green-100 text-green-700' :
+                                                                     'bg-purple-100 text-purple-700'
+                            }`}>
+                              {order.paymentMethod === 'COLLECTION' ? '🏪 Collection' :
+                               order.paymentMethod === 'CASH'       ? '💵 Cash on Delivery' :
+                                                                      '💳 Paid Online'}
+                            </span>
+                          )}
                         </div>
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${className}`}>{label}</span>
                       </div>

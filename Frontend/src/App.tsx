@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -7,28 +8,51 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ShopLoader from './components/ShopLoader';
-import HomePage from './pages/HomePage';
-import MarketplacePage from './pages/MarketplacePage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import ShopPage from './pages/ShopPage';
-import CreateShopPage from './pages/CreateShopPage';
-import MyShopsPage from './pages/MyShopsPage';
-import ShopDashboardPage from './pages/ShopDashboardPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import DriverDashboardPage from './pages/DriverDashboardPage';
-import DriverLoginPage from './pages/DriverLoginPage';
-import AboutPage from './pages/AboutPage';
-import AccountPage from './pages/AccountPage';
-import CartPage from './pages/CartPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import NotFound from './pages/NotFound';
-import OrderTrackingPage from './pages/OrderTrackingPage';
-import MyOrdersPage from './pages/MyOrdersPage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import PaymentCancelPage from './pages/PaymentCancelPage';
 
-const queryClient = new QueryClient();
+// ── Static imports — small, needed immediately ────────────────────────────────
+import HomePage          from './pages/HomePage';
+import MarketplacePage   from './pages/MarketplacePage';
+import LoginPage         from './pages/LoginPage';
+import RegisterPage      from './pages/RegisterPage';
+import NotFound          from './pages/NotFound';
+
+// ── Lazy imports — heavy pages, not needed until user navigates to them ───────
+const ProductDetailPage   = lazy(() => import('./pages/ProductDetailPage'));
+const ShopPage            = lazy(() => import('./pages/ShopPage'));
+const CreateShopPage      = lazy(() => import('./pages/CreateShopPage'));
+const MyShopsPage         = lazy(() => import('./pages/MyShopsPage'));
+const ShopDashboardPage   = lazy(() => import('./pages/ShopDashboardPage'));
+const AdminDashboardPage  = lazy(() => import('./pages/AdminDashboardPage'));
+const DriverDashboardPage = lazy(() => import('./pages/DriverDashboardPage'));
+const DriverLoginPage     = lazy(() => import('./pages/DriverLoginPage'));
+const AboutPage           = lazy(() => import('./pages/AboutPage'));
+const AccountPage         = lazy(() => import('./pages/AccountPage'));
+const CartPage            = lazy(() => import('./pages/CartPage'));
+const OrderTrackingPage   = lazy(() => import('./pages/OrderTrackingPage'));
+const MyOrdersPage        = lazy(() => import('./pages/MyOrdersPage'));
+const PaymentSuccessPage  = lazy(() => import('./pages/PaymentSuccessPage'));
+const PaymentCancelPage   = lazy(() => import('./pages/PaymentCancelPage'));
+
+// Minimal fallback shown while a lazy page chunk loads (< 200ms on fast connections)
+const PageSkeleton = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-duwaz-brown/30 border-t-duwaz-brown rounded-full animate-spin" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't refetch on window focus — avoids unnecessary requests on mobile
+      // when user switches apps and returns to browser
+      refetchOnWindowFocus: false,
+      // Retry failed requests once (not 3 times default) — faster failure feedback
+      retry: 1,
+      // Default staleTime: 60s for anything not explicitly overridden
+      staleTime: 60 * 1000,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -37,7 +61,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ShopLoader />
-        <Routes>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes>
           {/* Auth pages — no Layout wrapper (full-screen cards) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -140,6 +165,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

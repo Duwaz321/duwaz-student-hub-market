@@ -37,6 +37,11 @@ export interface Product {
   productStatus?: ProductStatus;
   category?: Category;
   business?: Business;
+  // Flat fields returned by the optimised list endpoint (ProductSummaryDto)
+  categoryId?: number;
+  categoryName?: string;
+  businessId?: number;
+  businessName?: string;
 }
 
 export interface Student {

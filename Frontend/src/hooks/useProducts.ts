@@ -6,6 +6,8 @@ export function useProducts() {
   return useQuery({
     queryKey: ['products'],
     queryFn: productsApi.getAll,
+    staleTime: 2 * 60 * 1000,  // 2 minutes — matches backend cache TTL
+    gcTime:    5 * 60 * 1000,  // keep in memory 5 minutes after last use
   });
 }
 
@@ -14,6 +16,8 @@ export function useProduct(id: number) {
     queryKey: ['products', id],
     queryFn: () => productsApi.getById(id),
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime:    5 * 60 * 1000,
   });
 }
 
@@ -22,6 +26,7 @@ export function useBusinessProducts(businessId: number) {
     queryKey: ['products', 'business', businessId],
     queryFn: () => productsApi.getByBusiness(businessId),
     enabled: !!businessId,
+    staleTime: 60 * 1000,  // 1 minute — shop owner may update stock frequently
   });
 }
 

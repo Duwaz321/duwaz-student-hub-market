@@ -18,6 +18,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { deliveriesApi, messagesApi } from '@/services/api';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { DeliveryAssignment, DeliveryStatus, DriverStatus, StoreMessage } from '@/types';
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -428,6 +429,12 @@ const DriverDashboardPage = () => {
     refetchInterval: 15000,
   });
   const driverUnreadCount = driverUnreadData?.unreadCount ?? 0;
+
+  // 🔔 Loud notifications for new deliveries and messages
+  useNotifications({
+    newDeliveryCount: activeDeliveries.filter(a => a.deliveryStatus === 'ASSIGNED').length,
+    newMessageCount:  driverUnreadCount,
+  });
 
   const [viewingDriverMsg, setViewingDriverMsg] = useState<StoreMessage | null>(null);
   const [driverReplyContent, setDriverReplyContent] = useState('');

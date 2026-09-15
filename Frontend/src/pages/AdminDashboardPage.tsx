@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { adminApi, ordersApi, deliveriesApi, messagesApi, productsApi, businessesApi, transactionsApi } from '@/services/api';
+import { useNotifications } from '@/hooks/useNotifications';
 import { ALL_STATUSES, getStatusBadge, ORDER_STATUS_LABELS } from '@/lib/orderUtils';
 import { useCategories } from '@/hooks/useCategories';
 import type { Order, OrderStatus, DeliveryDriver, StoreMessage, Product, Business, ProductStatus } from '@/types';
@@ -160,6 +161,12 @@ const AdminDashboardPage = () => {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 15000 });
   const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 15000 });
   const unreadCount = unreadData?.unreadCount ?? 0;
+
+  // 🔔 Loud notifications for new messages and pending orders
+  useNotifications({
+    newOrderCount:   orders.filter((o: any) => o.status === 'PENDING').length,
+    newMessageCount: unreadCount,
+  });
 
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;

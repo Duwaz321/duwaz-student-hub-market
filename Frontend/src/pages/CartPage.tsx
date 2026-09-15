@@ -1,12 +1,38 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+
+type PaymentMethod = 'collection' | 'cash' | 'yoco';
+
+const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; sub: string; icon: React.ElementType; color: string }[] = [
+  {
+    id: 'collection',
+    label: 'Collection',
+    sub: 'Pick up from the shop yourself — no delivery needed.',
+    icon: Package,
+    color: 'text-blue-600',
+  },
+  {
+    id: 'cash',
+    label: 'Cash on Delivery',
+    sub: 'Pay the driver in cash when your order arrives.',
+    icon: Banknote,
+    color: 'text-green-600',
+  },
+  {
+    id: 'yoco',
+    label: 'Pay Online',
+    sub: 'Secure card payment via Yoco.',
+    icon: CreditCard,
+    color: 'text-duwaz-brown',
+  },
+];
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 const CartPage = () => {
@@ -18,7 +44,10 @@ const CartPage = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [useMyResidence, setUseMyResidence] = useState(true);
   const [customAddress, setCustomAddress]   = useState('');
+  const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('yoco');
 
+  // Collection doesn't need a delivery address
+  const needsAddress = paymentMethod !== 'collection';
   const effectiveAddress = useMyResidence ? (user?.locationAddress ?? '') : customAddress;
 
   // Total = product prices × quantities only — no separate delivery fee
@@ -32,11 +61,12 @@ const CartPage = () => {
   const handleCheckout = () => {
     if (!isAuthenticated) {
       navigate('/register', { state: { from: { pathname: '/cart' } } });
-      toast({ title: 'Create an account first', description: 'You need an account to make a payment.' });
+      toast({ title: 'Create an account first', description: 'You need an account to place an order.' });
       return;
     }
 
-    if (!effectiveAddress.trim()) {
+    // Delivery address only required when not collecting
+    if (needsAddress && !effectiveAddress.trim()) {
       toast({
         title: 'Delivery address required',
         description: useMyResidence
@@ -63,12 +93,44 @@ const CartPage = () => {
       return;
     }
 
-    // Use first shop — most orders are single-shop
-    import('@/services/api').then(({ paymentApi }) => {
-      const shopId = shopIds[0];
-      const shopItems = businessGroups[shopId];
-      const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const shopId    = shopIds[0];
+    const shopItems = businessGroups[shopId];
+    const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+    // ── Collection or Cash — create order directly, no Yoco redirect ─────────
+    if (paymentMethod === 'collection' || paymentMethod === 'cash') {
+      import('@/services/api').then(({ ordersApi }) => {
+        ordersApi.create({
+          totalAmount: shopTotal,
+          deliveryFee: 0,
+          status: 'PENDING',
+          deliveryAddress: paymentMethod === 'collection' ? 'COLLECTION' : effectiveAddress.trim(),
+          paymentMethod,
+          business: { id: Number(shopId) },
+          items: shopItems.map(item => ({
+            product: { id: item.id },
+            quantity: item.quantity,
+            unitPrice: item.price,
+          })),
+        } as any)
+          .then((order: any) => {
+            clearCart();
+            toast({
+              title: paymentMethod === 'collection' ? '✅ Order placed — collect from shop!' : '✅ Order placed — pay driver on delivery!',
+              description: `Order #${order.id} confirmed.`,
+            });
+            navigate(`/order/${order.id}/track`);
+          })
+          .catch((err: any) => {
+            toast({ title: 'Order failed', description: err.message, variant: 'destructive' });
+            setIsCheckingOut(false);
+          });
+      });
+      return;
+    }
+
+    // ── Yoco online payment ───────────────────────────────────────────────────
+    import('@/services/api').then(({ paymentApi }) => {
       paymentApi.initiate({
         totalAmount: shopTotal,
         deliveryAddress: effectiveAddress.trim(),
@@ -80,10 +142,8 @@ const CartPage = () => {
         })),
       })
         .then((res) => {
-          // Remember orderId so the success page can redirect to tracking
           sessionStorage.setItem('duwaz_pending_order', String(res.orderId));
           clearCart();
-          // Send customer to Yoco hosted payment page
           window.location.href = res.redirectUrl;
         })
         .catch((err: any) => {
@@ -143,7 +203,8 @@ const CartPage = () => {
           {/* ── Right column ── */}
           <div className="space-y-4">
 
-            {/* Delivery address */}
+            {/* Delivery address — hidden for collection */}
+            {needsAddress && (
             <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5 space-y-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-duwaz-brown" />
@@ -209,6 +270,37 @@ const CartPage = () => {
                 </p>
               )}
             </div>
+            )} {/* end needsAddress */}
+
+            {/* Payment method selector */}
+            <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5 space-y-3">
+              <h2 className="text-base font-bold">How would you like to pay?</h2>
+              {PAYMENT_OPTIONS.map(opt => {
+                const Icon = opt.icon;
+                const selected = paymentMethod === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(opt.id)}
+                    className={`w-full flex items-start gap-3 border rounded-xl p-3 text-left transition-all ${
+                      selected
+                        ? 'border-duwaz-brown bg-duwaz-brown/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${selected ? 'text-duwaz-brown' : 'text-gray-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold ${selected ? 'text-duwaz-brown' : 'text-gray-700'}`}>
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.sub}</p>
+                    </div>
+                    {selected && <CheckCircle className="h-5 w-5 text-duwaz-brown flex-shrink-0 mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Order summary */}
             <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5">
@@ -234,7 +326,14 @@ const CartPage = () => {
                 disabled={isCheckingOut}
               >
                 {isCheckingOut ? 'Processing…' : (
-                  <><ShoppingBag className="mr-2 h-4 w-4" />Make Payment — R{total.toFixed(2)}</>
+                  <>
+                    {paymentMethod === 'collection' && <Package className="mr-2 h-4 w-4" />}
+                    {paymentMethod === 'cash'       && <Banknote className="mr-2 h-4 w-4" />}
+                    {paymentMethod === 'yoco'       && <CreditCard className="mr-2 h-4 w-4" />}
+                    {paymentMethod === 'collection' && `Confirm Collection — R${total.toFixed(2)}`}
+                    {paymentMethod === 'cash'       && `Place Order — Pay R${total.toFixed(2)} on Delivery`}
+                    {paymentMethod === 'yoco'       && `Pay Online — R${total.toFixed(2)}`}
+                  </>
                 )}
               </Button>
 

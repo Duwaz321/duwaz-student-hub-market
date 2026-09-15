@@ -4,9 +4,11 @@ import org.example.duwaz.classesFolder.Business;
 import org.example.duwaz.classesFolder.Product;
 import org.example.duwaz.classesFolder.Product.ProductStatus;
 import org.example.duwaz.classesFolder.Student;
+import org.example.duwaz.dto.ProductSummaryDto;
 import org.example.duwaz.repo.BusinessRepository;
 import org.example.duwaz.repo.StudentRepository;
 import org.example.duwaz.service.ProductService;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/products")
@@ -41,9 +44,21 @@ public class ProductController {
 
     // ── Public endpoints ──────────────────────────────────────────────────────
 
+    /**
+     * Public product listing — returns lightweight DTOs.
+     *
+     * Performance improvements vs original:
+     *  - Uses JOIN FETCH → 1 SQL query instead of N+1
+     *  - Returns ProductSummaryDto → strips imageUrl2-4, business.logoUrl, student data
+     *  - Spring @Cacheable → subsequent requests skip the DB for 2 minutes
+     *  - Cache-Control: public, max-age=60 → browser/CDN can cache for 60 seconds
+     *  - No authentication required → no JWT overhead on this hot path
+     */
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<List<ProductSummaryDto>> getAllProducts() {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic())
+                .body(productService.getAllProductsSummary());
     }
 
     @GetMapping("/business/{businessId}")

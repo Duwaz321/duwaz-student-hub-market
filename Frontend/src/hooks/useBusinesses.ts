@@ -7,6 +7,8 @@ export function useBusinesses() {
   return useQuery({
     queryKey: ['businesses'],
     queryFn: businessesApi.getAll,
+    staleTime: 3 * 60 * 1000,  // 3 minutes — shop list changes infrequently
+    gcTime:    5 * 60 * 1000,
   });
 }
 
@@ -15,6 +17,7 @@ export function useBusiness(id: number) {
     queryKey: ['businesses', id],
     queryFn: () => businessesApi.getById(id),
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
   });
 }
 

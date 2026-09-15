@@ -10,10 +10,18 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_product_business_id",     columnList = "business_id"),
+    @Index(name = "idx_product_category_id",     columnList = "category_id"),
+    @Index(name = "idx_product_status",          columnList = "product_status"),
+    @Index(name = "idx_product_business_status", columnList = "business_id, product_status"),
+})
 public class Product {
 
     public enum ProductStatus {

@@ -54,6 +54,10 @@ public class Order {
     @Column(name = "cancellation_reason")
     private String cancellationReason;
 
+    /** How the customer intends to pay: YOCO, CASH, COLLECTION */
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod = "YOCO";
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
@@ -107,6 +111,9 @@ public class Order {
 
     public String getCancellationReason() { return cancellationReason; }
     public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod != null ? paymentMethod.toUpperCase() : "YOCO"; }
 
     public PaymentStatus getPaymentStatus() { return paymentStatus != null ? paymentStatus : PaymentStatus.PENDING; }
     public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }

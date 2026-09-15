@@ -3,11 +3,15 @@ package org.example.duwaz.service;
 import org.example.duwaz.classesFolder.Business;
 import org.example.duwaz.classesFolder.Product;
 import org.example.duwaz.classesFolder.Product.ProductStatus;
+import org.example.duwaz.dto.ProductSummaryDto;
 import org.example.duwaz.repo.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -19,35 +23,67 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
+    /**
+     * Public product listing — used by GET /api/products.
+     *
+     * Improvements over the original findAll():
+     *   1. Uses JOIN FETCH — eliminates N+1 queries (1 SQL instead of N×3)
+     *   2. Returns ProductSummaryDto — strips imageUrl2-4 and heavy nested objects
+     *   3. Cached for 2 minutes — subsequent requests skip the DB entirely
+     *   4. Only returns AVAILABLE products — no need to send OUT_OF_STOCK to customers
+     */
+    @Cacheable(value = "products", key = "'all-available'")
+    @Transactional(readOnly = true)
+    public List<ProductSummaryDto> getAllProductsSummary() {
+        return productRepository.findAllAvailableWithAssociations()
+                .stream()
+                .map(ProductSummaryDto::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Admin/internal use — returns full Product entities for all statuses.
+     * Not cached because admins need real-time data.
+     */
+    @Transactional(readOnly = true)
+    public List<Product> getAllProducts() {
+        return productRepository.findAllWithAssociations();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Product> getProductsByBusiness(Long businessId) {
+        return productRepository.findByBusinessId(businessId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Product> getProductsByBusinessAndStatus(Long businessId, ProductStatus status) {
+        return productRepository.findByBusinessIdAndProductStatus(businessId, status);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Product> getLowStockProducts(Long businessId, int threshold) {
+        return productRepository.findByBusinessIdAndStockQuantityLessThanEqual(businessId, threshold);
+    }
+
+    @Transactional(readOnly = true)
+    public Product getProductById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
+    }
+
+    /**
+     * Evict the product cache whenever a product is created, updated, or deleted.
+     * This ensures customers never see stale data.
+     */
+    @CacheEvict(value = "products", allEntries = true)
     public Product createProduct(Product product) {
-        // Auto-set status based on initial stock
         if (product.getStockQuantity() <= 0) {
             product.setProductStatus(ProductStatus.OUT_OF_STOCK);
         }
         return productRepository.save(product);
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
-    public List<Product> getProductsByBusiness(Long businessId) {
-        return productRepository.findByBusinessId(businessId);
-    }
-
-    public List<Product> getProductsByBusinessAndStatus(Long businessId, ProductStatus status) {
-        return productRepository.findByBusinessIdAndProductStatus(businessId, status);
-    }
-
-    public List<Product> getLowStockProducts(Long businessId, int threshold) {
-        return productRepository.findByBusinessIdAndStockQuantityLessThanEqual(businessId, threshold);
-    }
-
-    public Product getProductById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
-    }
-
+    @CacheEvict(value = "products", allEntries = true)
     public Product updateProduct(Long id, Product product) {
         Product existing = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
@@ -63,14 +99,13 @@ public class ProductService {
         if (product.getImageUrl() != null) {
             existing.setImageUrl(product.getImageUrl());
         }
-        // Always update additional images (null clears them, which is intentional)
         existing.setImageUrl2(product.getImageUrl2());
         existing.setImageUrl3(product.getImageUrl3());
         existing.setImageUrl4(product.getImageUrl4());
         return productRepository.save(existing);
     }
 
-    /** Adjust stock by a delta (positive = add, negative = reduce) */
+    @CacheEvict(value = "products", allEntries = true)
     public Product adjustStock(Long id, int delta) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
@@ -80,7 +115,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    /** Decrease stock when an order is completed — called from OrderService */
+    @CacheEvict(value = "products", allEntries = true)
     public void decrementStockForOrder(Long productId, int quantity) {
         productRepository.findById(productId).ifPresent(product -> {
             int newStock = Math.max(0, product.getStockQuantity() - quantity);
@@ -89,18 +124,18 @@ public class ProductService {
         });
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
 
-    /** Verify a product belongs to a given business */
     public boolean isOwnedByBusiness(Long productId, Business business) {
         return productRepository.findById(productId)
-                .map(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
+                .map(p -> p.getBusiness() != null
+                        && p.getBusiness().getId().equals(business.getId()))
                 .orElse(false);
     }
 
-    // Stats helpers
     public long countByBusiness(Long businessId) {
         return productRepository.countByBusinessId(businessId);
     }
