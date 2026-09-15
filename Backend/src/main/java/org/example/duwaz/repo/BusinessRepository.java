@@ -13,6 +13,5 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     Optional<Business> findByStudentId(Long studentId);
     Optional<Business> findFirstByStudentEmail(String email);
     List<Business> findAllByStudentEmail(String email);
-    List<Business> findAllByStudentEmail(String email);
     List<Business> findAllByStudentId(Long studentId);
 }

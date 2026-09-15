@@ -121,7 +121,7 @@ public class BusinessController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the owner of this shop");
         }
 
-        existing.setOpen(!Boolean.TRUE.equals(existing.getOpen()));
+        existing.setIsOpen(!Boolean.TRUE.equals(existing.getIsOpen()));
         return ResponseEntity.ok(businessService.saveBusiness(existing));
     }
 }
