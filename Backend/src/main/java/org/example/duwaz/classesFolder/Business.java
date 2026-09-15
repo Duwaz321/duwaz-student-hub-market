@@ -7,13 +7,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
-import lombok.Getter;
-import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Getter
-@Setter
 public class Business {
 
     public Business() {
@@ -57,6 +53,81 @@ public class Business {
     @JsonIgnoreProperties({"businesses", "password", "hibernateLazyInitializer", "handler"})
     private Student student;
 
+    // Getters
+    public Long getId() {
+        return id;
+    }
+
+    public String getBusinessName() {
+        return businessName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public String getShopCategory() {
+        return shopCategory;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public String getOperatingHours() {
+        return operatingHours;
+    }
+
+    public Boolean getIsOpen() {
+        return open;
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    // Setters
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setBusinessName(String businessName) {
+        this.businessName = businessName;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
+
+    public void setShopCategory(String shopCategory) {
+        this.shopCategory = shopCategory;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setOperatingHours(String operatingHours) {
+        this.operatingHours = operatingHours;
+    }
+
+    public void setIsOpen(Boolean open) {
+        this.open = open;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
+    // Helper methods
     public void setName(String doas) {
         this.businessName = doas;
     }
