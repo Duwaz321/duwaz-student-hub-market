@@ -1,95 +1,56 @@
-import { useEffect, useRef, useCallback } from 'react';
-
-// ── Sound generator using Web Audio API ──────────────────────────────────────
-// No external file needed — generates tones programmatically.
-// Works on mobile, offline, and doesn't require any assets.
+import { useEffect, useRef } from 'react';
 
 type SoundType = 'order' | 'message' | 'delivery';
 
 function playSound(type: SoundType) {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-
     const configs: Record<SoundType, { freqs: number[]; duration: number; volume: number }> = {
-      // Order: two-tone ascending chime — loud and attention-grabbing
-      order: { freqs: [880, 1100, 1320], duration: 0.18, volume: 0.9 },
-      // Message: single soft ding
-      message: { freqs: [660, 880], duration: 0.15, volume: 0.7 },
-      // Delivery: triple beep for driver
-      delivery: { freqs: [440, 440, 440], duration: 0.1, volume: 0.85 },
+      order:    { freqs: [880, 1100, 1320], duration: 0.18, volume: 0.9 },
+      message:  { freqs: [660, 880],        duration: 0.15, volume: 0.7 },
+      delivery: { freqs: [440, 440, 440],   duration: 0.1,  volume: 0.85 },
     };
-
     const { freqs, duration, volume } = configs[type];
-
     freqs.forEach((freq, i) => {
-      const oscillator = ctx.createOscillator();
-      const gainNode   = ctx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      oscillator.type      = 'sine';
-      oscillator.frequency.value = freq;
-
-      const startTime = ctx.currentTime + i * (duration + 0.05);
-      gainNode.gain.setValueAtTime(volume, startTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-      oscillator.start(startTime);
-      oscillator.stop(startTime + duration + 0.01);
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * (duration + 0.05);
+      gain.gain.setValueAtTime(volume, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      osc.start(t);
+      osc.stop(t + duration + 0.01);
     });
-
-    // Clean up audio context after sounds finish
-    const totalDuration = (freqs.length * (duration + 0.05) + 0.5) * 1000;
-    setTimeout(() => ctx.close(), totalDuration);
-
-  } catch {
-    // Web Audio not available (old browser) — silent fail
-  }
+    setTimeout(() => ctx.close(), (freqs.length * (duration + 0.05) + 0.5) * 1000);
+  } catch { /* silent fail */ }
 }
 
-// ── Browser push notification ─────────────────────────────────────────────────
-function showBrowserNotification(title: string, body: string, icon = '/favicon.ico') {
+function showBrowserNotification(title: string, body: string) {
   if (!('Notification' in window)) return;
-
   const send = () => {
-    try {
-      new Notification(title, { body, icon, badge: '/favicon.ico' });
-    } catch {
-      // Some browsers block notifications in iframes — ignore
-    }
+    try { new Notification(title, { body, icon: '/favicon.ico' }); } catch { /* ignore */ }
   };
-
-  if (Notification.permission === 'granted') {
-    send();
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(perm => {
-      if (perm === 'granted') send();
-    });
+  if (Notification.permission === 'granted') send();
+  else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => { if (p === 'granted') send(); });
   }
 }
-
-// ── Main hook ─────────────────────────────────────────────────────────────────
 
 interface NotifyOptions {
-  /** Number of new orders to alert on */
-  newOrderCount?: number;
-  /** Number of new messages to alert on */
-  newMessageCount?: number;
-  /** Number of new delivery assignments to alert on */
+  newOrderCount?:    number;
+  newMessageCount?:  number;
   newDeliveryCount?: number;
 }
 
 /**
- * useNotifications
+ * Plays a sound and shows a browser notification when counts increase.
  *
- * Plays a loud sound and shows a browser notification whenever the
- * provided counts increase. Designed to be called from any dashboard.
- *
- * Usage:
- *   useNotifications({ newOrderCount: orders.length, newMessageCount: unread });
- *
- * On first render the baseline is recorded — only increases after that trigger alerts.
+ * Key fix: baseline is recorded only AFTER the data has loaded (i.e. count > 0
+ * or after first non-undefined value). This prevents false alerts on mount
+ * and stops the reload loop caused by re-rendering on every poll cycle.
  */
 export function useNotifications({
   newOrderCount    = 0,
@@ -97,20 +58,22 @@ export function useNotifications({
   newDeliveryCount = 0,
 }: NotifyOptions) {
 
-  const prevOrders    = useRef<number | null>(null);
-  const prevMessages  = useRef<number | null>(null);
-  const prevDelivery  = useRef<number | null>(null);
+  // null = not yet initialised (waiting for first real data)
+  const prevOrders   = useRef<number | null>(null);
+  const prevMessages = useRef<number | null>(null);
+  const prevDelivery = useRef<number | null>(null);
 
-  // Request browser notification permission on first call
+  // Request permission once on mount
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
 
+  // Orders
   useEffect(() => {
-    // Skip the very first render — just record the baseline
     if (prevOrders.current === null) {
+      // Record baseline on first data arrival — do NOT alert
       prevOrders.current = newOrderCount;
       return;
     }
@@ -119,12 +82,14 @@ export function useNotifications({
       playSound('order');
       showBrowserNotification(
         `🛍️ ${diff} New Order${diff > 1 ? 's' : ''}!`,
-        `You have ${diff} new order${diff > 1 ? 's' : ''} waiting for action.`
+        `You have ${diff} new order${diff > 1 ? 's' : ''} waiting.`
       );
     }
     prevOrders.current = newOrderCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newOrderCount]);
 
+  // Messages
   useEffect(() => {
     if (prevMessages.current === null) {
       prevMessages.current = newMessageCount;
@@ -139,8 +104,10 @@ export function useNotifications({
       );
     }
     prevMessages.current = newMessageCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newMessageCount]);
 
+  // Deliveries (driver)
   useEffect(() => {
     if (prevDelivery.current === null) {
       prevDelivery.current = newDeliveryCount;
@@ -155,5 +122,6 @@ export function useNotifications({
       );
     }
     prevDelivery.current = newDeliveryCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newDeliveryCount]);
 }

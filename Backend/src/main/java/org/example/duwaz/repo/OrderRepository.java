@@ -24,6 +24,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByBusinessId(Long businessId, Pageable pageable);
 
+    Page<Order> findByBusinessIdIn(java.util.List<Long> businessIds, Pageable pageable);
+
     Page<Order> findByStudentId(Long studentId, Pageable pageable);
 
     long countByStatus(Order.OrderStatus status);

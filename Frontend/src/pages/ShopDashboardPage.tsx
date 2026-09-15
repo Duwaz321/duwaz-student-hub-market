@@ -106,12 +106,18 @@ const ShopDashboardPage = () => {
     queryFn: transactionsApi.getMyShopRevenue,
     enabled: !!shop,
   });
-  const { data: ordersPage } = useQuery({
+  const { data: ordersPage, isLoading: ordersLoading } = useQuery({
     queryKey: ['orders', 'shop'],
     queryFn: () => ordersApi.getShopOrders(0, 100),
     enabled: !!shop,
+    refetchInterval: 30000,
+    staleTime: 10000,
   });
-  const shopOrders = ordersPage?.content ?? [];
+
+  // Handle both paginated response {content:[]} and plain array []
+  const shopOrders: any[] = Array.isArray(ordersPage)
+    ? ordersPage
+    : (ordersPage as any)?.content ?? [];
 
   // Mutations
   const { mutate: updateShop, isPending: isUpdatingShop } = useUpdateBusiness();
@@ -158,8 +164,10 @@ const ShopDashboardPage = () => {
   const unreadReplies = myMessages.filter(m => m.replyContent && m.status === 'REPLIED').length;
 
   // 🔔 Loud notifications for new orders and messages
+  // Use stable counts to avoid firing on every re-render
+  const pendingOrderCount = shopOrders.filter((o: any) => o.status === 'PENDING').length;
   useNotifications({
-    newOrderCount:   shopOrders.filter(o => o.status === 'PENDING').length,
+    newOrderCount:   pendingOrderCount,
     newMessageCount: unreadReplies,
   });
 

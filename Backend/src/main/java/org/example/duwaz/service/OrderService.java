@@ -56,6 +56,10 @@ public class OrderService {
         return orderRepository.findByBusinessId(businessId, pageable);
     }
 
+    public Page<Order> getOrdersByBusinessIdsPaged(java.util.List<Long> businessIds, Pageable pageable) {
+        return orderRepository.findByBusinessIdIn(businessIds, pageable);
+    }
+
     public List<Order> getOrdersByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status);
     }
