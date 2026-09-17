@@ -97,9 +97,9 @@ const CartPage = () => {
     const shopItems = businessGroups[shopId];
     const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-    // ── Collection or Cash — create order directly, no Yoco redirect ─────────
+    // ── Collection or Cash — create order + confirm payment ───────────────────
     if (paymentMethod === 'collection' || paymentMethod === 'cash') {
-      import('@/services/api').then(({ ordersApi }) => {
+      import('@/services/api').then(({ ordersApi, paymentApi }) => {
         ordersApi.create({
           totalAmount: shopTotal,
           deliveryFee: 0,
@@ -113,6 +113,20 @@ const CartPage = () => {
             unitPrice: item.price,
           })),
         } as any)
+          .then((order: any) => {
+            // Now confirm the payment (marks as PAID + CONFIRMED)
+            const endpoint = paymentMethod === 'collection'
+              ? `/payment/confirm-collection/${order.id}`
+              : `/payment/confirm-cash/${order.id}`;
+            
+            return fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            }).then(res => {
+              if (!res.ok) throw new Error('Payment confirmation failed');
+              return order;
+            });
+          })
           .then((order: any) => {
             clearCart();
             toast({
