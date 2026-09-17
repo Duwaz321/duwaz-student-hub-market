@@ -4,6 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
@@ -32,6 +33,8 @@ const OrderTrackingPage   = lazy(() => import('./pages/OrderTrackingPage'));
 const MyOrdersPage        = lazy(() => import('./pages/MyOrdersPage'));
 const PaymentSuccessPage  = lazy(() => import('./pages/PaymentSuccessPage'));
 const PaymentCancelPage   = lazy(() => import('./pages/PaymentCancelPage'));
+const CategoryListPage    = lazy(() => import('./pages/CategoryListPage'));
+const ServiceListPage     = lazy(() => import('./pages/ServiceListPage'));
 
 // Minimal fallback shown while a lazy page chunk loads (< 200ms on fast connections)
 const PageSkeleton = () => (
@@ -86,6 +89,8 @@ const App = () => (
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="marketplace" element={<MarketplacePage />} />
+            <Route path="categories" element={<CategoryListPage />} />
+            <Route path="services" element={<ServiceListPage />} />
             <Route path="product/:id" element={<ProductDetailPage />} />
             <Route path="shop/:id" element={<ShopPage />} />
             <Route path="about" element={<AboutPage />} />
