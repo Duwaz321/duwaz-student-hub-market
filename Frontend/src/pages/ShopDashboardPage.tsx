@@ -24,6 +24,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { shopApi, ordersApi, messagesApi, transactionsApi, businessesApi } from '@/services/api';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useShopContext } from '@/context/ShopContext';
+import { getStatusBadge, NEXT_STATUSES, ORDER_STATUS_LABELS } from '@/lib/orderUtils';
 import type { Product, OrderStatus, ProductStatus, StoreMessage } from '@/types';
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
