@@ -113,22 +113,29 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication auth) {
-        String email = auth.getName();
-        // Get ALL businesses owned by this user, not just the first one
-        java.util.List<Business> shops = businessRepository.findAllByStudentEmail(email);
-        if (shops.isEmpty()) {
-            // Fallback to single shop lookup for backwards compatibility
-            Optional<Business> biz = businessRepository.findFirstByStudentEmail(email);
-            if (biz.isEmpty()) return ResponseEntity.ok(Page.empty());
-            shops = java.util.List.of(biz.get());
+        try {
+            String email = auth.getName();
+            // Get ALL businesses owned by this user, not just the first one
+            java.util.List<Business> shops = businessRepository.findAllByStudentEmail(email);
+            if (shops.isEmpty()) {
+                // Fallback to single shop lookup for backwards compatibility
+                Optional<Business> biz = businessRepository.findFirstByStudentEmail(email);
+                if (biz.isEmpty()) return ResponseEntity.ok(Page.empty());
+                shops = java.util.List.of(biz.get());
+            }
+            java.util.List<Long> businessIds = shops.stream()
+                    .map(Business::getId)
+                    .collect(java.util.stream.Collectors.toList());
+            Page<Order> orders = orderService.getOrdersByBusinessIdsPaged(
+                    businessIds,
+                    PageRequest.of(page, size, Sort.by("orderDate").descending()));
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR in getShopOrders: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty page instead of 500
+            return ResponseEntity.ok(Page.empty());
         }
-        java.util.List<Long> businessIds = shops.stream()
-                .map(Business::getId)
-                .collect(java.util.stream.Collectors.toList());
-        Page<Order> orders = orderService.getOrdersByBusinessIdsPaged(
-                businessIds,
-                PageRequest.of(page, size, Sort.by("orderDate").descending()));
-        return ResponseEntity.ok(orders);
     }
 
     // ── Admin: all orders (paginated) ─────────────────────────────────────────

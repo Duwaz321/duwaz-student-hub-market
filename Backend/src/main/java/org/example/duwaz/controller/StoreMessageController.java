@@ -76,10 +76,18 @@ public class StoreMessageController {
     }
 
     @GetMapping("/mine")
+    @GetMapping("/mine")
     public ResponseEntity<?> getMyMessages(Authentication auth) {
-        Optional<Business> biz = getOwnerBusiness(auth);
-        if (biz.isEmpty()) return ResponseEntity.ok(List.of());
-        return ResponseEntity.ok(messageService.getMessagesForBusiness(biz.get().getId()));
+        try {
+            Optional<Business> biz = getOwnerBusiness(auth);
+            if (biz.isEmpty()) return ResponseEntity.ok(List.of());
+            return ResponseEntity.ok(messageService.getMessagesForBusiness(biz.get().getId()));
+        } catch (Exception e) {
+            System.err.println("❌ ERROR in getMyMessages: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list instead of 500
+            return ResponseEntity.ok(List.of());
+        }
     }
 
     // ── Driver endpoints ──────────────────────────────────────────────────────
