@@ -16,25 +16,24 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     /**
-     * Single JOIN FETCH query — resolves all EAGER associations in ONE SQL statement
-     * instead of N+1 round-trips to Supabase.
+     * Simple JOIN FETCH query — fetches only Product with Category and Business
+     * Avoids cartesian product by not nesting Student fetch
+     * Student will be lazy-loaded if needed (usually already cached)
      */
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.business b " +
-           "LEFT JOIN FETCH b.student " +
+           "LEFT JOIN FETCH p.business " +
            "WHERE p.productStatus = :status")
     @QueryHints(@QueryHint(name = org.hibernate.jpa.HibernateHints.HINT_CACHEABLE, value = "true"))
     List<Product> findAllAvailableWithAssociations(
            @org.springframework.data.repository.query.Param("status") ProductStatus status);
 
     /**
-     * All products (including non-available) with JOIN FETCH — used by admin.
+     * All products (including non-available) with simple JOIN FETCH
      */
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.business b " +
-           "LEFT JOIN FETCH b.student")
+           "LEFT JOIN FETCH p.business")
     List<Product> findAllWithAssociations();
 
     Product findByName(String name);
