@@ -46,8 +46,9 @@ const CartPage = () => {
   const [customAddress, setCustomAddress]   = useState('');
   const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('yoco');
 
-  // Collection doesn't need a delivery address
-  const needsAddress = paymentMethod !== 'collection';
+  // Collection doesn't need a delivery address; neither do services
+  const isServiceOrder = items.some(item => item.productType === 'SERVICE');
+  const needsAddress = paymentMethod !== 'collection' && !isServiceOrder;
   const effectiveAddress = useMyResidence ? (user?.locationAddress ?? '') : customAddress;
 
   // Total = product prices × quantities only — no separate delivery fee
@@ -96,6 +97,13 @@ const CartPage = () => {
     const shopId    = shopIds[0];
     const shopItems = businessGroups[shopId];
     const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const isService = shopItems.some(item => item.productType === 'SERVICE');
+
+    // For service orders, use "SERVICE" as address; for collection use "COLLECTION"; else actual address
+    let deliveryAddressValue = 'SERVICE_NO_DELIVERY';
+    if (!isService) {
+      deliveryAddressValue = paymentMethod === 'collection' ? 'COLLECTION' : effectiveAddress.trim();
+    }
 
     // ── Collection or Cash — create order + confirm payment ───────────────────
     if (paymentMethod === 'collection' || paymentMethod === 'cash') {
@@ -104,7 +112,7 @@ const CartPage = () => {
           totalAmount: shopTotal,
           deliveryFee: 0,
           status: 'PENDING',
-          deliveryAddress: paymentMethod === 'collection' ? 'COLLECTION' : effectiveAddress.trim(),
+          deliveryAddress: deliveryAddressValue,
           paymentMethod,
           business: { id: Number(shopId) },
           items: shopItems.map(item => ({

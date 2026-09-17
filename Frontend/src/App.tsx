@@ -4,11 +4,11 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ShopLoader from './components/ShopLoader';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // ── Static imports — small, needed immediately ────────────────────────────────
 import HomePage          from './pages/HomePage';
@@ -126,7 +126,9 @@ const App = () => (
               path="my-shop/:shopId"
               element={
                 <ProtectedRoute>
-                  <ShopDashboardPage />
+                  <ErrorBoundary>
+                    <ShopDashboardPage />
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -143,11 +145,20 @@ const App = () => (
               path="admin"
               element={
                 <RoleProtectedRoute requiredRole="ADMIN">
-                  <AdminDashboardPage />
+                  <ErrorBoundary>
+                    <AdminDashboardPage />
+                  </ErrorBoundary>
                 </RoleProtectedRoute>
               }
             />
-            <Route path="cart" element={<CartPage />} />
+            <Route
+              path="cart"
+              element={
+                <ErrorBoundary>
+                  <CartPage />
+                </ErrorBoundary>
+              }
+            />
 
             {/* Orders */}
             <Route

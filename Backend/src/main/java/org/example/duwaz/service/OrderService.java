@@ -3,7 +3,9 @@ package org.example.duwaz.service;
 import org.example.duwaz.classesFolder.Order;
 import org.example.duwaz.classesFolder.Order.OrderStatus;
 import org.example.duwaz.classesFolder.OrderItem;
+import org.example.duwaz.classesFolder.Product;
 import org.example.duwaz.repo.OrderRepository;
+import org.example.duwaz.repo.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,15 +19,29 @@ import java.util.Optional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
     }
 
     public Order createOrder(Order order) {
-        // Link each item back to the order
+        // Validate stock for all items before creating order
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
+                Product product = productRepository.findById(item.getProduct().getId())
+                        .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProduct().getId()));
+                
+                // Only check stock for PRODUCT type (not SERVICE)
+                if (product.getProductType() == Product.ProductType.PRODUCT) {
+                    if (product.getStockQuantity() < item.getQuantity()) {
+                        throw new RuntimeException("Insufficient stock for " + product.getName() + 
+                                ". Available: " + product.getStockQuantity() + ", Requested: " + item.getQuantity());
+                    }
+                }
+                
+                // Link each item back to the order
                 item.setOrder(order);
             }
         }

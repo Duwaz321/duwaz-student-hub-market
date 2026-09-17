@@ -197,4 +197,5 @@ export interface CartItem {
   image: string;
   shopName: string;
   shopId?: number;
+  productType?: 'PRODUCT' | 'SERVICE';
 }

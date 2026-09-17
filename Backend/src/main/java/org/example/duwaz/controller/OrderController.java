@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import io.sentry.Sentry;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,7 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class OrderController {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private final OrderService orderService;
     private final StudentRepository studentRepository;
     private final BusinessRepository businessRepository;
@@ -40,18 +44,30 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody Order order, Authentication auth) {
         String email = auth.getName();
-        Student student = studentRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
-        order.setStudent(student);
+        logger.info("📦 New order request from student: {}", email);
+        
+        try {
+            Student student = studentRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Student not found"));
+            order.setStudent(student);
 
-        // Resolve business from its id (Jackson gives us a detached object with only id set)
-        if (order.getBusiness() != null && order.getBusiness().getId() != null) {
-            Business business = businessRepository.findById(order.getBusiness().getId())
-                    .orElseThrow(() -> new RuntimeException("Shop not found: " + order.getBusiness().getId()));
-            order.setBusiness(business);
+            // Resolve business from its id (Jackson gives us a detached object with only id set)
+            if (order.getBusiness() != null && order.getBusiness().getId() != null) {
+                Business business = businessRepository.findById(order.getBusiness().getId())
+                        .orElseThrow(() -> new RuntimeException("Shop not found: " + order.getBusiness().getId()));
+                order.setBusiness(business);
+            }
+
+            Order createdOrder = orderService.createOrder(order);
+            logger.info("✅ Order created successfully: ID={}, Student={}, Total=R{}", 
+                    createdOrder.getId(), email, createdOrder.getTotalAmount());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
+        } catch (RuntimeException e) {
+            logger.error("❌ Order creation failed for {}: {}", email, e.getMessage());
+            Sentry.captureException(e);
+            throw e;
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(order));
     }
 
     // ── Customer: my orders ───────────────────────────────────────────────────

@@ -1,0 +1,37 @@
+package org.example.duwaz.config;
+
+import io.sentry.Sentry;
+import io.sentry.SentryOptions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Configuration
+public class SentryConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SentryConfig.class);
+
+    @Value("${sentry.dsn:}")
+    private String sentryDsn;
+
+    @Value("${app.environment:development}")
+    private String environment;
+
+    @Bean
+    public void initSentry() {
+        if (sentryDsn != null && !sentryDsn.isEmpty()) {
+            Sentry.init(options -> {
+                options.setDsn(sentryDsn);
+                options.setEnvironment(environment);
+                options.setTracesSampleRate(0.1); // Sample 10% of transactions
+                options.setDebug(false);
+                options.setAttachStacktrace(true);
+            });
+            logger.info("✅ Sentry initialized with DSN: {}...", sentryDsn.substring(0, Math.min(20, sentryDsn.length())));
+        } else {
+            logger.warn("⚠️  Sentry DSN not configured. Error tracking disabled.");
+        }
+    }
+}
