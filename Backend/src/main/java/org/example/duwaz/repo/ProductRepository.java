@@ -23,9 +23,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "LEFT JOIN FETCH p.category " +
            "LEFT JOIN FETCH p.business b " +
            "LEFT JOIN FETCH b.student " +
-           "WHERE p.productStatus = 'AVAILABLE'")
+           "WHERE p.productStatus = :status")
     @QueryHints(@QueryHint(name = org.hibernate.jpa.HibernateHints.HINT_CACHEABLE, value = "true"))
-    List<Product> findAllAvailableWithAssociations();
+    List<Product> findAllAvailableWithAssociations(
+           @org.springframework.data.repository.query.Param("status") ProductStatus status);
 
     /**
      * All products (including non-available) with JOIN FETCH — used by admin.

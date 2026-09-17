@@ -35,7 +35,7 @@ public class ProductService {
     @Cacheable(value = "products", key = "'all-available'")
     @Transactional(readOnly = true)
     public List<ProductSummaryDto> getAllProductsSummary() {
-        return productRepository.findAllAvailableWithAssociations()
+        return productRepository.findAllAvailableWithAssociations(ProductStatus.AVAILABLE)
                 .stream()
                 .map(ProductSummaryDto::from)
                 .collect(Collectors.toList());

@@ -149,7 +149,7 @@ public class CatalogController {
     @GetMapping("/products/featured")
     public ResponseEntity<?> getFeaturedProducts() {
         try {
-            List<Product> products = productRepository.findAllAvailableWithAssociations();
+            List<Product> products = productRepository.findAllAvailableWithAssociations(Product.ProductStatus.AVAILABLE);
             return ResponseEntity.ok(products);
 
         } catch (Exception e) {
