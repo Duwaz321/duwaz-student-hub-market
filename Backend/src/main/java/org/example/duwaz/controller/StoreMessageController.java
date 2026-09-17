@@ -76,7 +76,6 @@ public class StoreMessageController {
     }
 
     @GetMapping("/mine")
-    @GetMapping("/mine")
     public ResponseEntity<?> getMyMessages(Authentication auth) {
         try {
             Optional<Business> biz = getOwnerBusiness(auth);
