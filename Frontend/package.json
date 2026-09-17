@@ -61,7 +61,7 @@
     "vaul": "^0.9.3",
     "zod": "^3.23.8",
     "sockjs-client": "^1.6.1",
-    "@stomp/stompjs": "^8.0.0"
+    "@stomp/stompjs": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
