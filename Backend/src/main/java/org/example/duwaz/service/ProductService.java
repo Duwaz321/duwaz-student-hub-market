@@ -35,10 +35,20 @@ public class ProductService {
     @Cacheable(value = "products", key = "'all-available'")
     @Transactional(readOnly = true)
     public List<ProductSummaryDto> getAllProductsSummary() {
-        return productRepository.findAllAvailableWithAssociations(ProductStatus.AVAILABLE)
-                .stream()
-                .map(ProductSummaryDto::from)
-                .collect(Collectors.toList());
+        try {
+            // Try the optimized query first
+            return productRepository.findAllAvailableWithAssociations(ProductStatus.AVAILABLE)
+                    .stream()
+                    .map(ProductSummaryDto::from)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Fallback to simple query if JOIN FETCH fails
+            System.err.println("⚠️  JOIN FETCH query failed, using fallback: " + e.getMessage());
+            return productRepository.findAllAvailableSimple(ProductStatus.AVAILABLE)
+                    .stream()
+                    .map(ProductSummaryDto::from)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**

@@ -56,9 +56,20 @@ public class ProductController {
      */
     @GetMapping
     public ResponseEntity<List<ProductSummaryDto>> getAllProducts() {
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic())
-                .body(productService.getAllProductsSummary());
+        try {
+            List<ProductSummaryDto> products = productService.getAllProductsSummary();
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic())
+                    .body(products);
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("❌ ERROR in getAllProducts: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list instead of 500 — this keeps marketplace functional
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.SECONDS))
+                    .body(List.of());
+        }
     }
 
     @GetMapping("/business/{businessId}")

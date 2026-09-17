@@ -36,6 +36,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "LEFT JOIN FETCH p.business")
     List<Product> findAllWithAssociations();
 
+    /**
+     * FALLBACK: Simple query without JOIN FETCH if above queries fail
+     * This will cause N+1 but at least returns data
+     */
+    @Query("SELECT p FROM Product p WHERE p.productStatus = :status")
+    List<Product> findAllAvailableSimple(
+           @org.springframework.data.repository.query.Param("status") ProductStatus status);
+
     Product findByName(String name);
     List<Product> findByCategoryId(Long categoryId);
     List<Product> findByBusinessId(Long businessId);
