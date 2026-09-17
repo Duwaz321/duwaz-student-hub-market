@@ -16,6 +16,15 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     /**
+     * SIMPLE: Get all available products with ZERO joins
+     * Just load Product entities - let Hibernate lazy-load relationships as needed
+     * This is the most reliable fallback when complex queries fail
+     */
+    @Query("SELECT p FROM Product p WHERE p.productStatus = :status")
+    List<Product> findAllAvailableSimple(
+           @org.springframework.data.repository.query.Param("status") ProductStatus status);
+
+    /**
      * Simple JOIN FETCH query — fetches only Product with Category and Business
      * Avoids cartesian product by not nesting Student fetch
      * Student will be lazy-loaded if needed (usually already cached)
@@ -41,7 +50,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * This will cause N+1 but at least returns data
      */
     @Query("SELECT p FROM Product p WHERE p.productStatus = :status")
-    List<Product> findAllAvailableSimple(
+    List<Product> findAllAvailableBasic(
            @org.springframework.data.repository.query.Param("status") ProductStatus status);
 
     Product findByName(String name);

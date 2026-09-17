@@ -36,18 +36,27 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductSummaryDto> getAllProductsSummary() {
         try {
-            // Try the optimized query first
+            // Try the optimized query first with JOIN FETCH
             return productRepository.findAllAvailableWithAssociations(ProductStatus.AVAILABLE)
                     .stream()
                     .map(ProductSummaryDto::from)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            // Fallback to simple query if JOIN FETCH fails
-            System.err.println("⚠️  JOIN FETCH query failed, using fallback: " + e.getMessage());
-            return productRepository.findAllAvailableSimple(ProductStatus.AVAILABLE)
-                    .stream()
-                    .map(ProductSummaryDto::from)
-                    .collect(Collectors.toList());
+            System.err.println("⚠️  JOIN FETCH query failed, trying simple fallback: " + e.getMessage());
+            try {
+                // Fallback to simple query without joins
+                return productRepository.findAllAvailableSimple(ProductStatus.AVAILABLE)
+                        .stream()
+                        .map(ProductSummaryDto::from)
+                        .collect(Collectors.toList());
+            } catch (Exception e2) {
+                System.err.println("⚠️  Simple query also failed, trying basic: " + e2.getMessage());
+                // Last resort: bare minimum query
+                return productRepository.findAllAvailableBasic(ProductStatus.AVAILABLE)
+                        .stream()
+                        .map(ProductSummaryDto::from)
+                        .collect(Collectors.toList());
+            }
         }
     }
 
