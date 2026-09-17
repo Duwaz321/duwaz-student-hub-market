@@ -2,6 +2,8 @@ package org.example.duwaz.repo;
 
 import org.example.duwaz.classesFolder.Product;
 import org.example.duwaz.classesFolder.Product.ProductStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -16,14 +18,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /**
      * Single JOIN FETCH query — resolves all EAGER associations in ONE SQL statement
      * instead of N+1 round-trips to Supabase.
-     *
-     * Without this, Hibernate fires:
-     *   SELECT * FROM product
-     *   + N × SELECT * FROM category WHERE id = ?
-     *   + N × SELECT * FROM business WHERE id = ?
-     *   + N × SELECT * FROM student  WHERE id = ?
-     *
-     * With this, Hibernate fires ONE query using LEFT JOINs.
      */
     @Query("SELECT p FROM Product p " +
            "LEFT JOIN FETCH p.category " +
@@ -52,6 +46,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     long countByBusinessId(Long businessId);
     long countByBusinessIdAndProductStatus(Long businessId, ProductStatus status);
+
+    // Pagination queries
+    Page<Product> findByCategoryIdAndProductStatus(Long categoryId, Product.ProductStatus status, Pageable pageable);
+    Page<Product> findByCategoryIdAndProductTypeAndProductStatus(Long categoryId, Product.ProductType type, Product.ProductStatus status, Pageable pageable);
+    Page<Product> findByProductTypeAndProductStatus(Product.ProductType type, Product.ProductStatus status, Pageable pageable);
+
+    // Count products by category and status
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = ?1 AND p.productStatus = ?2")
+    long countByCategoryAndStatus(Long categoryId, ProductStatus status);
 
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.business.id = :businessId AND o.status = 'DELIVERED'")
     java.math.BigDecimal sumRevenueByBusinessId(Long businessId);

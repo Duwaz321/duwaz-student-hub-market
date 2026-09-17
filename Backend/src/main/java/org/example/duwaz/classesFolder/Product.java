@@ -20,12 +20,19 @@ import java.math.BigDecimal;
     @Index(name = "idx_product_business_id",     columnList = "business_id"),
     @Index(name = "idx_product_category_id",     columnList = "category_id"),
     @Index(name = "idx_product_status",          columnList = "product_status"),
+    @Index(name = "idx_product_type",            columnList = "product_type"),
     @Index(name = "idx_product_business_status", columnList = "business_id, product_status"),
+    @Index(name = "idx_product_business_type",   columnList = "business_id, product_type"),
 })
 public class Product {
 
     public enum ProductStatus {
         AVAILABLE, OUT_OF_STOCK, DISCONTINUED
+    }
+
+    public enum ProductType {
+        PRODUCT,   // Physical product (has stock, delivery)
+        SERVICE    // Service offering (no stock, no delivery, just communication)
     }
 
     @Id
@@ -58,6 +65,10 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "product_status", nullable = false)
     private ProductStatus productStatus = ProductStatus.AVAILABLE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type", nullable = false)
+    private ProductType productType = ProductType.PRODUCT;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
@@ -100,16 +111,21 @@ public class Product {
     public int getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(int stockQuantity) {
         this.stockQuantity = stockQuantity;
-        // Auto-update status based on stock
-        if (stockQuantity <= 0 && this.productStatus == ProductStatus.AVAILABLE) {
-            this.productStatus = ProductStatus.OUT_OF_STOCK;
-        } else if (stockQuantity > 0 && this.productStatus == ProductStatus.OUT_OF_STOCK) {
-            this.productStatus = ProductStatus.AVAILABLE;
+        // Auto-update status based on stock (only for PRODUCT type)
+        if (productType == ProductType.PRODUCT) {
+            if (stockQuantity <= 0 && this.productStatus == ProductStatus.AVAILABLE) {
+                this.productStatus = ProductStatus.OUT_OF_STOCK;
+            } else if (stockQuantity > 0 && this.productStatus == ProductStatus.OUT_OF_STOCK) {
+                this.productStatus = ProductStatus.AVAILABLE;
+            }
         }
     }
 
     public ProductStatus getProductStatus() { return productStatus; }
     public void setProductStatus(ProductStatus productStatus) { this.productStatus = productStatus; }
+
+    public ProductType getProductType() { return productType; }
+    public void setProductType(ProductType productType) { this.productType = productType; }
 
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
@@ -119,6 +135,6 @@ public class Product {
 
     @Override
     public String toString() {
-        return "Product{id=" + id + ", name='" + name + "', price=" + price + ", stock=" + stockQuantity + "}";
+        return "Product{id=" + id + ", name='" + name + "', type=" + productType + ", price=" + price + ", stock=" + stockQuantity + "}";
     }
 }
