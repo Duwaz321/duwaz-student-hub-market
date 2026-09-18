@@ -179,13 +179,66 @@ const AdminDashboardPage = () => {
   const filteredProducts = allProducts.filter(p => !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase()));
 
   // Mutations
-  const updateStatusMutation = useMutation({ mutationFn: ({ id, status }: { id: number; status: string }) => ordersApi.updateStatus(id, status), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }); toast({ title: 'Status updated' }); }, onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }) });
-  const assignDriverMutation = useMutation({ mutationFn: ({ orderId, driverId }: { orderId: number; driverId: number }) => deliveriesApi.assignDriver(orderId, driverId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }); queryClient.invalidateQueries({ queryKey: ['admin', 'deliveries'] }); toast({ title: 'Driver assigned' }); }, onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }) });
-  const deleteOrderMutation = useMutation({ mutationFn: (id: number) => ordersApi.delete(id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }); setDeleteOrderId(null); toast({ title: 'Order deleted' }); } });
-  const updateRoleMutation = useMutation({ mutationFn: ({ id, role }: { id: number; role: string }) => adminApi.updateUserRole(id, role), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }); toast({ title: 'Role updated' }); } });
-  const markReadMutation = useMutation({ mutationFn: (id: number) => messagesApi.markRead(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] }) });
-  const replyMutation = useMutation({ mutationFn: ({ id, replyContent }: { id: number; replyContent: string }) => messagesApi.reply(id, replyContent), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] }); setReplyingTo(null); setReplyContent(''); toast({ title: 'Reply sent' }); }, onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }) });
-  const resolveMutation = useMutation({ mutationFn: (id: number) => messagesApi.resolve(id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] }); setViewingMessage(null); toast({ title: 'Resolved' }); } });
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => ordersApi.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
+      toast({ title: 'Status updated' });
+    },
+    onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+  });
+
+  const assignDriverMutation = useMutation({
+    mutationFn: ({ orderId, driverId }: { orderId: number; driverId: number }) => deliveriesApi.assignDriver(orderId, driverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'deliveries'] });
+      toast({ title: 'Driver assigned' });
+    },
+    onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: (id: number) => ordersApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
+      setDeleteOrderId(null);
+      toast({ title: 'Order deleted' });
+    }
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: number; role: string }) => adminApi.updateUserRole(id, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      toast({ title: 'Role updated' });
+    }
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: number) => messagesApi.markRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] })
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: ({ id, replyContent }: { id: number; replyContent: string }) => messagesApi.reply(id, replyContent),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] });
+      setReplyingTo(null);
+      setReplyContent('');
+      toast({ title: 'Reply sent' });
+    },
+    onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+  });
+
+  const resolveMutation = useMutation({
+    mutationFn: (id: number) => messagesApi.resolve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] });
+      setViewingMessage(null);
+      toast({ title: 'Resolved' });
+    }
+  });
   const forwardToDriverMutation = useMutation({
     mutationFn: ({ messageId, driverId }: { messageId: number; driverId: number }) =>
       messagesApi.forwardToDriver(messageId, driverId),
@@ -196,9 +249,34 @@ const AdminDashboardPage = () => {
     },
     onError: (e: any) => toast({ title: 'Forward failed', description: e.message, variant: 'destructive' }),
   });
-  const createProdMutation = useMutation({ mutationFn: (data: Omit<Product, 'id'>) => productsApi.create(data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); setProdDialogOpen(false); toast({ title: 'Product created' }); }, onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }) });
-  const updateProdMutation = useMutation({ mutationFn: ({ id, data }: { id: number; data: Partial<Product> }) => productsApi.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); setProdDialogOpen(false); toast({ title: 'Product updated' }); }, onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }) });
-  const deleteProdMutation = useMutation({ mutationFn: (id: number) => productsApi.delete(id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); setDeleteProdId(null); toast({ title: 'Deleted' }); } });
+  const createProdMutation = useMutation({
+    mutationFn: (data: Omit<Product, 'id'>) => productsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setProdDialogOpen(false);
+      toast({ title: 'Product created' });
+    },
+    onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+  });
+
+  const updateProdMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Product> }) => productsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setProdDialogOpen(false);
+      toast({ title: 'Product updated' });
+    },
+    onError: (e: any) => toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+  });
+
+  const deleteProdMutation = useMutation({
+    mutationFn: (id: number) => productsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setDeleteProdId(null);
+      toast({ title: 'Deleted' });
+    }
+  });
 
   // Product handlers
   const openAddProd = () => { setEditingProd(null); setProdForm(emptyProdForm); setProdImagePreview(null); setProdDialogOpen(true); };
