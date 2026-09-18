@@ -52,9 +52,6 @@ const HomePage = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: businesses = [], isLoading: businessesLoading } = useBusinesses();
 
-  const featuredProducts = products.slice(0, 8);
-  const featuredShops = businesses.slice(0, 4);
-
   // Build a map of categoryId → product count so we can filter empty categories
   // Note: API returns categoryId (not category.id), so we use that directly
   const productCountByCategory = products.reduce<Record<number, number>>((acc, p: any) => {
@@ -78,6 +75,16 @@ const HomePage = () => {
 
   // Only show categories that have at least one product
   const activeCategories = categories.filter(cat => (productCountByCategory[cat.id] ?? 0) > 0);
+
+  // Shuffle products so they're mixed from different categories (not grouped by category)
+  // This prevents showing all items from the same category in a row
+  const shuffledProducts = (() => {
+    const shuffled = [...products].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 8);
+  })();
+  
+  const featuredProducts = shuffledProducts;
+  const featuredShops = businesses.slice(0, 4);
   
   // DEBUG: Log products to help diagnose why they're not appearing
   console.log('[HomePage] Total products loaded:', products.length);

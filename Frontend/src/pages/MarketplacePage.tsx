@@ -42,7 +42,9 @@ const MarketplacePage = () => {
       const matchSearch =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.description ?? '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchCat = selectedCategory === 'all' || String(p.category?.id) === selectedCategory;
+      // Handle both nested category object and flat categoryId field
+      const categoryId = String(p.category?.id ?? p.categoryId ?? '');
+      const matchCat = selectedCategory === 'all' || categoryId === selectedCategory;
       return matchSearch && matchCat;
     })
     .sort((a, b) => {
