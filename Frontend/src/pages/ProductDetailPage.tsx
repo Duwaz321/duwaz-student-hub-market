@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft, Star, Minus, Plus, Store, Tag, Heart } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Star, Minus, Plus, Store, Tag, Heart, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProduct } from '@/hooks/useProducts';
 import { useProductReviews } from '@/hooks/useReviews';
@@ -74,6 +74,11 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+    // Services cannot be added to cart - they require direct messaging
+    if ((product as any).productType === 'SERVICE') {
+      toast({ title: 'Contact the seller', description: 'Click "Message Seller" to arrange service details.', variant: 'default' });
+      return;
+    }
     for (let i = 0; i < quantity; i++) {
       addItem({
         id: product.id,
@@ -82,6 +87,7 @@ const ProductDetailPage = () => {
         image: allImages[0] ?? '/placeholder.svg',
         shopName: product.business?.businessName ?? product.category?.name ?? '',
         shopId: product.business?.id,
+        productType: (product as any).productType,  // Include service type
       });
     }
     toast({ title: `${product.name} added!`, description: `Qty: ${quantity}`, duration: 2500 });
@@ -222,6 +228,7 @@ const ProductDetailPage = () => {
 
             {/* Quantity + CTA */}
             <div className="flex flex-col gap-3 mt-auto">
+              {(product as any).productType !== 'SERVICE' && (
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-foreground/70">Quantity</span>
                 <div className="flex items-center gap-1 bg-muted/50 rounded-full border border-border/60 px-1.5">
@@ -243,15 +250,28 @@ const ProductDetailPage = () => {
                   </button>
                 </div>
               </div>
+              )}
 
               <div className="flex gap-3">
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl bg-duwaz-brown text-white font-semibold text-sm shadow-sm hover:bg-duwaz-brown/90 active:scale-[0.98] transition-all duration-200"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  Add to Cart — R{(Number(product.price) * quantity).toFixed(2)}
-                </button>
+                {(product as any).productType === 'SERVICE' ? (
+                  // SERVICE: Show "Message Seller" button
+                  <Link
+                    to={`/shop/${product.business?.id}`}
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all duration-200"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Message Seller — R{Number(product.price).toFixed(2)}/hr
+                  </Link>
+                ) : (
+                  // PRODUCT: Show "Add to Cart" button
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl bg-duwaz-brown text-white font-semibold text-sm shadow-sm hover:bg-duwaz-brown/90 active:scale-[0.98] transition-all duration-200"
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    Add to Cart — R{(Number(product.price) * quantity).toFixed(2)}
+                  </button>
+                )}
                 <button
                   onClick={() => setWished(v => !v)}
                   aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
