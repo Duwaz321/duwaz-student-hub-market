@@ -284,6 +284,13 @@ const ShopDashboardPage = () => {
     if (!shop || !productForm.name.trim() || !productForm.price) {
       toast({ title: 'Name and price required', variant: 'destructive' }); return;
     }
+    
+    // For PRODUCT type, at least one image is recommended
+    if (productForm.productType === 'PRODUCT' && !productForm.images[0]) {
+      toast({ title: 'Please upload at least one product image', variant: 'default', description: '(Services don\'t require images)' }); 
+      return;
+    }
+    
     const [img1, img2, img3, img4] = productForm.images;
     const payload: Omit<Product, 'id'> = {
       name: productForm.name,
@@ -294,10 +301,11 @@ const ShopDashboardPage = () => {
       productStatus: productForm.productStatus,
       productType: productForm.productType,  // NEW: include service/product type
       ...(productForm.categoryId ? { category: { id: Number(productForm.categoryId) } as any } : {}),
+      // Only include images if they exist (not required for services)
       ...(img1 ? { imageUrl: img1 } : {}),
-      ...(img2 !== undefined ? { imageUrl2: img2 } : {}),
-      ...(img3 !== undefined ? { imageUrl3: img3 } : {}),
-      ...(img4 !== undefined ? { imageUrl4: img4 } : {}),
+      ...(img2 !== undefined && img2 ? { imageUrl2: img2 } : {}),
+      ...(img3 !== undefined && img3 ? { imageUrl3: img3 } : {}),
+      ...(img4 !== undefined && img4 ? { imageUrl4: img4 } : {}),
     } as any;
     if (editingProduct) {
       updateProduct({ id: editingProduct.id, data: payload }, {

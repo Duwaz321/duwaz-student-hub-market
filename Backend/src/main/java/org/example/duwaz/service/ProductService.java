@@ -115,6 +115,9 @@ public class ProductService {
         if (product.getProductStatus() != null) {
             existing.setProductStatus(product.getProductStatus());
         }
+        if (product.getProductType() != null) {
+            existing.setProductType(product.getProductType());
+        }
         if (product.getImageUrl() != null) {
             existing.setImageUrl(product.getImageUrl());
         }

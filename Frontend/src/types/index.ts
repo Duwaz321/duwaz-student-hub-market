@@ -25,6 +25,7 @@ export interface Business {
 }
 
 export type ProductStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
+export type ProductType = 'PRODUCT' | 'SERVICE';
 
 export interface Product {
   id: number;
@@ -37,6 +38,7 @@ export interface Product {
   imageUrl4?: string;
   stockQuantity?: number;
   productStatus?: ProductStatus;
+  productType?: ProductType;  // NEW: Service or Physical Product
   category?: Category;
   business?: Business;
   // Flat fields returned by the optimised list endpoint (ProductSummaryDto)
