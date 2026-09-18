@@ -150,7 +150,13 @@ const AdminDashboardPage = () => {
 
   // Data queries
   const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ['admin', 'stats'], queryFn: adminApi.getStats, refetchInterval: 30000 });
-  const { data: duwazRevenue } = useQuery({ queryKey: ['admin', 'duwaz-revenue'], queryFn: transactionsApi.getAdminRevenue, refetchInterval: 60000 });
+  const { data: duwazRevenue } = useQuery({
+    queryKey: ['admin', 'duwaz-revenue'],
+    queryFn: transactionsApi.getAdminRevenue,
+    refetchInterval: 60000,
+    retry: 1,
+    initialData: { duwazRevenue: 0 }, // Fallback to 0 if query fails
+  });
   const { data: ordersPage, isLoading: ordersLoading } = useQuery({ queryKey: ['admin', 'orders', page], queryFn: () => ordersApi.getAll(page, 20) });
   const { data: users = [] } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminApi.getUsers });
   const { data: allDrivers = [] } = useQuery({ queryKey: ['admin', 'drivers'], queryFn: deliveriesApi.getAllDrivers, refetchInterval: 15000 });
@@ -722,66 +728,70 @@ const AdminDashboardPage = () => {
                 {(allDrivers as DeliveryDriver[]).filter(d => d.active).length === 0 ? (
                   <p className="text-center text-gray-500 text-sm py-4">No active drivers registered.</p>
                 ) : (
-                  (allDrivers as DeliveryDriver[]).filter(d => d.active).map(d => {
-                    const isAvailable = d.status === 'AVAILABLE';
-                    const statusColors: Record<string, string> = {
-                      AVAILABLE: 'bg-green-100 text-green-700',
-                      BUSY: 'bg-orange-100 text-orange-700',
-                      OFFLINE: 'bg-gray-100 text-gray-500',
-                      ON_BREAK: 'bg-yellow-100 text-yellow-700',
-                    };
-                    return (
-                      <div key={d.deliveryDriverId} className={`flex items-center justify-between border rounded-lg p-3 transition-colors ${isAvailable ? 'hover:bg-green-50' : 'opacity-60'}`}>
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-duwaz-brown/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {d.profileImage
-                              ? <img src={d.profileImage} alt={d.firstName} className="w-full h-full object-cover" />
-                              : <span className="text-sm font-bold text-duwaz-brown">{d.firstName.charAt(0)}</span>
-                            }
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{d.firstName} {d.lastName}</p>
-                            <p className="text-xs text-gray-500">{d.vehicleType} · {d.contactNumber}</p>
-                            <p className="text-xs text-gray-400">{d.deliveryCount ?? 0} deliveries · ★ {d.rating?.toFixed(1) ?? '—'}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1.5">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[d.status ?? 'OFFLINE'] ?? 'bg-gray-100'}`}>
-                            {d.status ?? 'OFFLINE'}
-                          </span>
-                          <Button
-                            size="sm"
-                            className="h-7 text-xs bg-duwaz-brown hover:bg-duwaz-brown/90 disabled:opacity-40"
-                            disabled={forwardToDriverMutation.isPending || assignDriverMutation.isPending || !isAvailable}
-                            title={!isAvailable ? 'Driver is not available' : ''}
-                            onClick={() => {
-                              const doForward = () => forwardToDriverMutation.mutate(
-                                { messageId: forwardingMessage.id, driverId: d.deliveryDriverId },
-                                { onSuccess: () => setForwardingMessage(null) }
-                              );
-                              // For delivery requests also assign the driver to the order
-                              if (forwardingMessage.messageType === 'DELIVERY_REQUEST' && forwardingMessage.order) {
-                                assignDriverMutation.mutate(
-                                  { orderId: forwardingMessage.order.id, driverId: d.deliveryDriverId },
-                                  { 
-                                    onSuccess: doForward,
-                                    onError: (error) => {
-                                      toast({ title: 'Assignment failed', description: (error as any)?.message ?? 'Could not assign driver', variant: 'destructive' });
-                                    }
-                                  }
-                                );
-                              } else {
-                                doForward();
+                  (() => {
+                    const fwdMutationIsPending = forwardToDriverMutation.isPending;
+                    const assignMutationIsPending = assignDriverMutation.isPending;
+                    return (allDrivers as DeliveryDriver[]).filter(d => d.active).map(d => {
+                      const isAvailable = d.status === 'AVAILABLE';
+                      const statusColors: Record<string, string> = {
+                        AVAILABLE: 'bg-green-100 text-green-700',
+                        BUSY: 'bg-orange-100 text-orange-700',
+                        OFFLINE: 'bg-gray-100 text-gray-500',
+                        ON_BREAK: 'bg-yellow-100 text-yellow-700',
+                      };
+                      return (
+                        <div key={d.deliveryDriverId} className={`flex items-center justify-between border rounded-lg p-3 transition-colors ${isAvailable ? 'hover:bg-green-50' : 'opacity-60'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-duwaz-brown/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {d.profileImage
+                                ? <img src={d.profileImage} alt={d.firstName} className="w-full h-full object-cover" />
+                                : <span className="text-sm font-bold text-duwaz-brown">{d.firstName.charAt(0)}</span>
                               }
-                            }}
-                          >
-                            <Truck className="h-3 w-3 mr-1" />
-                            {forwardingMessage.messageType === 'DELIVERY_REQUEST' ? 'Assign & Send' : 'Forward'}
-                          </Button>
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{d.firstName} {d.lastName}</p>
+                              <p className="text-xs text-gray-500">{d.vehicleType} · {d.contactNumber}</p>
+                              <p className="text-xs text-gray-400">{d.deliveryCount ?? 0} deliveries · ★ {d.rating?.toFixed(1) ?? '—'}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[d.status ?? 'OFFLINE'] ?? 'bg-gray-100'}`}>
+                              {d.status ?? 'OFFLINE'}
+                            </span>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-duwaz-brown hover:bg-duwaz-brown/90 disabled:opacity-40"
+                              disabled={fwdMutationIsPending || assignMutationIsPending || !isAvailable}
+                              title={!isAvailable ? 'Driver is not available' : ''}
+                              onClick={() => {
+                                const doForward = () => forwardToDriverMutation.mutate(
+                                  { messageId: forwardingMessage.id, driverId: d.deliveryDriverId },
+                                  { onSuccess: () => setForwardingMessage(null) }
+                                );
+                                // For delivery requests also assign the driver to the order
+                                if (forwardingMessage.messageType === 'DELIVERY_REQUEST' && forwardingMessage.order) {
+                                  assignDriverMutation.mutate(
+                                    { orderId: forwardingMessage.order.id, driverId: d.deliveryDriverId },
+                                    { 
+                                      onSuccess: doForward,
+                                      onError: (error) => {
+                                        toast({ title: 'Assignment failed', description: (error as any)?.message ?? 'Could not assign driver', variant: 'destructive' });
+                                      }
+                                    }
+                                  );
+                                } else {
+                                  doForward();
+                                }
+                              }}
+                            >
+                              <Truck className="h-3 w-3 mr-1" />
+                              {forwardingMessage.messageType === 'DELIVERY_REQUEST' ? 'Assign & Send' : 'Forward'}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    });
+                  })()
                 )}
               </div>
             </div>
