@@ -11,7 +11,8 @@ import java.util.List;
 @Repository
 public interface StudentRewardRepository extends JpaRepository<StudentReward, Long> {
 
-    List<StudentReward> findByStudentIdOrderByEarnedAtDesc(Long studentId);
+    @Query("SELECT r FROM StudentReward r WHERE r.student.id = :studentId ORDER BY r.earnedAt DESC")
+    List<StudentReward> findByStudentIdOrderByEarnedAtDesc(@Param("studentId") Long studentId);
 
     boolean existsByOrderId(Long orderId);
 

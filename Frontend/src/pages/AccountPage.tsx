@@ -37,6 +37,8 @@ const AccountPage = () => {
     queryKey: ['transactions', 'summary'],
     queryFn: () => transactionsApi.getMySummary(),
     staleTime: 30000,
+    retry: 1,
+    initialData: { totalSpend: 0, totalPoints: 0, pointsValue: 0, rewardHistory: [], transactions: [] },
   });
 
   const transactions = (summary as any)?.transactions ?? [];
