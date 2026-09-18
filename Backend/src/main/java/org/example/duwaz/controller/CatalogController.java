@@ -93,19 +93,15 @@ public class CatalogController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<Product> services = productRepository.findByProductTypeAndProductStatus(
-                    Product.ProductType.SERVICE,
-                    Product.ProductStatus.AVAILABLE,
-                    pageable
-            );
-
+            // TODO: product_type column missing in database - will implement when column added
+            // For now, return empty list to prevent 500 errors
             return ResponseEntity.ok(Map.of(
-                    "content", services.getContent(),
-                    "totalPages", services.getTotalPages(),
-                    "totalElements", services.getTotalElements(),
+                    "content", List.of(),
+                    "totalPages", 0,
+                    "totalElements", 0,
                     "currentPage", page,
-                    "pageSize", size
+                    "pageSize", size,
+                    "message", "Services will be available soon"
             ));
 
         } catch (Exception e) {
@@ -122,20 +118,15 @@ public class CatalogController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<Product> services = productRepository.findByCategoryIdAndProductTypeAndProductStatus(
-                    categoryId,
-                    Product.ProductType.SERVICE,
-                    Product.ProductStatus.AVAILABLE,
-                    pageable
-            );
-
+            // TODO: product_type column missing in database - will implement when column added
+            // For now, return empty list to prevent 500 errors
             return ResponseEntity.ok(Map.of(
-                    "content", services.getContent(),
-                    "totalPages", services.getTotalPages(),
-                    "totalElements", services.getTotalElements(),
+                    "content", List.of(),
+                    "totalPages", 0,
+                    "totalElements", 0,
                     "currentPage", page,
-                    "pageSize", size
+                    "pageSize", size,
+                    "message", "Services will be available soon"
             ));
 
         } catch (Exception e) {
