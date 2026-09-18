@@ -56,19 +56,22 @@ const HomePage = () => {
   const featuredShops = businesses.slice(0, 4);
 
   // Build a map of categoryId → product count so we can filter empty categories
-  const productCountByCategory = products.reduce<Record<number, number>>((acc, p) => {
-    if (p.category?.id) {
-      acc[p.category.id] = (acc[p.category.id] ?? 0) + 1;
+  // Note: API returns categoryId (not category.id), so we use that directly
+  const productCountByCategory = products.reduce<Record<number, number>>((acc, p: any) => {
+    const catId = p.categoryId || p.category?.id;
+    if (catId) {
+      acc[catId] = (acc[catId] ?? 0) + 1;
     }
     return acc;
   }, {});
 
   // Collect up to 4 product images per category for the card slideshow
-  const imagesByCategory = products.reduce<Record<number, string[]>>((acc, p) => {
-    if (p.category?.id && p.imageUrl) {
-      const list = acc[p.category.id] ?? [];
+  const imagesByCategory = products.reduce<Record<number, string[]>>((acc, p: any) => {
+    const catId = p.categoryId || p.category?.id;
+    if (catId && p.imageUrl) {
+      const list = acc[catId] ?? [];
       if (list.length < 4) list.push(p.imageUrl);
-      acc[p.category.id] = list;
+      acc[catId] = list;
     }
     return acc;
   }, {});
@@ -80,6 +83,7 @@ const HomePage = () => {
   console.log('[HomePage] Total products loaded:', products.length);
   console.log('[HomePage] Products by category:', productCountByCategory);
   console.log('[HomePage] Active categories:', activeCategories.length);
+  console.log('[HomePage] Sample product:', products[0]);
 
   // Build slides from products with images
   const slides = (() => {
@@ -98,14 +102,14 @@ const HomePage = () => {
     }));
   })();
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: any) => {
     addItem({
       id: product.id,
       name: product.name,
       price: Number(product.price),
       image: product.imageUrl ?? '/placeholder.svg',
-      shopName: product.business?.businessName ?? product.businessName ?? product.category?.name ?? product.categoryName ?? '',
-      shopId: product.business?.id ?? product.businessId,
+      shopName: product.businessName ?? product.business?.businessName ?? product.categoryName ?? product.category?.name ?? '',
+      shopId: product.businessId ?? product.business?.id,
     });
     toast({ title: 'Added to cart', description: `${product.name} added.`, duration: 2500 });
   };
