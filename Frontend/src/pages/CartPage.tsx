@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -99,11 +99,22 @@ const CartPage = () => {
     const shopTotal = shopItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const isService = shopItems.some(item => item.productType === 'SERVICE');
 
-    // For service orders, use "SERVICE" as address; for collection use "COLLECTION"; else actual address
-    let deliveryAddressValue = 'SERVICE_NO_DELIVERY';
-    if (!isService) {
-      deliveryAddressValue = paymentMethod === 'collection' ? 'COLLECTION' : effectiveAddress.trim();
+    // ── SERVICE ITEMS: Skip payment, go directly to messaging ───────────────────
+    if (isService) {
+      toast({
+        title: '✅ Service ready to discuss',
+        description: 'You will be redirected to message the seller about service details.',
+      });
+      clearCart();
+      // Navigate to shop page where customer can message seller
+      // Add service items to session storage for pre-filling message context
+      sessionStorage.setItem('duwaz_service_items', JSON.stringify(shopItems));
+      navigate(`/shop/${shopId}`);
+      return;
     }
+
+    // For collection use "COLLECTION"; else actual address
+    let deliveryAddressValue = paymentMethod === 'collection' ? 'COLLECTION' : effectiveAddress.trim();
 
     // ── Collection or Cash — create order + confirm payment ───────────────────
     if (paymentMethod === 'collection' || paymentMethod === 'cash') {
@@ -227,7 +238,7 @@ const CartPage = () => {
           {/* ── Right column ── */}
           <div className="space-y-4">
 
-            {/* Delivery address — hidden for collection */}
+            {/* Delivery address — hidden for collection AND services */}
             {needsAddress && (
             <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5 space-y-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
@@ -296,7 +307,8 @@ const CartPage = () => {
             </div>
             )} {/* end needsAddress */}
 
-            {/* Payment method selector */}
+            {/* Payment method selector — hidden for services */}
+            {!isServiceOrder && (
             <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5 space-y-3">
               <h2 className="text-base font-bold">How would you like to pay?</h2>
               {PAYMENT_OPTIONS.map(opt => {
@@ -325,6 +337,7 @@ const CartPage = () => {
                 );
               })}
             </div>
+            )}
 
             {/* Order summary */}
             <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-5">
@@ -351,12 +364,21 @@ const CartPage = () => {
               >
                 {isCheckingOut ? 'Processing…' : (
                   <>
-                    {paymentMethod === 'collection' && <Package className="mr-2 h-4 w-4" />}
-                    {paymentMethod === 'cash'       && <Banknote className="mr-2 h-4 w-4" />}
-                    {paymentMethod === 'yoco'       && <CreditCard className="mr-2 h-4 w-4" />}
-                    {paymentMethod === 'collection' && `Confirm Collection — R${total.toFixed(2)}`}
-                    {paymentMethod === 'cash'       && `Place Order — Pay R${total.toFixed(2)} on Delivery`}
-                    {paymentMethod === 'yoco'       && `Pay Online — R${total.toFixed(2)}`}
+                    {isServiceOrder ? (
+                      <>
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Message Seller About Service
+                      </>
+                    ) : (
+                      <>
+                        {paymentMethod === 'collection' && <Package className="mr-2 h-4 w-4" />}
+                        {paymentMethod === 'cash'       && <Banknote className="mr-2 h-4 w-4" />}
+                        {paymentMethod === 'yoco'       && <CreditCard className="mr-2 h-4 w-4" />}
+                        {paymentMethod === 'collection' && `Confirm Collection — R${total.toFixed(2)}`}
+                        {paymentMethod === 'cash'       && `Place Order — Pay R${total.toFixed(2)} on Delivery`}
+                        {paymentMethod === 'yoco'       && `Pay Online — R${total.toFixed(2)}`}
+                      </>
+                    )}
                   </>
                 )}
               </Button>
