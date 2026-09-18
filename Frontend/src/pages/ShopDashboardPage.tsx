@@ -68,11 +68,13 @@ interface ProductFormData {
   images: (string | null)[];   // up to 4 base64 images; index 0 = primary
   stockQuantity: string;
   productStatus: ProductStatus;
+  productType: 'PRODUCT' | 'SERVICE';  // NEW: toggle between product and service
 }
 
 const emptyForm: ProductFormData = {
   name: '', description: '', price: '', categoryId: '',
   images: [null, null, null, null], stockQuantity: '0', productStatus: 'AVAILABLE',
+  productType: 'PRODUCT',  // default to product
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -250,6 +252,7 @@ const ShopDashboardPage = () => {
       ],
       stockQuantity: String(p.stockQuantity ?? 0),
       productStatus: (p.productStatus as ProductStatus) ?? 'AVAILABLE',
+      productType: (p as any).productType ?? 'PRODUCT',  // NEW: load service/product type
     });
     setProductDialogOpen(true);
   };
@@ -289,6 +292,7 @@ const ShopDashboardPage = () => {
       business: { id: shop.id } as any,
       stockQuantity: Number(productForm.stockQuantity),
       productStatus: productForm.productStatus,
+      productType: productForm.productType,  // NEW: include service/product type
       ...(productForm.categoryId ? { category: { id: Number(productForm.categoryId) } as any } : {}),
       ...(img1 ? { imageUrl: img1 } : {}),
       ...(img2 !== undefined ? { imageUrl2: img2 } : {}),
@@ -302,8 +306,8 @@ const ShopDashboardPage = () => {
       });
     } else {
       createProduct(payload, {
-        onSuccess: () => { toast({ title: 'Product added!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); },
-        onError: (err) => toast({ title: 'Failed to add product', description: err.message, variant: 'destructive' }),
+        onSuccess: () => { toast({ title: (productForm.productType === 'SERVICE' ? 'Service' : 'Product') + ' added!' }); setProductDialogOpen(false); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); },
+        onError: (err) => toast({ title: 'Failed to add ' + (productForm.productType === 'SERVICE' ? 'service' : 'product'), description: err.message, variant: 'destructive' }),
       });
     }
   };
@@ -734,10 +738,49 @@ const ShopDashboardPage = () => {
       {/* ── Add/Edit Product Dialog ── */}
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
         <DialogContent className="max-w-lg" aria-describedby={undefined}>
-          <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add Product'}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editingProduct ? 'Edit' : 'Add'} {productForm.productType === 'SERVICE' ? 'Service' : 'Product'}
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
 
-            {/* ── Image uploader — up to 4 images ── */}
+            {/* ── PRODUCT vs SERVICE Toggle ── */}
+            <div className="bg-duwaz-cream/50 border border-duwaz-brown/20 rounded-lg p-3 mb-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Type</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProductForm(p => ({ ...p, productType: 'PRODUCT', stockQuantity: '0' }))}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                    productForm.productType === 'PRODUCT'
+                      ? 'bg-duwaz-brown text-white'
+                      : 'bg-white border border-border text-foreground hover:border-duwaz-brown'
+                  }`}
+                >
+                  📦 Physical Product
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProductForm(p => ({ ...p, productType: 'SERVICE', stockQuantity: '0' }))}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                    productForm.productType === 'SERVICE'
+                      ? 'bg-duwaz-brown text-white'
+                      : 'bg-white border border-border text-foreground hover:border-duwaz-brown'
+                  }`}
+                >
+                  🔧 Service
+                </button>
+              </div>
+              {productForm.productType === 'SERVICE' && (
+                <p className="text-xs text-duwaz-brown font-medium mt-2 bg-blue-50 p-2 rounded">
+                  ℹ️ Services don't require stock or delivery. Customers will message you to arrange details.
+                </p>
+              )}
+            </div>
+
+            {/* ── Image uploader — only for PRODUCT type ── */}
+            {productForm.productType === 'PRODUCT' && (
             <div>
               <Label className="mb-2 block">
                 Product Images <span className="text-muted-foreground font-normal text-xs">(up to 4 · max 2MB each · JPG/PNG/WebP)</span>
@@ -789,6 +832,7 @@ const ShopDashboardPage = () => {
                 ))}
               </div>
             </div>
+            )}
 
             <div className="space-y-1"><Label>Name <span className="text-red-500">*</span></Label><Input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Cheese Chips" /></div>
             <div className="space-y-1"><Label>Description</Label><Textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="min-h-[60px]" /></div>
@@ -798,9 +842,12 @@ const ShopDashboardPage = () => {
                 <Input type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(p => ({ ...p, price: e.target.value }))} />
                 {productForm.price && Number(productForm.price) > 0 && (
                   <div className="rounded-md bg-amber-50 border border-amber-200 p-2 space-y-1 text-xs">
-                    <p className="font-semibold text-amber-700">💡 Price tip:</p>
+                    <p className="font-semibold text-amber-700">💡 {productForm.productType === 'SERVICE' ? 'Service Rate' : 'Price'} tip:</p>
                     <p className="text-gray-600">
-                      Set your price to include the delivery cost. Customers pay exactly what you list — no extra fees are added at checkout.
+                      {productForm.productType === 'SERVICE'
+                        ? 'Set your service rate. This is what customers will see when booking.'
+                        : 'Set your price to include the delivery cost. Customers pay exactly what you list — no extra fees are added at checkout.'
+                      }
                     </p>
                     <div className="flex justify-between font-semibold text-duwaz-brown border-t pt-1">
                       <span>Customer pays</span>
@@ -809,7 +856,9 @@ const ShopDashboardPage = () => {
                   </div>
                 )}
               </div>
+              {productForm.productType === 'PRODUCT' && (
               <div className="space-y-1"><Label>Stock Quantity</Label><Input type="number" min="0" value={productForm.stockQuantity} onChange={e => setProductForm(p => ({ ...p, stockQuantity: e.target.value }))} /></div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Category</Label><select className="w-full border rounded-md py-2 px-3 text-sm" value={productForm.categoryId} onChange={e => setProductForm(p => ({ ...p, categoryId: e.target.value }))}><option value="">None</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
