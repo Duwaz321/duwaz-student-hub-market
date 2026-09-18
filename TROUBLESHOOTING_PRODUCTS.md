@@ -1,7 +1,26 @@
-# 🔧 Troubleshooting: Products Not Showing on Homepage
+# 🔧 Troubleshooting: Products Not Showing on Homepage & Category Filtering
 
 ## 📍 Problem Statement
-When you added new products to categories, they don't appear on the homepage in the "Shop by Category" section, even though they exist in the database.
+When you added new products to categories, they don't appear on the homepage in the "Shop by Category" section. Products also don't filter correctly when selecting categories. The homepage should show a shuffled mix of products from all categories (Drinks, Food, Other products).
+
+---
+
+## 🎯 What Should Happen (After Fixes)
+
+✅ **Homepage displays:**
+- Products shuffled from different categories (no same-category clustering)
+- Shows mix of Drinks, Food, and Other products on every page load
+- "Shop by Category" shows all active categories with product images
+
+✅ **Category Filtering works:**
+- When you click a category, all products in that category display
+- Category filter properly handles both nested and flat product data structures
+- All products show (not just first 8)
+
+✅ **Database is clean:**
+- All products have a category assigned (no NULL category_id)
+- All active products have status = AVAILABLE
+- Drinks, Food, and Other categories exist with products
 
 ---
 
@@ -16,20 +35,25 @@ When you added new products to categories, they don't appear on the homepage in 
    [HomePage] Total products loaded: 25
    [HomePage] Products by category: { 1: 5, 2: 3, 3: 7, ... }
    [HomePage] Active categories: 4
+   [HomePage] Sample product: { id: 1, name: "...", category: { id: 1, name: "Drinks" } }
    ```
 
 **What each means:**
 - **Total products loaded: 0** → No products in database or API not responding
 - **Products by category: {}** (empty object) → Products exist but NO category assigned
 - **Active categories: 0** → No categories have products assigned
+- **Sample product shows null category** → Products missing category_id in database
 
 ### Step 2: Check Network Tab
 1. In DevTools, click **Network** tab
 2. Refresh page
-3. Look for request to `/api/products` or `/api/catalog/products/featured`
-4. Click it and check **Response** tab:
-   - Should see JSON array with products
-   - Each product should have `category: { id: 1, name: "Electronics", ... }`
+3. Look for requests to:
+   - `/api/products` → Main product list for homepage
+   - `/api/catalog/categories` → Categories for filters
+   - `/api/catalog/products/by-category/{id}` → When filtering by category
+4. Click each and check **Response** tab:
+   - Products should have `category: { id: 1, name: "Drinks" }`
+   - Categories should list with product counts
    - If category is `null` → **That's the problem!**
 
 ### Step 3: Verify in Database
@@ -38,7 +62,7 @@ When you added new products to categories, they don't appear on the homepage in 
 3. Go to **Table Editor** → **product** table
 4. Check a few products you added:
    - **category_id** column should have a number (1, 2, 3, etc.)
-   - If it's **NULL** or **empty** → Products need categories assigned
+   - If it's **NULL** or **empty** → **Products need categories assigned**
 
 ---
 
@@ -48,20 +72,43 @@ When you added new products to categories, they don't appear on the homepage in 
 **Symptoms:**
 - Console shows: `Total products loaded: X` but `Active categories: 0`
 - Homepage shows "No categories with products yet"
+- Marketplace shows no products
 
 **Why it happens:**
 - Product creation form might not require category selection
-- Or categories were added AFTER products were created
+- Categories were added AFTER products were created
+- Or products imported without category mappings
 
-**Fix Option A: Update Product in Database (SQL)**
+**Fix Option A: Run Migration SQL (RECOMMENDED)**
 ```sql
--- Assign category_id to all uncategorized products
--- Replace 1 with the actual category ID you want
+-- Run this SQL in Supabase to ensure categories and assign uncategorized products
 
--- First, see which products have NULL category
+-- 1. Create key categories if missing
+INSERT INTO category (name, description) 
+VALUES 
+  ('Drinks', 'Beverages and drinks'),
+  ('Food', 'Food and snacks'),
+  ('Other', 'Miscellaneous items and services')
+ON DUPLICATE KEY UPDATE 
+  description = VALUES(description);
+
+-- 2. Assign any products without categories to 'Other'
+UPDATE product p 
+SET p.category_id = (SELECT id FROM category WHERE name = 'Other') 
+WHERE p.category_id IS NULL;
+
+-- 3. Verify all products now have categories
+SELECT COUNT(*) as products_with_category 
+FROM product 
+WHERE category_id IS NOT NULL;
+```
+
+**Fix Option B: Update Product in Database (SQL - Manual)**
+```sql
+-- See which products have NULL category
 SELECT id, name, category_id FROM product WHERE category_id IS NULL;
 
--- Then assign a category (e.g., category_id = 1)
+-- Assign a category (replace 1 with actual category ID)
 UPDATE product 
 SET category_id = 1 
 WHERE category_id IS NULL;
@@ -70,151 +117,281 @@ WHERE category_id IS NULL;
 SELECT id, name, category_id FROM product WHERE category_id IS NOT NULL;
 ```
 
-**Fix Option B: Re-add Products via Shop Dashboard**
+**Fix Option C: Re-add Products via Shop Dashboard**
 1. Login to shop
 2. Go to Shop Dashboard → Products tab
 3. Click "Add Product"
-4. Make sure to **select a category** from dropdown
-5. Save product
-6. Repeat for all products
+4. **SELECT A CATEGORY** from dropdown (required!)
+5. Fill in other details
+6. Save product
+7. Repeat for all products
 
-**Fix Option C: Update Product Creation Form (Code)**
-If products can be added without selecting a category, update `ShopDashboardPage.tsx`:
+**Fix Option D: Update Product Creation Form (Code)**
+If products can be added without selecting a category:
 ```typescript
-// Make category REQUIRED (not optional)
+// In ShopDashboardPage.tsx - make category REQUIRED
 if (!productForm.categoryId) {
-  toast({ title: 'Category required', variant: 'destructive' });
+  toast({ 
+    title: 'Category required', 
+    description: 'Please select a category (Drinks, Food, or Other)',
+    variant: 'destructive' 
+  });
   return;
 }
 ```
 
 ---
 
-### Issue #2: Categories Exist But Products Not Linked
+### Issue #2: Category Filtering Broken (Products Don't Filter by Category)
 **Symptoms:**
-- Console shows: `Active categories: 0` 
-- Database has categories but products.category_id is NULL
+- Click on category pill → Products don't filter
+- Or shows products from all categories instead of just one
+- Marketplace filter doesn't work
 
-**Fix:**
-See **Fix Option A** above (SQL update)
+**Why it happens:**
+- Frontend code had bug checking `p.category?.id` but API returns flat `categoryId`
+- Type mismatch between nested and flat data structures
+
+**Fix: Code is Already Updated** ✅
+The marketplace page now handles both:
+```typescript
+// Handles both p.category?.id (nested) and p.categoryId (flat)
+const categoryId = String(p.category?.id ?? p.categoryId ?? '');
+const matchCat = selectedCategory === 'all' || categoryId === selectedCategory;
+```
+
+If still broken, clear browser cache:
+- Press **Ctrl+Shift+Delete**
+- Clear "Cookies and other site data"
+- Reload page
 
 ---
 
-### Issue #3: Products Exist, Categories Exist, But Still Not Showing
+### Issue #3: Products Show Same Category Clustering on Homepage
 **Symptoms:**
-- Console shows: `Total products loaded: 10`, categories exist
-- But homepage shows "No categories with products yet"
+- Homepage shows all Drinks first, then all Food, then Other
+- Products not shuffled/mixed
+- Same category items grouped together
 
 **Why it happens:**
-- Product status might be OUT_OF_STOCK or DISCONTINUED
-- Homepage only shows AVAILABLE products
+- Old code: `products.slice(0, 8)` took first 8 products (often same category)
+- No randomization/shuffling logic
 
-**Fix: Check Product Status**
-```sql
--- Check product status
-SELECT id, name, product_status, category_id 
-FROM product 
-WHERE category_id IS NOT NULL;
-
--- Should see: product_status = 'AVAILABLE'
--- If it's 'OUT_OF_STOCK' or 'DISCONTINUED', update it:
-
-UPDATE product 
-SET product_status = 'AVAILABLE' 
-WHERE id = YOUR_PRODUCT_ID;
+**Fix: Code is Already Updated** ✅
+Homepage now shuffles products:
+```typescript
+const shuffledProducts = [...products].sort(() => Math.random() - 0.5).slice(0, 8);
+const featuredProducts = shuffledProducts;
 ```
+
+Products now display in random order on each page load.
 
 ---
 
 ### Issue #4: API Returning Old Data (Caching)
 **Symptoms:**
 - You updated products in database
-- But homepage still shows old data
-- Or shows no products at all
+- But homepage still shows old data or no products
 
 **Why it happens:**
-- Backend caches products for 2 minutes
-- Or frontend cache hasn't expired
+- Backend caches products for 2 minutes (@Cacheable)
+- Frontend browser cache (60 sec HTTP cache)
 
 **Fix:**
 1. **Clear Frontend Cache:**
-   - Press **Ctrl+Shift+Delete** (or Cmd+Shift+Delete on Mac)
+   - Press **Ctrl+Shift+Delete** (Windows/Linux) or **Cmd+Shift+Delete** (Mac)
    - Clear "Cookies and other site data"
    - Reload page
 
-2. **Wait for Backend Cache to Expire:**
+2. **Wait for Backend Cache:**
    - Wait 2-3 minutes and refresh
-   - Or restart backend service
+   - Or restart backend service in Docker
 
-3. **Force Cache Refresh:**
-   - In DevTools Network tab, check "Disable cache"
+3. **Force Cache Refresh in DevTools:**
+   - Open DevTools (F12)
+   - Network tab → Check "Disable cache" checkbox
    - Reload page
+
+---
+
+### Issue #5: Products Status Not AVAILABLE
+**Symptoms:**
+- Database has products with categories
+- But homepage doesn't show them
+- Or shows fewer products than expected
+
+**Why it happens:**
+- Product status is OUT_OF_STOCK or DISCONTINUED
+- HomePage filters to only show AVAILABLE products
+
+**Fix: Check and Update Product Status**
+```sql
+-- See all products and their status
+SELECT id, name, product_status, category_id, stock_quantity
+FROM product 
+LIMIT 20;
+
+-- For PRODUCTS (physical items): update if stock > 0
+UPDATE product 
+SET product_status = 'AVAILABLE' 
+WHERE product_type = 'PRODUCT' 
+  AND stock_quantity > 0 
+  AND product_status != 'AVAILABLE';
+
+-- For SERVICES: always available (no stock check)
+UPDATE product 
+SET product_status = 'AVAILABLE' 
+WHERE product_type = 'SERVICE' 
+  AND product_status != 'AVAILABLE';
+```
 
 ---
 
 ## ✅ Verification Checklist
 
-After implementing fixes, verify everything:
+After implementing fixes, verify everything works:
 
-- [ ] **Console logs show products**
+- [ ] **Database Setup**
+  ```sql
+  -- Check categories exist
+  SELECT * FROM category WHERE name IN ('Drinks', 'Food', 'Other');
+  
+  -- Should return 3 rows
+  ```
+
+- [ ] **All Products Have Categories**
+  ```sql
+  SELECT COUNT(*) as uncategorized 
+  FROM product 
+  WHERE category_id IS NULL;
+  
+  -- Should return 0
+  ```
+
+- [ ] **Console Shows Products**
   ```
   [HomePage] Total products loaded: > 0
   [HomePage] Active categories: > 0
+  [HomePage] Sample product shows category
   ```
 
-- [ ] **Network shows product data**
-  - `/api/products` returns products with categories
+- [ ] **API Returns Data**
+  - `/api/products` returns array with products having categories
+  - `/api/catalog/categories` returns Drinks, Food, Other
+  - `/api/catalog/products/by-category/1` filters by category
 
-- [ ] **Database has data**
-  - `SELECT COUNT(*) FROM product;` returns > 0
-  - `SELECT COUNT(*) FROM product WHERE category_id IS NOT NULL;` returns > 0
+- [ ] **Homepage Displays:**
+  - ✅ Products from different categories (shuffled)
+  - ✅ "Shop by Category" shows Drinks, Food, Other
+  - ✅ Category cards show product images
 
-- [ ] **Homepage displays categories**
-  - "Shop by Category" section NOT empty
-  - Category cards show product images
-  - Clicking category shows products
+- [ ] **Marketplace Filtering Works:**
+  - ✅ Click "Drinks" → only Drinks show
+  - ✅ Click "Food" → only Food show
+  - ✅ Click "All" → all products show
+  - ✅ Search still works with category filter
 
-- [ ] **Product status is correct**
-  - Products show `product_status = 'AVAILABLE'`
-  - Not OUT_OF_STOCK
+- [ ] **Product Data Complete:**
+  - ✅ All products have `product_status = 'AVAILABLE'`
+  - ✅ Physical products have `stock_quantity > 0`
+  - ✅ Services have `product_type = 'SERVICE'`
 
 ---
 
 ## 📋 Quick Command Reference
 
 ### SQL Queries to Run in Supabase
+
 ```sql
--- 1. Count total products
-SELECT COUNT(*) as total_products FROM product;
+-- 1. Setup: Create key categories
+INSERT INTO category (name, description) 
+VALUES 
+  ('Drinks', 'Beverages and drinks'),
+  ('Food', 'Food and snacks'),
+  ('Other', 'Miscellaneous items')
+ON DUPLICATE KEY UPDATE description = VALUES(description);
 
--- 2. Count products WITH categories
-SELECT COUNT(*) as products_with_category 
-FROM product 
-WHERE category_id IS NOT NULL;
-
--- 3. Count products WITHOUT categories
-SELECT COUNT(*) as products_no_category 
-FROM product 
+-- 2. Assign uncategorized products to 'Other'
+UPDATE product SET category_id = 
+  (SELECT id FROM category WHERE name = 'Other')
 WHERE category_id IS NULL;
 
--- 4. List categories with product counts
-SELECT c.id, c.name, COUNT(p.id) as product_count
+-- 3. Count total products
+SELECT COUNT(*) as total FROM product;
+
+-- 4. Count products WITH categories
+SELECT COUNT(*) FROM product WHERE category_id IS NOT NULL;
+
+-- 5. Count products WITHOUT categories
+SELECT COUNT(*) FROM product WHERE category_id IS NULL;
+
+-- 6. Show categories with product counts
+SELECT c.id, c.name, 
+  COUNT(p.id) as total,
+  SUM(CASE WHEN p.product_status = 'AVAILABLE' THEN 1 ELSE 0 END) as available
 FROM category c
 LEFT JOIN product p ON p.category_id = c.id
 GROUP BY c.id, c.name
-ORDER BY product_count DESC;
+ORDER BY available DESC;
 
--- 5. Show uncategorized products
-SELECT id, name, category_id, product_status 
+-- 7. Show uncategorized products
+SELECT id, name, category_id, product_status, product_type 
 FROM product 
 WHERE category_id IS NULL
 LIMIT 10;
 
--- 6. Show products by status
-SELECT product_status, COUNT(*) 
+-- 8. Show products by status
+SELECT product_status, COUNT(*) as count
 FROM product 
 GROUP BY product_status;
+
+-- 9. Update uncategorized products to AVAILABLE
+UPDATE product 
+SET product_status = 'AVAILABLE'
+WHERE category_id IS NOT NULL 
+  AND product_status NOT IN ('AVAILABLE', 'DISCONTINUED');
 ```
+
+---
+
+## �️ Architecture: How Product Filtering Works
+
+### Frontend Flow
+```
+HomePage loads
+  ↓
+useProducts() hook calls GET /api/products
+  ↓
+ProductController.getAllProducts()
+  ↓
+ProductService.getAllProductsSummary() [cached 2 min]
+  ↓
+Products returned with category info
+  ↓
+HomePage shuffles products: sort(() => Math.random() - 0.5)
+  ↓
+Shows 8 shuffled products from different categories
+```
+
+### Category Filtering Flow
+```
+User clicks "Drinks" category
+  ↓
+MarketplacePage.setSelectedCategory('1')
+  ↓
+Filters products: categoryId === '1' OR category?.id === '1'
+  ↓
+Shows all Drinks products
+  ↓
+User can search within category
+```
+
+### Backend API Endpoints
+- `GET /api/products` → All AVAILABLE products (used by homepage)
+- `GET /api/catalog/categories` → All categories with product counts
+- `GET /api/catalog/products/by-category/{id}` → Products in category (paginated)
+- `GET /api/catalog/services` → SERVICE type products
+- `GET /api/catalog/services/by-category/{id}` → Services in category
 
 ---
 
@@ -222,35 +399,38 @@ GROUP BY product_status;
 
 If products still don't show after these fixes:
 
-1. **Check backend logs** on Render:
-   - Go to https://dashboard.render.com
-   - Click your backend service
-   - Check logs for errors
+1. **Check backend logs** on Render/Docker:
+   - Look for errors in Maven compilation
+   - Check for database connection issues
 
 2. **Verify API is working:**
    - Open console and run:
    ```javascript
-   fetch('https://api.duwaz.co.za/api/products')
+   fetch('/api/products')
      .then(r => r.json())
-     .then(data => console.log('Products:', data))
+     .then(data => console.log('Products:', data.length, data[0]))
+     .catch(e => console.error('Error:', e))
    ```
-   - Should see array of products with category info
 
-3. **Restart backend:**
-   - On Render dashboard, restart the service
-   - Wait 2-3 minutes for rebuild
-
-4. **Check Supabase status:**
+3. **Check Supabase status:**
    - Visit https://status.supabase.com
-   - Make sure database is online
+   - Ensure database is online
+
+4. **Run migration script:**
+   - Execute the SQL migration to ensure categories and assignments
+
+5. **Restart backend:**
+   - Restart Docker container or backend service
+   - Wait 2-3 minutes for full startup
 
 ---
 
-## 📞 Support Info
+## 📞 Next Steps
 
-If you need more help:
-- Check database in Supabase directly
-- Look at backend logs on Render
-- Compare your product data with the test queries above
-- Ensure categories table has data: `SELECT COUNT(*) FROM category;`
+1. ✅ Run the SQL migration to setup categories and assign products
+2. ✅ Clear browser cache (Ctrl+Shift+Delete)
+3. ✅ Reload homepage and verify products show
+4. ✅ Test category filtering on marketplace
+5. ✅ Verify products are shuffled (different order on each reload)
+
 
