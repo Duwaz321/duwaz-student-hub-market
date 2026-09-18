@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Upload, X, Navigation, TrendingUp, Star, Receipt } from 'lucide-react';
+import { Camera, Upload, X, Navigation, TrendingUp, Star, Receipt, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStudent, useUpdateStudent } from '@/hooks/useStudents';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { ordersApi, transactionsApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadge } from '@/lib/orderUtils';
+import NotificationSettings from '@/components/NotificationSettings';
 
 const AccountPage = () => {
   const { toast } = useToast();
@@ -208,6 +209,7 @@ const AccountPage = () => {
               <TabsTrigger value="orders">Orders</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="rewards">Rewards</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
             {/* ── Profile tab ── */}
@@ -555,6 +557,33 @@ const AccountPage = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* ── Notifications ── */}
+            <TabsContent value="notifications">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Push Notifications</CardTitle>
+                  <CardDescription>Get real-time alerts for orders, messages, and updates even when you're not on the website.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <NotificationSettings />
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+                    <h4 className="font-semibold text-sm text-blue-900 flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      You'll receive notifications for:
+                    </h4>
+                    <ul className="text-sm text-blue-800 space-y-1 ml-6 list-disc">
+                      <li>New orders placed</li>
+                      <li>Order status updates (preparing, ready, delivered)</li>
+                      <li>New messages from sellers or drivers</li>
+                      <li>Service inquiry responses</li>
+                      <li>Points earned and rewards available</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
