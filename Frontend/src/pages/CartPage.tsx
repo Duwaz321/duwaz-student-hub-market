@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { useState } from 'react';
+import type { AddressDetails } from '@/hooks/useGoogleMapsAutocomplete';
 
 type PaymentMethod = 'collection' | 'cash' | 'yoco';
 
@@ -43,13 +46,14 @@ const CartPage = () => {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [useMyResidence, setUseMyResidence] = useState(true);
-  const [customAddress, setCustomAddress]   = useState('');
-  const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('yoco');
+  const [customAddress, setCustomAddress] = useState<AddressDetails | null>(null);
+  const [customAddressString, setCustomAddressString] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('yoco');
 
   // Collection doesn't need a delivery address; neither do services
   const isServiceOrder = items.some(item => item.productType === 'SERVICE');
   const needsAddress = paymentMethod !== 'collection' && !isServiceOrder;
-  const effectiveAddress = useMyResidence ? (user?.locationAddress ?? '') : customAddress;
+  const effectiveAddress = useMyResidence ? (user?.locationAddress ?? '') : (customAddress?.formattedAddress || customAddressString);
 
   // Total = product prices × quantities only — no separate delivery fee
   const total = subtotal;
@@ -285,14 +289,19 @@ const CartPage = () => {
                 </button>
 
                 {!useMyResidence && (
-                  <div className="space-y-1">
-                    <Label htmlFor="customAddr">Delivery address</Label>
-                    <Input
-                      id="customAddr"
-                      placeholder="e.g. 12 Main Road, Observatory, Cape Town"
+                  <div className="space-y-2">
+                    <AddressAutocomplete
+                      label="Delivery address"
+                      placeholder="Start typing your address..."
                       value={customAddress}
-                      onChange={e => setCustomAddress(e.target.value)}
-                      autoFocus
+                      onChange={(addr) => {
+                        setCustomAddress(addr);
+                        setCustomAddressString(addr.formattedAddress);
+                      }}
+                      onAddressChange={(addrString) => setCustomAddressString(addrString)}
+                      showCoordinates={false}
+                      showValidation={true}
+                      required={true}
                     />
                   </div>
                 )}
