@@ -2,13 +2,14 @@ package org.example.duwaz.controller;
 
 import org.example.duwaz.dto.PushNotificationDto;
 import org.example.duwaz.dto.PushSubscriptionDto;
-import org.example.duwaz.security.JwtTokenProvider;
+import org.example.duwaz.util.JwtUtil;
 import org.example.duwaz.service.PushNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.jsonwebtoken.Claims;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -18,12 +19,12 @@ public class NotificationController {
     private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
 
     private final PushNotificationService notificationService;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtUtil jwtUtil;
 
     public NotificationController(PushNotificationService notificationService,
-                                  JwtTokenProvider jwtTokenProvider) {
+                                  JwtUtil jwtUtil) {
         this.notificationService = notificationService;
-        this.jwtTokenProvider = jwtTokenProvider;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -37,7 +38,8 @@ public class NotificationController {
         try {
             // Extract user ID from JWT token
             String token = authHeader.replace("Bearer ", "");
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Long userId = ((Number) claims.get("userId")).longValue();
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -88,7 +90,8 @@ public class NotificationController {
         try {
             // Extract user ID from JWT token
             String token = authHeader.replace("Bearer ", "");
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Long userId = ((Number) claims.get("userId")).longValue();
 
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
