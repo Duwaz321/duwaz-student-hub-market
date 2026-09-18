@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
-import { useState } from 'react';
 import type { AddressDetails } from '@/hooks/useGoogleMapsAutocomplete';
 
 type PaymentMethod = 'collection' | 'cash' | 'yoco';

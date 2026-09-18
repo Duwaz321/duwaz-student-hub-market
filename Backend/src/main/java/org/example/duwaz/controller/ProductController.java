@@ -72,6 +72,27 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/admin/all")
+    public ResponseEntity<?> getAllProductsForAdmin(Authentication auth) {
+        // Verify admin access
+        Student requester = auth != null ? studentRepository.findByEmail(auth.getName()).orElse(null) : null;
+        boolean isAdmin = requester != null && requester.isAdmin();
+        if (!isAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Admin access required");
+        }
+        
+        try {
+            List<Product> products = productService.getAllProducts();
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS).cachePublic())
+                    .body(products);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR in getAllProductsForAdmin: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error fetching products: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/business/{businessId}")
     public ResponseEntity<List<Product>> getProductsByBusiness(@PathVariable Long businessId) {
         return ResponseEntity.ok(productService.getProductsByBusiness(businessId));

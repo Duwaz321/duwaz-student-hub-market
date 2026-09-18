@@ -155,7 +155,7 @@ const AdminDashboardPage = () => {
   const { data: users = [] } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminApi.getUsers });
   const { data: allDrivers = [] } = useQuery({ queryKey: ['admin', 'drivers'], queryFn: deliveriesApi.getAllDrivers, refetchInterval: 15000 });
   const { data: allAssignments = [] } = useQuery({ queryKey: ['admin', 'deliveries'], queryFn: deliveriesApi.getAllAssignments, refetchInterval: 15000 });
-  const { data: allProducts = [], isLoading: productsLoading } = useQuery({ queryKey: ['admin', 'products'], queryFn: productsApi.getAll });
+  const { data: allProducts = [], isLoading: productsLoading } = useQuery({ queryKey: ['admin', 'products'], queryFn: () => productsApi.getAllForAdmin(), refetchInterval: 30000 });
   const { data: allShops = [] } = useQuery({ queryKey: ['admin', 'shops'], queryFn: businessesApi.getAll });
   const { data: categories = [] } = useCategories();
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 15000 });
@@ -685,7 +685,12 @@ const AdminDashboardPage = () => {
                               if (forwardingMessage.messageType === 'DELIVERY_REQUEST' && forwardingMessage.order) {
                                 assignDriverMutation.mutate(
                                   { orderId: forwardingMessage.order.id, driverId: d.deliveryDriverId },
-                                  { onSuccess: doForward, onError: doForward } // forward even if already assigned
+                                  { 
+                                    onSuccess: doForward,
+                                    onError: (error) => {
+                                      toast({ title: 'Assignment failed', description: (error as any)?.message ?? 'Could not assign driver', variant: 'destructive' });
+                                    }
+                                  }
                                 );
                               } else {
                                 doForward();

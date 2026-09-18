@@ -93,18 +93,19 @@ export const authApi = {
 
 // ── Categories ────────────────────────────────────────────────────────────────
 export const categoriesApi = {
-  getAll: () => request<Category[]>('/api/categories'),
-  getById: (id: number) => request<Category>(`/api/categories/${id}`),
+  getAll: () => request<Category[]>('/api/catalog/categories'),
+  getById: (id: number) => request<Category>(`/api/catalog/categories/${id}`),
   create: (data: Omit<Category, 'id'>) =>
-    request<Category>('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
+    request<Category>('/api/catalog/categories', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<Category>) =>
-    request<Category>(`/api/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: number) => request<null>(`/api/categories/${id}`, { method: 'DELETE' }),
+    request<Category>(`/api/catalog/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<null>(`/api/catalog/categories/${id}`, { method: 'DELETE' }),
 };
 
 // ── Products ──────────────────────────────────────────────────────────────────
 export const productsApi = {
   getAll: () => request<Product[]>('/api/products'),
+  getAllForAdmin: () => request<Product[]>('/api/products/admin/all'),
   getById: (id: number) => request<Product>(`/api/products/${id}`),
   getByBusiness: (businessId: number) => request<Product[]>(`/api/products/business/${businessId}`),
   create: (data: Omit<Product, 'id'>) =>
