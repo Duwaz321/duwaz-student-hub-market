@@ -67,7 +67,8 @@ public class NotificationController {
         try {
             // Extract user ID from JWT token (for logging, optional)
             String token = authHeader.replace("Bearer ", "");
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Long userId = ((Number) claims.get("userId")).longValue();
 
             notificationService.unsubscribe(request.getEndpoint());
 
