@@ -75,6 +75,11 @@ const HomePage = () => {
 
   // Only show categories that have at least one product
   const activeCategories = categories.filter(cat => (productCountByCategory[cat.id] ?? 0) > 0);
+  
+  // DEBUG: Log products to help diagnose why they're not appearing
+  console.log('[HomePage] Total products loaded:', products.length);
+  console.log('[HomePage] Products by category:', productCountByCategory);
+  console.log('[HomePage] Active categories:', activeCategories.length);
 
   // Build slides from products with images
   const slides = (() => {

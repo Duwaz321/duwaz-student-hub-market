@@ -35,6 +35,7 @@ const PaymentSuccessPage  = lazy(() => import('./pages/PaymentSuccessPage'));
 const PaymentCancelPage   = lazy(() => import('./pages/PaymentCancelPage'));
 const CategoryListPage    = lazy(() => import('./pages/CategoryListPage'));
 const ServiceListPage     = lazy(() => import('./pages/ServiceListPage'));
+const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
 
 // Minimal fallback shown while a lazy page chunk loads (< 200ms on fast connections)
 const PageSkeleton = () => (
@@ -74,6 +75,7 @@ const App = () => (
           {/* Payment redirect pages — no Layout (full-screen feedback) */}
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/cancel"  element={<PaymentCancelPage />} />
+          <Route path="/purchase/success/:orderId" element={<PurchaseSuccessPage />} />
 
           {/* Driver dashboard — no marketplace Layout */}
           <Route

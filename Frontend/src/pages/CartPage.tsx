@@ -141,7 +141,7 @@ const CartPage = () => {
               title: paymentMethod === 'collection' ? '✅ Order placed — collect from shop!' : '✅ Order placed — pay driver on delivery!',
               description: `Order #${order.id} confirmed.`,
             });
-            navigate(`/order/${order.id}/track`);
+            navigate(`/purchase/success/${order.id}`);
           })
           .catch((err: any) => {
             toast({ title: 'Order failed', description: err.message, variant: 'destructive' });

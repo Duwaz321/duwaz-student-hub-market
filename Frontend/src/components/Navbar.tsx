@@ -82,7 +82,6 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
           <NavLink to="/" active={location.pathname === '/'}>Home</NavLink>
           <NavLink to="/marketplace" active={location.pathname === '/marketplace'}>Marketplace</NavLink>
-          <NavLink to="/categories" active={location.pathname === '/categories'}>Categories</NavLink>
           <NavLink to="/services" active={location.pathname === '/services'}>Services</NavLink>
           {shopNavItem}
           <NavLink to="/about" active={location.pathname === '/about'}>About</NavLink>
@@ -235,7 +234,6 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
         <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
           <MobileNavLink to="/">Home</MobileNavLink>
           <MobileNavLink to="/marketplace">Marketplace</MobileNavLink>
-          <MobileNavLink to="/categories">Categories</MobileNavLink>
           <MobileNavLink to="/services">Services</MobileNavLink>
           {shopMobileItem}
           <MobileNavLink to="/about">About</MobileNavLink>
