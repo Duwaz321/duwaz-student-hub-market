@@ -66,9 +66,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // Pagination queries
     Page<Product> findByCategoryIdAndProductStatus(Long categoryId, Product.ProductStatus status, Pageable pageable);
-    // NOTE: Commented out queries using product_type until database column is added
-    // Page<Product> findByCategoryIdAndProductTypeAndProductStatus(Long categoryId, Product.ProductType type, Product.ProductStatus status, Pageable pageable);
-    // Page<Product> findByProductTypeAndProductStatus(Product.ProductType type, Product.ProductStatus status, Pageable pageable);
+    
+    // Service-specific queries (product_type = 'SERVICE')
+    @Query("SELECT p FROM Product p WHERE p.productType = 'SERVICE' AND p.productStatus = :status")
+    Page<Product> findByProductTypeAndStatus(String productType, Product.ProductStatus status, Pageable pageable);
+    
+    @Query("SELECT p FROM Product p WHERE p.productType = 'SERVICE' AND p.category.id = :categoryId AND p.productStatus = :status")
+    Page<Product> findByProductTypeAndCategoryAndStatus(String productType, Long categoryId, Product.ProductStatus status, Pageable pageable);
 
     // Count products by category and status
     @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = ?1 AND p.productStatus = ?2")
