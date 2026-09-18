@@ -106,10 +106,10 @@ const CartPage = () => {
         description: 'You will be redirected to message the seller about service details.',
       });
       clearCart();
-      // Navigate to shop page where customer can message seller
+      // Navigate to service order page where customer can message seller
       // Add service items to session storage for pre-filling message context
       sessionStorage.setItem('duwaz_service_items', JSON.stringify(shopItems));
-      navigate(`/shop/${shopId}`);
+      navigate(`/service-order/${shopId}`);
       return;
     }
 

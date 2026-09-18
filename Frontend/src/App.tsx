@@ -36,6 +36,7 @@ const PaymentCancelPage   = lazy(() => import('./pages/PaymentCancelPage'));
 const CategoryListPage    = lazy(() => import('./pages/CategoryListPage'));
 const ServiceListPage     = lazy(() => import('./pages/ServiceListPage'));
 const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
+const ServiceOrderPage    = lazy(() => import('./pages/ServiceOrderPage'));
 
 // Minimal fallback shown while a lazy page chunk loads (< 200ms on fast connections)
 const PageSkeleton = () => (
@@ -96,6 +97,9 @@ const App = () => (
             <Route path="product/:id" element={<ProductDetailPage />} />
             <Route path="shop/:id" element={<ShopPage />} />
             <Route path="about" element={<AboutPage />} />
+
+            {/* Service inquiry page */}
+            <Route path="service-order/:id" element={<ServiceOrderPage />} />
 
             {/* Protected routes */}
             <Route
