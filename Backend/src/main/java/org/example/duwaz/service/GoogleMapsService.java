@@ -251,21 +251,62 @@ public class GoogleMapsService {
         AddressDto address = new AddressDto();
         address.setFormattedAddress(addressString);
         address.setIsGeocoded(false);
-        address.setGeocodingProvider("USER_INPUT");
+        address.setGeocodingProvider("FALLBACK");
 
-        // Default to University of Cape Town area for testing
-        // Latitude: -33.9249, Longitude: 18.4241
-        if (addressString.toLowerCase().contains("obs") || 
-            addressString.toLowerCase().contains("observatory")) {
+        String lower = addressString.toLowerCase();
+        
+        // CPUT Zonnebloem Campus (Main campus, District Six area)
+        if (lower.contains("cput") || lower.contains("zonnebloem") || lower.contains("wale street") || 
+            lower.contains("hanover street") || lower.contains("district six") || lower.contains("dorp street")) {
+            address.setLatitude(-33.9636);
+            address.setLongitude(18.4133);
+            address.setCity("Cape Town");
+            address.setProvince("Western Cape");
+            address.setCountry("South Africa");
+        }
+        // CPUT City Campus (De Waterkant/Signal Hill)
+        else if (lower.contains("city campus") || lower.contains("de waterkant") || 
+                 lower.contains("prestwich street") || lower.contains("signal hill")) {
+            address.setLatitude(-33.9250);
+            address.setLongitude(18.4167);
+            address.setCity("Cape Town");
+            address.setProvince("Western Cape");
+            address.setCountry("South Africa");
+        }
+        // Observatory area
+        else if (lower.contains("obs") || lower.contains("observatory")) {
             address.setLatitude(-33.9380);
             address.setLongitude(18.4728);
             address.setCity("Cape Town");
             address.setProvince("Western Cape");
             address.setCountry("South Africa");
+        }
+        // Other surrounding areas
+        else if (lower.contains("salt river")) {
+            address.setLatitude(-33.9510);
+            address.setLongitude(18.4367);
+        } else if (lower.contains("woodstock")) {
+            address.setLatitude(-33.9458);
+            address.setLongitude(18.4608);
+        } else if (lower.contains("mowbray")) {
+            address.setLatitude(-33.9380);
+            address.setLongitude(18.4728);
+        } else if (lower.contains("rondebosch")) {
+            address.setLatitude(-33.9380);
+            address.setLongitude(18.4728);
+        } else if (lower.contains("claremont")) {
+            address.setLatitude(-33.9636);
+            address.setLongitude(18.5250);
+        } else if (lower.contains("camps bay")) {
+            address.setLatitude(-33.9731);
+            address.setLongitude(18.3848);
+        } else if (lower.contains("newlands")) {
+            address.setLatitude(-33.9723);
+            address.setLongitude(18.4533);
         } else {
-            // Generic fallback (Cape Town city center)
-            address.setLatitude(-33.9249);
-            address.setLongitude(18.4241);
+            // Default to CPUT area (Cape Town city center bias)
+            address.setLatitude(-33.9636);
+            address.setLongitude(18.4133);
             address.setCity("Cape Town");
             address.setProvince("Western Cape");
             address.setCountry("South Africa");
@@ -282,15 +323,37 @@ public class GoogleMapsService {
 
         List<AddressSuggestionDto> suggestions = new ArrayList<>();
 
-        // Suggest common Cape Town locations
+        // CPUT Campus (Cape Peninsula University of Technology) area and surrounding Cape Town locations
         String[] commonLocations = {
+            // CPUT Main Campus Area (District Six/Zonnebloem area)
+            "CPUT, Zonnebloem Campus, Cape Town, South Africa",
+            "Wale Street, CPUT, Cape Town, South Africa",
+            "Hanover Street, Zonnebloem, Cape Town, South Africa",
+            "Constitution Street, Zonnebloem, Cape Town, South Africa",
+            "Dorp Street, Cape Town, South Africa",
+            "Buitengracht Street, Cape Town, South Africa",
+            
+            // CPUT City Campus (De Waterkant/Signal Hill)
+            "CPUT City Campus, De Waterkant, Cape Town, South Africa",
+            "Prestwich Street, De Waterkant, Cape Town, South Africa",
+            "Hans Strijdom Avenue, Signal Hill, Cape Town, South Africa",
+            
+            // Surrounding areas near CPUT
+            "Salt River, Cape Town, South Africa",
+            "District Six, Cape Town, South Africa",
+            "Schotsche Kloof, Cape Town, South Africa",
+            "Woodstock, Cape Town, South Africa",
             "Observatory, Cape Town, South Africa",
+            "Mowbray, Cape Town, South Africa",
+            "Rondebosch, Cape Town, South Africa",
+            "Claremont, Cape Town, South Africa",
+            
+            // Main roads and landmarks
             "Main Road, Observatory, Cape Town, South Africa",
             "University Avenue, Observatory, Cape Town, South Africa",
             "Camps Bay, Cape Town, South Africa",
-            "Claremont, Cape Town, South Africa",
-            "Rondebosch, Cape Town, South Africa",
-            "Newlands, Cape Town, South Africa"
+            "Newlands, Cape Town, South Africa",
+            "Totara Park, Rondebosch, Cape Town, South Africa"
         };
 
         for (String location : commonLocations) {
@@ -298,6 +361,7 @@ public class GoogleMapsService {
                 AddressSuggestionDto suggestion = new AddressSuggestionDto();
                 suggestion.setDescription(location);
                 suggestion.setMainText(location.split(",")[0]);
+                suggestion.setPlaceId("fallback-" + location.hashCode());
                 suggestions.add(suggestion);
             }
         }
