@@ -124,12 +124,14 @@ const CartPage = () => {
           .then((order: any) => {
             // Now confirm the payment (marks as PAID + CONFIRMED)
             const endpoint = paymentMethod === 'collection'
-              ? `/payment/confirm-collection/${order.id}`
-              : `/payment/confirm-cash/${order.id}`;
+              ? `/api/payment/confirm-collection/${order.id}`
+              : `/api/payment/confirm-cash/${order.id}`;
             
-            return fetch(endpoint, {
+            const fullUrl = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}${endpoint}`;
+            
+            return fetch(fullUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('duwaz_token')}` },
             }).then(res => {
               if (!res.ok) throw new Error('Payment confirmation failed');
               return order;
