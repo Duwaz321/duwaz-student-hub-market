@@ -125,7 +125,7 @@ const HomePage = () => {
     <div className="flex flex-col">
 
       {/* ── Hero Slideshow ── */}
-      <section className="w-full h-[55vh] md:h-[65vh] lg:h-[70vh]">
+      <section className="w-full h-[55vh] md:h-[65vh] lg:h-[min(58vh,560px)]">
         <Slideshow slides={slides} className="h-full rounded-none" />
       </section>
 
