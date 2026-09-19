@@ -63,6 +63,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 // Yoco webhook — must be public (Yoco calls it server-to-server, no JWT)
                 .requestMatchers(HttpMethod.POST, "/api/payment/webhook").permitAll()
+                // Catalog endpoints — public (categories, services, products)
+                .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
+                // Legacy product endpoints
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/businesses").permitAll()
