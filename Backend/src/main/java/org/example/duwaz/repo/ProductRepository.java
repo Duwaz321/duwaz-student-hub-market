@@ -68,11 +68,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryIdAndProductStatus(Long categoryId, Product.ProductStatus status, Pageable pageable);
     
     // Service-specific queries (product_type = 'SERVICE')
-    @Query("SELECT p FROM Product p WHERE p.productType = 'SERVICE' AND p.productStatus = :status")
-    Page<Product> findByProductTypeAndStatus(String productType, Product.ProductStatus status, Pageable pageable);
+    @Query("SELECT p FROM Product p WHERE p.productType = :productType AND p.productStatus = :status")
+    Page<Product> findByProductTypeAndStatus(@org.springframework.data.repository.query.Param("productType") String productType, @org.springframework.data.repository.query.Param("status") Product.ProductStatus status, Pageable pageable);
     
-    @Query("SELECT p FROM Product p WHERE p.productType = 'SERVICE' AND p.category.id = :categoryId AND p.productStatus = :status")
-    Page<Product> findByProductTypeAndCategoryAndStatus(String productType, Long categoryId, Product.ProductStatus status, Pageable pageable);
+    @Query("SELECT p FROM Product p WHERE p.productType = :productType AND p.category.id = :categoryId AND p.productStatus = :status")
+    Page<Product> findByProductTypeAndCategoryAndStatus(@org.springframework.data.repository.query.Param("productType") String productType, @org.springframework.data.repository.query.Param("categoryId") Long categoryId, @org.springframework.data.repository.query.Param("status") Product.ProductStatus status, Pageable pageable);
 
     // Count products by category and status
     @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = ?1 AND p.productStatus = ?2")
