@@ -167,15 +167,14 @@ const AdminDashboardPage = () => {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 15000 });
   const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 15000 });
   const unreadCount = unreadData?.unreadCount ?? 0;
+  const orders: Order[] = ordersPage?.content ?? [];
+  const totalPages = ordersPage?.totalPages ?? 1;
 
   // 🔔 Loud notifications for new messages and pending orders
   useNotifications({
     newOrderCount:   orders.filter((o: any) => o.status === 'PENDING').length,
     newMessageCount: unreadCount,
   });
-
-  const orders: Order[] = ordersPage?.content ?? [];
-  const totalPages = ordersPage?.totalPages ?? 1;
 
   const filteredOrders = orders.filter(o => {
     const matchSearch = !orderSearch || String(o.id).includes(orderSearch) || (o.student?.studentName ?? '').toLowerCase().includes(orderSearch.toLowerCase());
