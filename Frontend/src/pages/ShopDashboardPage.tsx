@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient as useQC } from '@tanstack/react-query';
 import {
@@ -201,6 +201,22 @@ const ShopDashboardPage = () => {
   const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
   const [stockDialogProduct, setStockDialogProduct] = useState<Product | null>(null);
   const [stockDelta, setStockDelta] = useState('');
+
+  useEffect(() => {
+    if (!shop) return;
+    const nextListingType = localStorage.getItem('duwaz_next_listing_type');
+    if (!nextListingType || (nextListingType !== 'PRODUCT' && nextListingType !== 'SERVICE')) return;
+
+    setProductForm(prev => ({ ...prev, productType: nextListingType }));
+    setProductDialogOpen(true);
+    localStorage.removeItem('duwaz_next_listing_type');
+    toast({
+      title: nextListingType === 'SERVICE' ? 'Create your service listing' : 'Create your product listing',
+      description: nextListingType === 'SERVICE'
+        ? 'Service listings are handled through direct messages with the shop.'
+        : 'Products can be added to cart and purchased normally.',
+    });
+  }, [shop, toast]);
 
   // Messaging state
   const [composeOpen, setComposeOpen] = useState(false);

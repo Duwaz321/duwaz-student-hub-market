@@ -54,6 +54,7 @@ const CreateShopPage = () => {
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [sellingType, setSellingType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -138,13 +139,17 @@ const CreateShopPage = () => {
       },
       {
         onSuccess: (createdShop) => {
+          const nextType = sellingType === 'SERVICE' ? 'SERVICE' : 'PRODUCT';
+          localStorage.setItem('duwaz_next_listing_type', nextType);
           setMyShops([...myShops, createdShop]);
           queryClient.invalidateQueries({ queryKey: ['businesses'] });
           toast({
             title: 'Shop created successfully!',
-            description: 'Your shop is now live in the marketplace.',
+            description: nextType === 'SERVICE'
+              ? 'Your shop is live and ready for service listings.'
+              : 'Your shop is live and ready for product listings.',
           });
-          navigate('/my-shops');
+          navigate(`/shop/${createdShop.id}`);
         },
         onError: (err) => {
           toast({
@@ -316,6 +321,40 @@ const CreateShopPage = () => {
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-3">Set your opening and closing time for each day, or mark days as closed.</p>
+          </section>
+
+          {/* ── Selling Type ───────────────────────────────────── */}
+          <section className="rounded-2xl border border-border/50 bg-duwaz-cream/20 p-4">
+            <h2 className="section-label mb-3 flex items-center gap-2">
+              <Tag className="h-3.5 w-3.5" /> What do you sell?
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSellingType('PRODUCT')}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  sellingType === 'PRODUCT'
+                    ? 'border-duwaz-brown bg-duwaz-brown/10 shadow-sm'
+                    : 'border-border bg-card hover:border-border/80'
+                }`}
+              >
+                <div className="font-semibold text-foreground">Physical Product</div>
+                <div className="text-xs text-muted-foreground mt-1">Products go into cart and checkout</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSellingType('SERVICE')}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  sellingType === 'SERVICE'
+                    ? 'border-blue-600 bg-blue-50 shadow-sm'
+                    : 'border-border bg-card hover:border-border/80'
+                }`}
+              >
+                <div className="font-semibold text-foreground">Service</div>
+                <div className="text-xs text-muted-foreground mt-1">Service buyers message the shop directly</div>
+              </button>
+            </div>
           </section>
 
           {/* ── Submit ──────────────────────────────────────────── */}
