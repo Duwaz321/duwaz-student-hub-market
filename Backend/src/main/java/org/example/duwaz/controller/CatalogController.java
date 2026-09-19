@@ -95,7 +95,7 @@ public class CatalogController {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Product> services = productRepository.findByProductTypeAndStatus(
-                    Product.ProductType.SERVICE.name(),
+                    Product.ProductType.SERVICE,
                     Product.ProductStatus.AVAILABLE,
                     pageable
             );
@@ -124,7 +124,7 @@ public class CatalogController {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Product> services = productRepository.findByProductTypeAndCategoryAndStatus(
-                    Product.ProductType.SERVICE.name(),
+                    Product.ProductType.SERVICE,
                     categoryId,
                     Product.ProductStatus.AVAILABLE,
                     pageable

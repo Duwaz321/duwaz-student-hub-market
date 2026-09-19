@@ -803,11 +803,9 @@ const ShopDashboardPage = () => {
               )}
             </div>
 
-            {/* ── Image uploader — only for PRODUCT type ── */}
-            {productForm.productType === 'PRODUCT' && (
             <div>
               <Label className="mb-2 block">
-                Product Images <span className="text-muted-foreground font-normal text-xs">(up to 4 · max 2MB each · JPG/PNG/WebP)</span>
+                {productForm.productType === 'SERVICE' ? 'Service Images' : 'Product Images'} <span className="text-muted-foreground font-normal text-xs">(up to 4 · max 2MB each · JPG/PNG/WebP)</span>
               </Label>
               <div className="grid grid-cols-4 gap-2">
                 {[0, 1, 2, 3].map(i => (
@@ -816,7 +814,7 @@ const ShopDashboardPage = () => {
                       <>
                         <img
                           src={productForm.images[i]!}
-                          alt={`Product image ${i + 1}`}
+                          alt={`${productForm.productType === 'SERVICE' ? 'Service' : 'Product'} image ${i + 1}`}
                           className="w-full h-full rounded-lg object-cover border border-border"
                         />
                         <button
@@ -856,7 +854,6 @@ const ShopDashboardPage = () => {
                 ))}
               </div>
             </div>
-            )}
 
             <div className="space-y-1"><Label>Name <span className="text-red-500">*</span></Label><Input value={productForm.name} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Cheese Chips" /></div>
             <div className="space-y-1"><Label>Description</Label><Textarea value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} className="min-h-[60px]" /></div>
@@ -891,7 +888,7 @@ const ShopDashboardPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setProductDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-duwaz-brown hover:bg-duwaz-brown/90" onClick={handleSaveProduct} disabled={isCreatingProduct || isUpdatingProduct}>{isCreatingProduct || isUpdatingProduct ? 'Saving...' : editingProduct ? 'Save Changes' : 'Add Product'}</Button>
+            <Button className="bg-duwaz-brown hover:bg-duwaz-brown/90" onClick={handleSaveProduct} disabled={isCreatingProduct || isUpdatingProduct}>{isCreatingProduct || isUpdatingProduct ? 'Saving...' : editingProduct ? 'Save Changes' : productForm.productType === 'SERVICE' ? 'Add Service' : 'Add Product'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

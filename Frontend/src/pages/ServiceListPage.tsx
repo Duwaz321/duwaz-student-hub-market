@@ -5,6 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
+
 interface Service {
   id: number;
   name: string;
@@ -37,7 +39,7 @@ const ServiceListPage = () => {
     // Fetch service categories
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/catalog/categories?includeEmpty=false', {
+        const response = await fetch(`${API_BASE_URL}/api/catalog/categories?includeEmpty=false`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -60,8 +62,8 @@ const ServiceListPage = () => {
       try {
         setLoading(true);
         const endpoint = selectedCategory
-          ? `/api/catalog/services/by-category/${selectedCategory}?page=${page}&size=${pageSize}`
-          : `/api/catalog/services?page=${page}&size=${pageSize}`;
+          ? `${API_BASE_URL}/api/catalog/services/by-category/${selectedCategory}?page=${page}&size=${pageSize}`
+          : `${API_BASE_URL}/api/catalog/services?page=${page}&size=${pageSize}`;
 
         const response = await fetch(endpoint, {
           method: 'GET',
