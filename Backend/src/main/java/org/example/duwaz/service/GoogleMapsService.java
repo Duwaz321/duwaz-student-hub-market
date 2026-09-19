@@ -275,75 +275,88 @@ public class GoogleMapsService {
 
     /**
      * Fallback geocoding when Google Maps API is not available.
-     * Returns reasonable default coordinates for testing.
+     * Prefer readable location names and postal codes over raw coordinate strings.
      */
     private AddressDto fallbackGeocodeAddress(String addressString) {
         logger.debug("Using fallback geocoding for: {}", addressString);
 
         AddressDto address = new AddressDto();
-        address.setFormattedAddress(addressString);
         address.setIsGeocoded(false);
         address.setGeocodingProvider("FALLBACK");
 
-        String lower = addressString.toLowerCase();
-        
-        // CPUT Zonnebloem Campus (Main campus, District Six area)
-        if (lower.contains("cput") || lower.contains("zonnebloem") || lower.contains("wale street") || 
-            lower.contains("hanover street") || lower.contains("district six") || lower.contains("dorp street")) {
-            address.setLatitude(-33.9636);
-            address.setLongitude(18.4133);
+        String rawInput = addressString == null ? "" : addressString.trim();
+        String lower = rawInput.toLowerCase(Locale.ROOT);
+
+        if (rawInput.matches("^-?\\d+(?:\\.\\d+)?\\s*[, ]\\s*-?\\d+(?:\\.\\d+)?$")) {
+            String normalized = rawInput.replace(" ", "");
+            String[] parts = normalized.split(",");
+            try {
+                address.setLatitude(Double.parseDouble(parts[0]));
+                address.setLongitude(Double.parseDouble(parts[1]));
+            } catch (Exception e) {
+                address.setLatitude(-33.9269);
+                address.setLongitude(18.4395);
+            }
+            address.setFormattedAddress("Cape Town CBD, Cape Town, South Africa");
             address.setCity("Cape Town");
             address.setProvince("Western Cape");
             address.setCountry("South Africa");
-        }
-        // CPUT City Campus (De Waterkant/Signal Hill)
-        else if (lower.contains("city campus") || lower.contains("de waterkant") || 
-                 lower.contains("prestwich street") || lower.contains("signal hill")) {
-            address.setLatitude(-33.9250);
-            address.setLongitude(18.4167);
-            address.setCity("Cape Town");
-            address.setProvince("Western Cape");
-            address.setCountry("South Africa");
-        }
-        // Observatory area
-        else if (lower.contains("obs") || lower.contains("observatory")) {
-            address.setLatitude(-33.9380);
-            address.setLongitude(18.4728);
-            address.setCity("Cape Town");
-            address.setProvince("Western Cape");
-            address.setCountry("South Africa");
-        }
-        // Other surrounding areas
-        else if (lower.contains("salt river")) {
-            address.setLatitude(-33.9510);
-            address.setLongitude(18.4367);
-        } else if (lower.contains("woodstock")) {
-            address.setLatitude(-33.9458);
-            address.setLongitude(18.4608);
-        } else if (lower.contains("mowbray")) {
-            address.setLatitude(-33.9380);
-            address.setLongitude(18.4728);
-        } else if (lower.contains("rondebosch")) {
-            address.setLatitude(-33.9380);
-            address.setLongitude(18.4728);
-        } else if (lower.contains("claremont")) {
-            address.setLatitude(-33.9636);
-            address.setLongitude(18.5250);
-        } else if (lower.contains("camps bay")) {
-            address.setLatitude(-33.9731);
-            address.setLongitude(18.3848);
-        } else if (lower.contains("newlands")) {
-            address.setLatitude(-33.9723);
-            address.setLongitude(18.4533);
-        } else {
-            // Default to CPUT area (Cape Town city center bias)
-            address.setLatitude(-33.9636);
-            address.setLongitude(18.4133);
-            address.setCity("Cape Town");
-            address.setProvince("Western Cape");
-            address.setCountry("South Africa");
+            return address;
         }
 
+        if (lower.contains("castle") || lower.contains("good hope")) {
+            address.setLatitude(-33.9269);
+            address.setLongitude(18.4395);
+            address.setFormattedAddress("Castle of Good Hope, Cape Town, South Africa");
+        } else if (lower.contains("greenmarket") || lower.contains("company gardens")) {
+            address.setLatitude(-33.9252);
+            address.setLongitude(18.4171);
+            address.setFormattedAddress("Company Gardens, Cape Town, South Africa");
+        } else if (lower.contains("waterfront") || lower.contains("v&a") || lower.contains("va waterfront")) {
+            address.setLatitude(-33.9067);
+            address.setLongitude(18.4173);
+            address.setFormattedAddress("V&A Waterfront, Cape Town, South Africa");
+        } else if (lower.contains("table mountain") || lower.contains("signal hill")) {
+            address.setLatitude(-33.9628);
+            address.setLongitude(18.4102);
+            address.setFormattedAddress("Table Mountain, Cape Town, South Africa");
+        } else if (lower.contains("long street") || lower.contains("bree street") || lower.contains("adderley") || lower.contains("loop street") || lower.contains("kloof street")) {
+            address.setLatitude(-33.9255);
+            address.setLongitude(18.4192);
+            address.setFormattedAddress("Cape Town CBD, Cape Town, South Africa");
+        } else if (lower.contains("uct") || lower.contains("rondebosch") || lower.contains("mowbray") || lower.contains("observatory")) {
+            address.setLatitude(-33.9580);
+            address.setLongitude(18.4600);
+            address.setFormattedAddress("University of Cape Town, Rondebosch, Cape Town, South Africa");
+        } else if (lower.contains("cput") || lower.contains("zonnebloem") || lower.contains("wale street") || lower.contains("hanover street") || lower.contains("district six") || lower.contains("dorp street")) {
+            address.setLatitude(-33.9636);
+            address.setLongitude(18.4133);
+            address.setFormattedAddress("CPUT, Zonnebloem Campus, Cape Town, South Africa");
+        } else if (lower.contains("city campus") || lower.contains("de waterkant") || lower.contains("prestwich street")) {
+            address.setLatitude(-33.9250);
+            address.setLongitude(18.4167);
+            address.setFormattedAddress("CPUT City Campus, De Waterkant, Cape Town, South Africa");
+        } else if (lower.contains("salt river") || lower.contains("woodstock")) {
+            address.setLatitude(-33.9470);
+            address.setLongitude(18.4560);
+            address.setFormattedAddress("Woodstock, Cape Town, South Africa");
+        } else if (lower.contains("claremont") || lower.contains("newlands") || lower.contains("camps bay") || lower.contains("sea point") || lower.contains("green point") || lower.contains("bo-kaap") || lower.contains("gardens")) {
+            address.setLatitude(-33.9269);
+            address.setLongitude(18.4395);
+            address.setFormattedAddress("Cape Town CBD, Cape Town, South Africa");
+        } else if (lower.matches(".*\\b(?:8000|8001|8002|8005|8060|7925|7700|8040|7080|7180)\\b.*")) {
+            address.setLatitude(-33.9269);
+            address.setLongitude(18.4395);
+            address.setFormattedAddress("Cape Town CBD, Cape Town, South Africa");
+        } else {
+            address.setLatitude(-33.9269);
+            address.setLongitude(18.4395);
+            address.setFormattedAddress("Cape Town CBD, Cape Town, South Africa");
+        }
+
+        address.setCity("Cape Town");
+        address.setProvince("Western Cape");
+        address.setCountry("South Africa");
         return address;
     }
 
@@ -353,43 +366,57 @@ public class GoogleMapsService {
     private List<AddressSuggestionDto> fallbackAutocompleteSuggestions(String input) {
         logger.debug("Using fallback autocomplete for: {}", input);
 
+        if (input == null || input.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        String normalizedInput = input.trim().toLowerCase(Locale.ROOT).replace("&", "and");
+        String sanitizedInput = normalizedInput.replaceAll("[^a-z0-9 ]", "").trim();
         List<AddressSuggestionDto> suggestions = new ArrayList<>();
 
-        // CPUT Campus (Cape Peninsula University of Technology) area and surrounding Cape Town locations
         String[] commonLocations = {
-            // CPUT Main Campus Area (District Six/Zonnebloem area)
-            "CPUT, Zonnebloem Campus, Cape Town, South Africa",
-            "Wale Street, CPUT, Cape Town, South Africa",
-            "Hanover Street, Zonnebloem, Cape Town, South Africa",
-            "Constitution Street, Zonnebloem, Cape Town, South Africa",
-            "Dorp Street, Cape Town, South Africa",
-            "Buitengracht Street, Cape Town, South Africa",
-            
-            // CPUT City Campus (De Waterkant/Signal Hill)
-            "CPUT City Campus, De Waterkant, Cape Town, South Africa",
-            "Prestwich Street, De Waterkant, Cape Town, South Africa",
-            "Hans Strijdom Avenue, Signal Hill, Cape Town, South Africa",
-            
-            // Surrounding areas near CPUT
-            "Salt River, Cape Town, South Africa",
-            "District Six, Cape Town, South Africa",
-            "Schotsche Kloof, Cape Town, South Africa",
-            "Woodstock, Cape Town, South Africa",
-            "Observatory, Cape Town, South Africa",
-            "Mowbray, Cape Town, South Africa",
-            "Rondebosch, Cape Town, South Africa",
-            "Claremont, Cape Town, South Africa",
-            
-            // Main roads and landmarks
-            "Main Road, Observatory, Cape Town, South Africa",
-            "University Avenue, Observatory, Cape Town, South Africa",
-            "Camps Bay, Cape Town, South Africa",
-            "Newlands, Cape Town, South Africa",
-            "Totara Park, Rondebosch, Cape Town, South Africa"
+            "Cape Town CBD, 8001, South Africa",
+            "Long Street, 8001, Cape Town, South Africa",
+            "Bree Street, 8001, Cape Town, South Africa",
+            "Loop Street, 8001, Cape Town, South Africa",
+            "Adderley Street, 8001, Cape Town, South Africa",
+            "Greenmarket Square, 8001, Cape Town, South Africa",
+            "Castle of Good Hope, 8001, Cape Town, South Africa",
+            "Company Gardens, 8001, Cape Town, South Africa",
+            "V&A Waterfront, 8002, Cape Town, South Africa",
+            "Waterfront, 8002, Cape Town, South Africa",
+            "Kloof Street, 8001, Cape Town, South Africa",
+            "Gardens, 8001, Cape Town, South Africa",
+            "Foreshore, 8001, Cape Town, South Africa",
+            "Bo-Kaap, 8001, Cape Town, South Africa",
+            "Vredehoek, 8001, Cape Town, South Africa",
+            "Tamboerskloof, 8001, Cape Town, South Africa",
+            "Oranjezicht, 8001, Cape Town, South Africa",
+            "Green Point, 8001, Cape Town, South Africa",
+            "Sea Point, 8060, Cape Town, South Africa",
+            "Table Mountain, 8001, Cape Town, South Africa",
+            "City Hall, 8001, Cape Town, South Africa",
+            "Signal Hill, 8001, Cape Town, South Africa",
+            "CPUT, Zonnebloem Campus, 8000, Cape Town, South Africa",
+            "Wale Street, 8001, Cape Town, South Africa",
+            "Hanover Street, 8001, Cape Town, South Africa",
+            "District Six, 8000, Cape Town, South Africa",
+            "Salt River, 7925, Cape Town, South Africa",
+            "Woodstock, 7925, Cape Town, South Africa",
+            "Observatory, 7925, Cape Town, South Africa",
+            "Mowbray, 7700, Cape Town, South Africa",
+            "Rondebosch, 7700, Cape Town, South Africa",
+            "Claremont, 7700, Cape Town, South Africa",
+            "University of Cape Town, 7700, Rondebosch, Cape Town, South Africa",
+            "UCT, 7700, Rondebosch, Cape Town, South Africa",
+            "Camps Bay, 8040, Cape Town, South Africa",
+            "Newlands, 7700, Cape Town, South Africa",
+            "Totara Park, 7700, Rondebosch, Cape Town, South Africa"
         };
 
         for (String location : commonLocations) {
-            if (location.toLowerCase().contains(input.toLowerCase())) {
+            String lowerLocation = location.toLowerCase(Locale.ROOT);
+            if (matchesFallbackLocation(sanitizedInput, lowerLocation)) {
                 AddressSuggestionDto suggestion = new AddressSuggestionDto();
                 suggestion.setDescription(location);
                 suggestion.setMainText(location.split(",")[0]);
@@ -398,7 +425,71 @@ public class GoogleMapsService {
             }
         }
 
+        if (!suggestions.isEmpty()) {
+            return suggestions;
+        }
+
+        String[] landMarks = {
+            "cbd", "city bowl", "castle", "greenmarket", "company gardens", "waterfront",
+            "table mountain", "long street", "bree street", "kloof street",
+            "gardens", "bo kaap", "uct", "university of cape town", "observatory",
+            "8001", "8002", "7925", "7700"
+        };
+
+        for (String alias : landMarks) {
+            if (sanitizedInput.contains(alias) || alias.contains(sanitizedInput)) {
+                String label = switch (alias) {
+                    case "castle" -> "Castle of Good Hope, 8001, Cape Town, South Africa";
+                    case "greenmarket" -> "Greenmarket Square, 8001, Cape Town, South Africa";
+                    case "company gardens" -> "Company Gardens, 8001, Cape Town, South Africa";
+                    case "waterfront" -> "V&A Waterfront, 8002, Cape Town, South Africa";
+                    case "table mountain" -> "Table Mountain, 8001, Cape Town, South Africa";
+                    case "long street" -> "Long Street, 8001, Cape Town, South Africa";
+                    case "bree street" -> "Bree Street, 8001, Cape Town, South Africa";
+                    case "kloof street" -> "Kloof Street, 8001, Cape Town, South Africa";
+                    case "gardens" -> "Gardens, 8001, Cape Town, South Africa";
+                    case "bo kaap" -> "Bo-Kaap, 8001, Cape Town, South Africa";
+                    case "uct", "university of cape town" -> "University of Cape Town, 7700, Rondebosch, Cape Town, South Africa";
+                    case "cbd", "city bowl" -> "Cape Town CBD, 8001, South Africa";
+                    case "8001", "8002", "7925", "7700" -> "Cape Town CBD, " + alias + ", South Africa";
+                    default -> "Cape Town CBD, 8001, South Africa";
+                };
+
+                AddressSuggestionDto suggestion = new AddressSuggestionDto();
+                suggestion.setDescription(label);
+                suggestion.setMainText(label.split(",")[0]);
+                suggestion.setPlaceId("fallback-alias-" + alias.hashCode());
+                suggestions.add(suggestion);
+            }
+        }
+
         return suggestions;
+    }
+
+    private boolean matchesFallbackLocation(String normalizedInput, String lowerLocation) {
+        if (normalizedInput.isEmpty()) {
+            return true;
+        }
+
+        if (normalizedInput.matches("\\d{3,5}")) {
+            return lowerLocation.contains(normalizedInput);
+        }
+
+        String[] searchableTokens = {
+            "cape town", "cbd", "city bowl", "waterfront", "castle", "greenmarket",
+            "company gardens", "table mountain", "signal hill", "long street", "bree street",
+            "adderley", "loop street", "kloof street", "gardens", "bo kaap", "district six",
+            "zonnebloem", "de waterkant", "observatory", "mowbray", "rondebosch", "claremont",
+            "uct", "newlands", "camps bay", "sea point", "green point", "8001", "8002", "7925", "7700"
+        };
+
+        for (String token : searchableTokens) {
+            if (normalizedInput.contains(token) || token.contains(normalizedInput) || lowerLocation.contains(normalizedInput) || lowerLocation.contains(token)) {
+                return true;
+            }
+        }
+
+        return lowerLocation.contains(normalizedInput);
     }
 
     /**
