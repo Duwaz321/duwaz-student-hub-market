@@ -11,6 +11,7 @@ import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import type { AddressDetails } from '@/hooks/useGoogleMapsAutocomplete';
 
 type PaymentMethod = 'collection' | 'cash' | 'yoco';
+const MIN_DELIVERY_FEE = 10;
 
 const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; sub: string; icon: React.ElementType; color: string }[] = [
   {
@@ -54,8 +55,8 @@ const CartPage = () => {
   const needsAddress = paymentMethod !== 'collection' && !isServiceOrder;
   const effectiveAddress = useMyResidence ? (user?.locationAddress ?? '') : (customAddress?.formattedAddress || customAddressString);
 
-  // Total = product prices × quantities only — no separate delivery fee
-  const total = subtotal;
+  const deliveryFee = needsAddress ? MIN_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee;
 
   const handleRemove = (id: number, name: string) => {
     removeItem(id);
@@ -124,7 +125,7 @@ const CartPage = () => {
       import('@/services/api').then(({ ordersApi, paymentApi }) => {
         ordersApi.create({
           totalAmount: shopTotal,
-          deliveryFee: 0,
+          deliveryFee,
           status: 'PENDING',
           deliveryAddress: deliveryAddressValue,
           paymentMethod,
@@ -170,7 +171,7 @@ const CartPage = () => {
     // ── Yoco online payment ───────────────────────────────────────────────────
     import('@/services/api').then(({ paymentApi }) => {
       paymentApi.initiate({
-        totalAmount: shopTotal,
+        totalAmount: shopTotal + deliveryFee,
         deliveryAddress: effectiveAddress.trim(),
         businessId: Number(shopId),
         items: shopItems.map(item => ({
@@ -357,7 +358,7 @@ const CartPage = () => {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>🚚 Delivery</span>
-                  <span className="text-green-600 font-medium">Free</span>
+                  <span className="font-medium">{deliveryFee === 0 ? 'Free' : `R${deliveryFee.toFixed(2)}`}</span>
                 </div>
                 <div className="pt-2 border-t flex justify-between font-bold text-lg">
                   <span>Total</span>

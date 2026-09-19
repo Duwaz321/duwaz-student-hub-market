@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getStatusBadge } from '@/lib/orderUtils';
 import NotificationSettings from '@/components/NotificationSettings';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 const AccountPage = () => {
   const { toast } = useToast();
@@ -296,13 +297,21 @@ const AccountPage = () => {
                       {/* Location Address */}
                       <div className="space-y-1">
                         <Label htmlFor="locationAddress">Location Address</Label>
-                        <Input
-                          id="locationAddress"
-                          placeholder="e.g. Room 204, Res Block B"
-                          value={isEditing ? editForm.locationAddress : (student?.locationAddress ?? '')}
-                          onChange={(e) => setEditForm(p => ({ ...p, locationAddress: e.target.value }))}
-                          disabled={!isEditing}
-                        />
+                        {isEditing ? (
+                          <AddressAutocomplete
+                            value={editForm.locationAddress ? {
+                              formattedAddress: editForm.locationAddress,
+                              latitude: 0,
+                              longitude: 0,
+                            } : null}
+                            placeholder="Search your exact address on Google Maps..."
+                            showValidation={false}
+                            onAddressChange={(address) => setEditForm(p => ({ ...p, locationAddress: address }))}
+                            disabled={!isEditing}
+                          />
+                        ) : (
+                          <Input id="locationAddress" value={student?.locationAddress ?? ''} disabled />
+                        )}
                       </div>
                     </>
                   )}

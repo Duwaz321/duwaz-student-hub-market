@@ -55,6 +55,7 @@ export const AddressAutocomplete = React.forwardRef<
     error,
     setInput,
     selectSuggestion,
+    geocodeAddress,
     getCurrentLocation,
     validateAddress,
     clearSuggestions,
@@ -118,9 +119,13 @@ export const AddressAutocomplete = React.forwardRef<
     const location = await getCurrentLocation();
     if (location) {
       setInput(`Loading address for ${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}...`);
-      // In a real app, you'd reverse-geocode these coordinates
-      // For now, just show the coordinates
-      setInput(`My Location (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)})`);
+      const address = await geocodeAddress(`${location.lat}, ${location.lon}`);
+      if (address) {
+        onChange?.(address);
+        onAddressChange?.(address.formattedAddress);
+      } else {
+        setInput(`My Location (${location.lat.toFixed(4)}, ${location.lon.toFixed(4)})`);
+      }
     }
   };
 

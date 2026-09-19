@@ -10,6 +10,7 @@ import org.example.duwaz.repo.BusinessRepository;
 import org.example.duwaz.repo.OrderRepository;
 import org.example.duwaz.repo.ProductRepository;
 import org.example.duwaz.repo.StudentRepository;
+import org.example.duwaz.service.OrderService;
 import org.example.duwaz.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,8 +61,16 @@ public class PaymentController {
             Order order = new Order();
             order.setStudent(student);
             order.setBusiness(business);
-            order.setTotalAmount(req.getTotalAmount());
             order.setDeliveryAddress(req.getDeliveryAddress());
+            BigDecimal productSubtotal = req.getItems() == null ? BigDecimal.ZERO : req.getItems().stream()
+                     .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            boolean deliveryRequired = req.getDeliveryAddress() != null
+                     && !"COLLECTION".equalsIgnoreCase(req.getDeliveryAddress())
+                     && !"SERVICE_NO_DELIVERY".equalsIgnoreCase(req.getDeliveryAddress());
+            BigDecimal deliveryFee = deliveryRequired ? OrderService.MIN_DELIVERY_FEE : BigDecimal.ZERO;
+            order.setDeliveryFee(deliveryFee);
+            order.setTotalAmount(productSubtotal.add(deliveryFee));
             order.setStatus(Order.OrderStatus.PENDING);
             order.setPaymentStatus(PaymentStatus.PENDING);
             order.setPaymentMethod("YOCO");
@@ -86,7 +95,7 @@ public class PaymentController {
 
             // Call Yoco Checkout API
             // Amount must be in CENTS (integer)
-            long amountInCents = req.getTotalAmount()
+            long amountInCents = order.getTotalAmount()
                     .multiply(BigDecimal.valueOf(100))
                     .longValue();
 

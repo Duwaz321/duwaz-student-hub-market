@@ -5,29 +5,58 @@ import org.example.duwaz.dto.AddressSuggestionDto;
 import org.example.duwaz.util.GeoLocationUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
 /**
  * Google Maps API service for geocoding, address validation, and location services.
  * 
- * Note: This is a stub implementation. For production, integrate with actual Google Maps API:
- * - Add google-maps-services dependency to pom.xml
- * - Get API key from Google Cloud Console
- * - Enable Geocoding API, Places API, Distance Matrix API
+ * Uses Google's Places and Geocoding REST APIs when enabled, with local fallbacks for development.
  */
 @Service
 public class GoogleMapsService {
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleMapsService.class);
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${google.maps.api.key:YOUR_API_KEY_HERE}")
     private String googleMapsApiKey;
 
     @Value("${google.maps.enabled:false}")
     private boolean googleMapsEnabled;
+
+    private AddressDto parseGoogleAddress(JsonNode node) {
+        AddressDto address = new AddressDto();
+        address.setFormattedAddress(node.path("formatted_address").asText());
+        address.setPlaceId(node.path("place_id").asText(null));
+        address.setLatitude(node.path("geometry").path("location").path("lat").asDouble());
+        address.setLongitude(node.path("geometry").path("location").path("lng").asDouble());
+        address.setIsGeocoded(true);
+        address.setGeocodingProvider("GOOGLE_MAPS");
+        address.setGeocodedAt(System.currentTimeMillis());
+        for (JsonNode component : node.path("address_components")) {
+            String value = component.path("long_name").asText();
+            for (JsonNode type : component.path("types")) {
+                switch (type.asText()) {
+                    case "street_number", "route" -> address.setStreetAddress(
+                            address.getStreetAddress() == null ? value : address.getStreetAddress() + " " + value);
+                    case "locality", "postal_town" -> address.setCity(value);
+                    case "postal_code" -> address.setPostalCode(value);
+                    case "country" -> address.setCountry(value);
+                    case "administrative_area_level_1" -> address.setProvince(value);
+                    default -> { }
+                }
+            }
+        }
+        return address;
+    }
 
     /**
      * Geocode an address string to coordinates.
@@ -42,18 +71,15 @@ public class GoogleMapsService {
         }
 
         try {
-            // TODO: Implement actual Google Geocoding API call
-            // GeoApiContext context = new GeoApiContext.Builder()
-            //     .apiKey(googleMapsApiKey)
-            //     .build();
-            // GeocodingResult[] results = GeocodingApi.geocode(context, addressString).await();
-            // if (results.length > 0) {
-            //     LatLng location = results[0].geometry.location;
-            //     return parseGeocodeResult(results[0], addressString);
-            // }
-
-            logger.info("Geocoding address: {}", addressString);
-            return fallbackGeocodeAddress(addressString);
+            String url = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/geocode/json")
+                    .queryParam("address", addressString)
+                    .queryParam("key", googleMapsApiKey)
+                    .queryParam("region", "za")
+                    .build().toUriString();
+            JsonNode result = objectMapper.readTree(restTemplate.getForObject(url, String.class));
+            JsonNode first = result.path("results").path(0);
+            if (first.isMissingNode()) return fallbackGeocodeAddress(addressString);
+            return parseGoogleAddress(first);
 
         } catch (Exception e) {
             logger.error("Error geocoding address: {}", addressString, e);
@@ -78,18 +104,24 @@ public class GoogleMapsService {
         }
 
         try {
-            // TODO: Implement actual Google Places Autocomplete API call
-            // PlacesRequestParams params = new PlacesRequestParams()
-            //     .input(input)
-            //     .components(new String[]{"country:za"})  // Restrict to South Africa
-            //     .sessionToken(sessionToken);
-            // if (latitude != null && longitude != null) {
-            //     params.location(latitude, longitude).radius(50000);  // Bias to 50km radius
-            // }
-            // AutocompletePrediction[] predictions = PlacesApi.placeAutocomplete(context, params).await();
-
-            logger.info("Getting autocomplete suggestions for: {}", input);
-            return fallbackAutocompleteSuggestions(input);
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/autocomplete/json")
+                    .queryParam("input", input)
+                    .queryParam("components", "country:za")
+                    .queryParam("key", googleMapsApiKey);
+            if (latitude != null && longitude != null) {
+                builder.queryParam("location", latitude + "," + longitude).queryParam("radius", 50000);
+            }
+            JsonNode root = objectMapper.readTree(restTemplate.getForObject(builder.build().toUriString(), String.class));
+            List<AddressSuggestionDto> result = new ArrayList<>();
+            for (JsonNode prediction : root.path("predictions")) {
+                AddressSuggestionDto dto = new AddressSuggestionDto();
+                dto.setPlaceId(prediction.path("place_id").asText());
+                dto.setDescription(prediction.path("description").asText());
+                dto.setMainText(prediction.path("structured_formatting").path("main_text").asText());
+                dto.setSecondaryText(prediction.path("structured_formatting").path("secondary_text").asText());
+                result.add(dto);
+            }
+            return result;
 
         } catch (Exception e) {
             logger.error("Error getting autocomplete suggestions: {}", input, e);
@@ -111,13 +143,13 @@ public class GoogleMapsService {
         }
 
         try {
-            // TODO: Implement actual Google Places Details API call
-            // PlaceDetailsRequest request = PlacesApi.placeDetails(context, placeId);
-            // PlaceDetail detail = request.await();
-            // return parsePlaceDetail(detail);
-
-            logger.info("Getting place details for place ID: {}", placeId);
-            return new AddressDto();
+            String url = UriComponentsBuilder.fromUriString("https://maps.googleapis.com/maps/api/place/details/json")
+                    .queryParam("place_id", placeId)
+                    .queryParam("fields", "place_id,formatted_address,address_components,geometry,types")
+                    .queryParam("key", googleMapsApiKey)
+                    .build().toUriString();
+            JsonNode result = objectMapper.readTree(restTemplate.getForObject(url, String.class));
+            return parseGoogleAddress(result.path("result"));
 
         } catch (Exception e) {
             logger.error("Error getting place details for: {}", placeId, e);

@@ -11,12 +11,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @Transactional
 public class OrderService {
+
+    public static final BigDecimal MIN_DELIVERY_FEE = BigDecimal.TEN;
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
@@ -27,6 +30,7 @@ public class OrderService {
     }
 
     public Order createOrder(Order order) {
+        BigDecimal productSubtotal = BigDecimal.ZERO;
         // Validate stock for all items before creating order
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
@@ -43,8 +47,15 @@ public class OrderService {
                 
                 // Link each item back to the order
                 item.setOrder(order);
+                productSubtotal = productSubtotal.add(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             }
         }
+        boolean deliveryRequired = order.getDeliveryAddress() != null
+                && !"COLLECTION".equalsIgnoreCase(order.getDeliveryAddress())
+                && !"SERVICE_NO_DELIVERY".equalsIgnoreCase(order.getDeliveryAddress());
+        BigDecimal deliveryFee = deliveryRequired ? MIN_DELIVERY_FEE : BigDecimal.ZERO;
+        order.setDeliveryFee(deliveryFee);
+        order.setTotalAmount(productSubtotal.add(deliveryFee));
         return orderRepository.save(order);
     }
 

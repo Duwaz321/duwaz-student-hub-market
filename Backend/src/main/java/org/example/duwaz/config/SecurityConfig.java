@@ -65,6 +65,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/payment/webhook").permitAll()
                 // Catalog endpoints — public (categories, services, products)
                 .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
+                // Address search and geocoding are needed before sign-in on registration
+                .requestMatchers("/api/locations/**").permitAll()
                 // Legacy product endpoints
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()

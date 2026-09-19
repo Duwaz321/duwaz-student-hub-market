@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle2, Mail, RefreshCw } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/services/api';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 // ── Field defined OUTSIDE component to prevent focus-loss remounting ──────────
 interface FieldProps {
@@ -331,11 +332,11 @@ const RegisterPage = () => {
             {/* Location */}
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-1.5">Location Address <span className="text-muted-foreground font-normal">(optional)</span></label>
-              <input
-                name="locationAddress" type="text"
-                placeholder="e.g. Room 204, Res Block B, DUT Campus"
-                value={formData.locationAddress} onChange={handleChange}
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background dark:bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-duwaz-brown/25 focus:border-duwaz-brown transition-all"
+              <AddressAutocomplete
+                label=""
+                placeholder="Search your address on Google Maps..."
+                showValidation={false}
+                onAddressChange={(address) => setFormData(prev => ({ ...prev, locationAddress: address }))}
               />
               <p className="text-xs text-muted-foreground mt-1">Used as your default delivery address. You can update this later.</p>
             </div>

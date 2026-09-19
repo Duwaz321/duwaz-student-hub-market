@@ -44,6 +44,7 @@ export interface AddressDetails {
  */
 export const useGoogleMapsAutocomplete = () => {
   const { toast } = useToast();
+  const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -78,7 +79,7 @@ export const useGoogleMapsAutocomplete = () => {
         }),
       });
 
-      const response = await fetch(`/api/locations/autocomplete?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/locations/autocomplete?${params}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -135,7 +136,7 @@ export const useGoogleMapsAutocomplete = () => {
 
     try {
       // Fetch full details from backend
-      const response = await fetch(`/api/locations/place/${suggestion.placeId}`);
+      const response = await fetch(`${API_BASE_URL}/api/locations/place/${suggestion.placeId}`);
       const details = await response.json();
 
       if (!response.ok) {
@@ -170,7 +171,7 @@ export const useGoogleMapsAutocomplete = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/locations/geocode', {
+      const response = await fetch(`${API_BASE_URL}/api/locations/geocode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address }),
@@ -197,7 +198,7 @@ export const useGoogleMapsAutocomplete = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [API_BASE_URL, toast]);
 
   /**
    * Get current location using browser geolocation API
@@ -239,7 +240,7 @@ export const useGoogleMapsAutocomplete = () => {
         }
       );
     });
-  }, [toast]);
+  }, [geocodeAddress, toast]);
 
   /**
    * Validate if address is in service area
@@ -251,7 +252,7 @@ export const useGoogleMapsAutocomplete = () => {
     try {
       const addressString = typeof address === 'string' ? address : address.formattedAddress;
 
-      const response = await fetch('/api/locations/validate', {
+      const response = await fetch(`${API_BASE_URL}/api/locations/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: addressString }),
@@ -286,7 +287,7 @@ export const useGoogleMapsAutocomplete = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/locations/distance', {
+      const response = await fetch(`${API_BASE_URL}/api/locations/distance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
