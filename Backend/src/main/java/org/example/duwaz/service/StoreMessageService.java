@@ -46,6 +46,18 @@ public class StoreMessageService {
         return messageRepository.save(msg);
     }
 
+    public StoreMessage sendServiceInquiry(Business business, Student customer, String subject, String content) {
+        StoreMessage msg = new StoreMessage();
+        msg.setBusiness(business);
+        msg.setCustomer(customer);
+        msg.setMessageType(MessageType.SERVICE_INQUIRY);
+        msg.setSubject(subject);
+        msg.setContent(content);
+        msg.setStatus(MessageStatus.UNREAD);
+        msg.setFromAdmin(false);
+        return messageRepository.save(msg);
+    }
+
     public StoreMessage requestDelivery(Business business, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));

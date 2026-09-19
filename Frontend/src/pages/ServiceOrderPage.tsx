@@ -66,7 +66,7 @@ const ServiceOrderPage = () => {
         ? `Service Inquiry: ${serviceItems.map(i => i.name).join(', ')}`
         : 'Service Inquiry';
 
-      await messagesApi.send(subject, messageContent);
+      await messagesApi.sendServiceInquiry(shopId, subject, messageContent);
 
       toast({
         title: '✅ Message sent!',

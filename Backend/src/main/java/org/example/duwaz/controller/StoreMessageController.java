@@ -64,6 +64,24 @@ public class StoreMessageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(messageService.sendMessage(biz.get(), subject, content));
     }
 
+    @PostMapping("/service-inquiry/{businessId}")
+    public ResponseEntity<?> sendServiceInquiry(@PathVariable Long businessId,
+                                                  @RequestBody Map<String, String> body,
+                                                  Authentication auth) {
+        Business business = businessRepository.findById(businessId).orElse(null);
+        Student customer = studentRepository.findByEmail(auth.getName()).orElse(null);
+        if (business == null || customer == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String content = body.get("content");
+        if (content == null || content.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Content required");
+        }
+        String subject = body.getOrDefault("subject", "Service Inquiry");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(messageService.sendServiceInquiry(business, customer, subject, content.trim()));
+    }
+
     @PostMapping("/request-delivery/{orderId}")
     public ResponseEntity<?> requestDelivery(@PathVariable Long orderId, Authentication auth) {
         Optional<Business> biz = getOwnerBusiness(auth);

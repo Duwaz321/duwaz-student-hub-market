@@ -13,7 +13,8 @@ public class StoreMessage {
         DELIVERY_REQUEST,   // Shop owner → admin structured delivery request
         ADMIN_REPLY,        // Admin → shop owner reply
         DRIVER_MESSAGE,     // Admin → driver (forwarded delivery or instructions)
-        DRIVER_REPLY        // Driver → admin reply
+        DRIVER_REPLY,       // Driver → admin reply
+        SERVICE_INQUIRY     // Customer → service shop
     }
 
     public enum MessageStatus {
@@ -29,6 +30,12 @@ public class StoreMessage {
     @JoinColumn(name = "business_id")
     @JsonIgnoreProperties({"student", "businesses", "hibernateLazyInitializer", "handler"})
     private Business business;
+
+    /** Customer who initiated a service inquiry, when applicable. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id")
+    @JsonIgnoreProperties({"password", "businesses", "hibernateLazyInitializer", "handler"})
+    private Student customer;
 
     /** The driver involved — nullable for shop-only messages */
     @ManyToOne(fetch = FetchType.EAGER)
@@ -85,6 +92,9 @@ public class StoreMessage {
 
     public Business getBusiness() { return business; }
     public void setBusiness(Business business) { this.business = business; }
+
+    public Student getCustomer() { return customer; }
+    public void setCustomer(Student customer) { this.customer = customer; }
 
     public DeliverDriver getDriver() { return driver; }
     public void setDriver(DeliverDriver driver) { this.driver = driver; }

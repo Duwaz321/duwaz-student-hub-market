@@ -256,7 +256,15 @@ const ProductDetailPage = () => {
                 {(product as any).productType === 'SERVICE' ? (
                   // SERVICE: Show "Message Seller" button
                   <Link
-                    to={`/shop/${product.business?.id}`}
+                    to={`/service-order/${product.business?.id}`}
+                    onClick={() => sessionStorage.setItem('duwaz_service_items', JSON.stringify([{
+                      id: product.id,
+                      name: product.name,
+                      price: Number(product.price),
+                      image: allImages[0] ?? '/placeholder.svg',
+                      shopId: product.business?.id,
+                      productType: 'SERVICE',
+                    }]))}
                     className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all duration-200"
                   >
                     <MessageCircle className="h-4 w-4" />

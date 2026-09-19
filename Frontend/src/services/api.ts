@@ -242,6 +242,8 @@ export const messagesApi = {
   // Shop owner
   send: (subject: string, content: string) =>
     request<StoreMessage>('/api/messages/send', { method: 'POST', body: JSON.stringify({ subject, content }) }),
+  sendServiceInquiry: (businessId: number, subject: string, content: string) =>
+    request<StoreMessage>(`/api/messages/service-inquiry/${businessId}`, { method: 'POST', body: JSON.stringify({ subject, content }) }),
   requestDelivery: (orderId: number) =>
     request<StoreMessage>(`/api/messages/request-delivery/${orderId}`, { method: 'POST' }),
   getMyMessages: () => request<StoreMessage[]>('/api/messages/mine'),
