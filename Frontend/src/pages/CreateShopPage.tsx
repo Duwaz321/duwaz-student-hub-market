@@ -149,7 +149,7 @@ const CreateShopPage = () => {
               ? 'Your shop is live and ready for service listings.'
               : 'Your shop is live and ready for product listings.',
           });
-          navigate(`/shop/${createdShop.id}`);
+          navigate(`/my-shop/${createdShop.id}`);
         },
         onError: (err) => {
           toast({
