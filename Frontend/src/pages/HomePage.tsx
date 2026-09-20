@@ -92,19 +92,28 @@ const HomePage = () => {
   console.log('[HomePage] Active categories:', activeCategories.length);
   console.log('[HomePage] Sample product:', products[0]);
 
-  // Build slides from products with images
+  // Build slides from all available products with images so the hero shows a full mix
+  // instead of only whatever category happens to appear first in the API response.
   const slides = (() => {
-    const withImages = products.filter(p => p.imageUrl);
-    const pool = (withImages.length >= 3 ? withImages : products).slice(0, 6);
+    const withImages = [...products]
+      .filter(p => p.imageUrl)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 6);
+
+    const pool = withImages.length > 0 ? withImages : products.slice(0, 6);
+
     if (pool.length === 0) {
       return [{ image: '/placeholder.svg', title: 'Welcome to Duwaz', description: 'Student marketplace — buy and sell on campus' }];
     }
+
     return pool.map(p => ({
       image: p.imageUrl ?? '/placeholder.svg',
       title: p.name,
       description: p.business?.businessName
         ? `By ${p.business.businessName} · R${Number(p.price).toFixed(2)}`
-        : `R${Number(p.price).toFixed(2)}`,
+        : p.businessName
+          ? `By ${p.businessName} · R${Number(p.price).toFixed(2)}`
+          : `R${Number(p.price).toFixed(2)}`,
       linkTo: `/product/${p.id}`,
     }));
   })();
