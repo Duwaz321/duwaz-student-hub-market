@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useToast } from './use-toast';
+import { getGeolocationErrorResult } from '@/lib/geolocation';
 
 export interface AddressSuggestion {
   placeId: string;
@@ -226,17 +227,24 @@ export const useGoogleMapsAutocomplete = () => {
           resolve(location);
         },
         (error) => {
-          console.error('Geolocation error:', error);
-          toast({
-            title: 'Location access denied',
-            description: 'Unable to access your location. Please enable location permissions.',
-            variant: 'destructive',
-          });
+          console.warn('Geolocation error:', error);
+
+          const result = getGeolocationErrorResult(error);
+
+          if (result.shouldShowToast) {
+            toast({
+              title: 'Location unavailable',
+              description: result.userMessage,
+              variant: 'destructive',
+            });
+          }
+
           resolve(null);
         },
         {
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 300000, // 5 minutes
+          enableHighAccuracy: true,
         }
       );
     });
