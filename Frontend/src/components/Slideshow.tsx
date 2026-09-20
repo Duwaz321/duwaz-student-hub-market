@@ -42,7 +42,7 @@ const Slideshow: React.FC<SlideshowProps> = ({ slides, autoplay = true, interval
   if (!slides.length) return <div className={cn('bg-duwaz-cream/50 animate-pulse', className)} />;
 
   return (
-    <div className={cn('relative w-full overflow-hidden bg-black', className)}>
+    <div className={cn('relative w-full overflow-hidden bg-[#f6f1ea]', className)}>
       {slides.map((slide, i) => {
         const isActive = i === current;
         const inner = (
@@ -54,7 +54,7 @@ const Slideshow: React.FC<SlideshowProps> = ({ slides, autoplay = true, interval
             <img
               src={slide.image}
               alt={slide.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain object-center p-2 md:p-4 lg:p-6"
               onError={e => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
             />
 
