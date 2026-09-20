@@ -430,6 +430,10 @@ const DriverDashboardPage = () => {
   });
   const driverUnreadCount = driverUnreadData?.unreadCount ?? 0;
 
+  const activeDeliveries = allDeliveries.filter(
+    (a) => a.deliveryStatus !== 'DELIVERED' && a.deliveryStatus !== 'DELIVERY_FAILED' && a.deliveryStatus !== 'CANCELLED'
+  );
+
   // 🔔 Loud notifications for new deliveries and messages
   useNotifications({
     newDeliveryCount: activeDeliveries.filter(a => a.deliveryStatus === 'ASSIGNED').length,
@@ -455,10 +459,6 @@ const DriverDashboardPage = () => {
     },
     onError: (err: any) => toast({ title: 'Failed', description: err.message, variant: 'destructive' }),
   });
-
-  const activeDeliveries = allDeliveries.filter(
-    (a) => a.deliveryStatus !== 'DELIVERED' && a.deliveryStatus !== 'DELIVERY_FAILED' && a.deliveryStatus !== 'CANCELLED'
-  );
 
   // ── Live GPS broadcasting ──────────────────────────────────────────────────
   // While the driver has active deliveries, push location to backend every 8s.
