@@ -46,6 +46,7 @@ export interface AddressDetails {
 export const useGoogleMapsAutocomplete = () => {
   const { toast } = useToast();
   const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
+  const MIN_QUERY_LENGTH = 3;
 
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -63,8 +64,11 @@ export const useGoogleMapsAutocomplete = () => {
    * Fetch autocomplete suggestions from backend
    */
   const fetchAutocompleteSuggestions = useCallback(async (query: string) => {
-    if (!query || query.trim().length < 2) {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery || trimmedQuery.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
+      setError(null);
       return;
     }
 

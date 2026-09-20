@@ -319,7 +319,7 @@ export const AddressAutocomplete = React.forwardRef<
       )}
 
       {/* No Suggestions Message */}
-      {showSuggestions && suggestions.length === 0 && input.trim() && !isLoading && (
+      {showSuggestions && suggestions.length === 0 && input.trim().length >= 3 && !isLoading && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg p-3 text-center text-sm text-muted-foreground z-50">
           No suggestions found. Try entering a different address.
         </div>
