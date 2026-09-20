@@ -362,7 +362,6 @@ export const deliveriesApi = {
   getMyActiveDeliveries: () => request<DeliveryAssignment[]>('/api/deliveries/my/active'),
   acceptDelivery: (assignmentId: number) =>
     request<DeliveryAssignment>(`/api/deliveries/${assignmentId}/accept`, { method: 'POST' }),
-  getMyEarnings: () => request<any>('/api/deliveries/my/earnings'),
   updateDeliveryStatus: (id: number, status: DeliveryStatus, notes?: string, proofOfDelivery?: string) =>
     request<DeliveryAssignment>(`/api/deliveries/${id}/status`, {
       method: 'PUT',

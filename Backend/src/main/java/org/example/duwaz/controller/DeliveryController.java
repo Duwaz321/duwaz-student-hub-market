@@ -266,36 +266,4 @@ public class DeliveryController {
         return ResponseEntity.ok(driverRepository.save(driver));
     }
 
-    // ── Driver: my earnings ───────────────────────────────────────────────────
-
-    /**
-     * Returns a full earnings summary for the authenticated driver.
-     * {
-     *   totalEarnings: BigDecimal,       // sum of all 10% commissions
-     *   deliveryCount: int,              // from driver profile
-     *   averagePerDelivery: BigDecimal,  // totalEarnings / deliveryCount
-     *   earnings: [ { id, amount, orderTotal, earnedAt, description, order } ]
-     * }
-     */
-    @GetMapping("/my/earnings")
-    public ResponseEntity<?> getMyEarnings(Authentication auth) {
-        Optional<DeliverDriver> driverOpt = getDriverFromAuth(auth);
-        if (driverOpt.isEmpty()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Driver access only");
-
-        Long driverId = driverOpt.get().getDeliveryDriverId();
-        java.math.BigDecimal total = transactionService.getTotalEarningsByDriverId(driverId);
-        java.util.List<?> history  = transactionService.getEarningsByDriverId(driverId);
-        int deliveryCount          = driverOpt.get().getDeliveryCount();
-
-        java.math.BigDecimal avg = deliveryCount > 0
-                ? total.divide(java.math.BigDecimal.valueOf(deliveryCount), 2, java.math.RoundingMode.HALF_UP)
-                : java.math.BigDecimal.ZERO;
-
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
-        result.put("totalEarnings",      total);
-        result.put("deliveryCount",      deliveryCount);
-        result.put("averagePerDelivery", avg);
-        result.put("earnings",           history);
-        return ResponseEntity.ok(result);
-    }
 }

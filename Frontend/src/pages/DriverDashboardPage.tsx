@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, MapPin, Phone, CheckCircle, XCircle, Package, User, Navigation, LogOut, MessageSquare, Send, TrendingUp, Banknote } from 'lucide-react';
+import { Truck, MapPin, Phone, CheckCircle, XCircle, Package, User, Navigation, LogOut, MessageSquare, Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -375,16 +375,6 @@ const DriverDashboardPage = () => {
     queryFn: deliveriesApi.getMyProfile,
   });
 
-  const { data: earningsData } = useQuery({
-    queryKey: ['driver', 'earnings'],
-    queryFn: deliveriesApi.getMyEarnings,
-    staleTime: 30000,
-  });
-
-  const totalEarnings      = Number(earningsData?.totalEarnings      ?? 0);
-  const averagePerDelivery = Number(earningsData?.averagePerDelivery ?? 0);
-  const earningsList       = (earningsData?.earnings ?? []) as any[];
-
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status, notes }: { id: number; status: DeliveryStatus; notes?: string }) =>
       deliveriesApi.updateDeliveryStatus(id, status, notes),
@@ -545,7 +535,7 @@ const DriverDashboardPage = () => {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <Card>
             <CardContent className="pt-4 pb-3 text-center">
               <p className="text-2xl font-bold text-duwaz-brown">{activeDeliveries.length}</p>
@@ -564,12 +554,6 @@ const DriverDashboardPage = () => {
               <p className="text-xs text-gray-500">Total</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 text-center">
-              <p className="text-lg font-bold text-emerald-600">R{totalEarnings.toFixed(0)}</p>
-              <p className="text-xs text-gray-500">Earned</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Tabs */}
@@ -580,10 +564,6 @@ const DriverDashboardPage = () => {
             </TabsTrigger>
             <TabsTrigger value="history" className="flex-1">
               History
-            </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex-1">
-              <Banknote className="h-4 w-4 mr-1" />
-              Earnings
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex-1">
               <MessageSquare className="h-4 w-4 mr-1" />
@@ -647,85 +627,6 @@ const DriverDashboardPage = () => {
                 />
               ))
             )}
-          </TabsContent>
-
-          <TabsContent value="earnings">
-            <div className="space-y-4">
-              {/* Summary cards */}
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="border-emerald-200 bg-emerald-50/50">
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <Banknote className="h-5 w-5 mx-auto mb-1 text-emerald-600" />
-                    <p className="text-2xl font-bold text-emerald-700">R{totalEarnings.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Total Earned</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <TrendingUp className="h-5 w-5 mx-auto mb-1 text-blue-500" />
-                    <p className="text-2xl font-bold text-blue-600">R{averagePerDelivery.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Per Delivery</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <Truck className="h-5 w-5 mx-auto mb-1 text-duwaz-brown" />
-                    <p className="text-2xl font-bold text-duwaz-brown">{profile?.deliveryCount ?? 0}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Deliveries</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* How earnings work */}
-              <Card className="border-dashed border-emerald-300 bg-emerald-50/30">
-                <CardContent className="pt-3 pb-3">
-                  <p className="text-xs text-emerald-700 font-semibold">
-                    💰 You earn <strong>10% of every order total</strong> you deliver.
-                    Earnings are recorded automatically when you mark an order as delivered.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Earnings history */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Earnings History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {earningsList.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Banknote className="h-10 w-10 mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-500 text-sm">No earnings yet.</p>
-                      <p className="text-gray-400 text-xs mt-1">Complete your first delivery to start earning.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-0 divide-y">
-                      {earningsList.map((e: any) => (
-                        <div key={e.id} className="flex items-center justify-between py-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              Order #{e.order?.id ?? '—'}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(e.earnedAt).toLocaleDateString('en-ZA', {
-                                day: 'numeric', month: 'short', year: 'numeric',
-                              })}
-                              {' · '}Order total: R{Number(e.orderTotal).toFixed(2)}
-                            </p>
-                          </div>
-                          <div className="text-right flex-shrink-0 ml-3">
-                            <p className="font-bold text-emerald-600 text-sm">
-                              +R{Number(e.amount).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-gray-400">10%</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           <TabsContent value="messages">            {driverMessages.length === 0 ? (
