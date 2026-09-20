@@ -8,6 +8,7 @@ import org.example.duwaz.repo.StudentRepository;
 import org.example.duwaz.service.EmailService;
 import org.example.duwaz.service.OtpService;
 import org.example.duwaz.util.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired private AuthenticationManager authenticationManager;
@@ -37,7 +37,7 @@ public class AuthController {
 
     // ── Step 1: validate, save as unverified, send OTP to email ──────────────
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         if (studentRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body("Email already registered");
         }

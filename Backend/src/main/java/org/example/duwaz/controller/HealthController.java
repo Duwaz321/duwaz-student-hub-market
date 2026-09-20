@@ -9,7 +9,6 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/health")
-@CrossOrigin(origins = "*")
 public class HealthController {
 
     @Autowired(required = false)

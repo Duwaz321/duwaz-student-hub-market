@@ -281,6 +281,12 @@ const RegisterPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="mb-2 rounded-xl border border-[#f1e5dc] bg-[#faf5f2] px-3 py-2 text-xs leading-5 text-[#4a332a]">
+              By creating an account, you agree to our{' '}
+              <Link to="/terms" className="font-medium text-[#7b4a2d] underline underline-offset-2">Terms & Conditions</Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="font-medium text-[#7b4a2d] underline underline-offset-2">Privacy Policy</Link>.
+            </div>
             <Field label="Full Name" name="studentName" placeholder="Sipho Mabaso" required value={formData.studentName} onChange={handleChange} />
             <Field label="Student Number" name="studentNumber" placeholder="ST12345678" required value={formData.studentNumber} onChange={handleChange} />
             <Field label="Email" name="email" type="email" placeholder="you@university.ac.za" required value={formData.email} onChange={handleChange} />

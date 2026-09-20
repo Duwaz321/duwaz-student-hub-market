@@ -20,7 +20,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/locations")
-@CrossOrigin(origins = "*")
 public class LocationController {
 
     private static final Logger logger = LoggerFactory.getLogger(LocationController.class);

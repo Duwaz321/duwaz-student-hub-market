@@ -48,20 +48,12 @@ const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Contact</h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2 text-sm text-white/55">
-                <Mail className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />
-                duwaz2026@gmail.com
-              </li>
-              <li className="flex items-start gap-2 text-sm text-white/55">
-                <Phone className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />
-                +27 83 670 2391
-              </li>
-              <li className="flex items-start gap-2 text-sm text-white/55">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-white/30" />
-                Cape Town, South Africa
-              </li>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Legal</h4>
+            <ul className="space-y-2.5">
+              <li><Link to="/privacy" className="text-sm text-white/55 hover:text-duwaz-light-brown transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="text-sm text-white/55 hover:text-duwaz-light-brown transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/refunds" className="text-sm text-white/55 hover:text-duwaz-light-brown transition-colors">Refunds & Returns</Link></li>
+              <li><Link to="/seller-terms" className="text-sm text-white/55 hover:text-duwaz-light-brown transition-colors">Seller Terms</Link></li>
             </ul>
           </div>
         </div>
@@ -73,9 +65,11 @@ const Footer = () => {
           <p className="text-xs text-white/35">
             &copy; {year} Duwaz Marketplace. All rights reserved.
           </p>
-          <div className="flex gap-5">
-            <a href="#" className="text-xs text-white/35 hover:text-white/60 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-xs text-white/35 hover:text-white/60 transition-colors">Terms of Service</a>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+            <Link to="/privacy" className="text-xs text-white/35 hover:text-white/60 transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="text-xs text-white/35 hover:text-white/60 transition-colors">Terms & Conditions</Link>
+            <Link to="/refunds" className="text-xs text-white/35 hover:text-white/60 transition-colors">Refunds & Returns</Link>
+            <Link to="/seller-terms" className="text-xs text-white/35 hover:text-white/60 transition-colors">Seller Terms</Link>
           </div>
         </div>
       </div>

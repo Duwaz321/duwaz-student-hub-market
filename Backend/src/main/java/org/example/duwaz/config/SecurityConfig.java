@@ -41,6 +41,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .headers(headers -> headers
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .preload(true)
+                    .maxAgeInSeconds(31536000))
+                .frameOptions(frame -> frame.deny())
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https://api.duwaz.co.za https://*.supabase.co https://*.googleapis.com https://payments.yoco.com wss://api.duwaz.co.za; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"))
+                .referrerPolicy(referrer -> referrer.policy("strict-origin-when-cross-origin")))
             // Return 401 JSON instead of redirecting to /error
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

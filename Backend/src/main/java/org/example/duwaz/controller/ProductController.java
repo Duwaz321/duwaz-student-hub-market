@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(origins = "*")
 public class ProductController {
 
     private final ProductService productService;

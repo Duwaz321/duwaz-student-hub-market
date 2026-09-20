@@ -24,7 +24,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/payment")
-@CrossOrigin(origins = "*")
 public class PaymentController {
 
     @Autowired private OrderRepository orderRepository;
@@ -46,7 +45,7 @@ public class PaymentController {
     // ── Step 1: Initiate Yoco payment ──────────────────────────────────────────
     @PostMapping("/initiate")
     public ResponseEntity<?> initiatePayment(
-            @RequestBody PaymentInitiateRequest req,
+            @Valid @RequestBody PaymentInitiateRequest req,
             Authentication auth) {
         try {
             // Resolve student

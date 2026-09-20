@@ -398,7 +398,10 @@ const CartPage = () => {
                 </p>
               )}
               <p className="text-xs text-gray-400 mt-3 text-center">
-                By completing this purchase you agree to our terms and conditions.
+                By completing this purchase you agree to our{' '}
+                <Link to="/terms" className="text-duwaz-brown underline underline-offset-2">Terms & Conditions</Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="text-duwaz-brown underline underline-offset-2">Privacy Policy</Link>.
               </p>
             </div>
 

@@ -3,6 +3,7 @@ package org.example.duwaz.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +16,21 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${jwt.secret:}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private Long expiration;
+
+    @PostConstruct
+    public void validateConfig() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT secret is required. Set JWT_SECRET in the runtime environment.");
+        }
+        if (secret.getBytes().length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 bytes long.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());

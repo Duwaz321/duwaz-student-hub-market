@@ -16,6 +16,10 @@ import MarketplacePage   from './pages/MarketplacePage';
 import LoginPage         from './pages/LoginPage';
 import RegisterPage      from './pages/RegisterPage';
 import NotFound          from './pages/NotFound';
+import TermsPage          from './pages/TermsPage';
+import PrivacyPage        from './pages/PrivacyPage';
+import RefundsPage        from './pages/RefundsPage';
+import SellerTermsPage    from './pages/SellerTermsPage';
 
 // ── Lazy imports — heavy pages, not needed until user navigates to them ───────
 const ProductDetailPage   = lazy(() => import('./pages/ProductDetailPage'));
@@ -97,6 +101,10 @@ const App = () => (
             <Route path="product/:id" element={<ProductDetailPage />} />
             <Route path="shop/:id" element={<ShopPage />} />
             <Route path="about" element={<AboutPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="refunds" element={<RefundsPage />} />
+            <Route path="seller-terms" element={<SellerTermsPage />} />
 
             {/* Service inquiry page */}
             <Route path="service-order/:id" element={<ServiceOrderPage />} />

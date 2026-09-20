@@ -19,7 +19,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth/driver")
-@CrossOrigin(origins = "*")
 public class DriverAuthController {
 
     private final DeliverDriverRepository driverRepository;

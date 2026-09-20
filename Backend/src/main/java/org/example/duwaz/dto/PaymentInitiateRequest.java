@@ -1,5 +1,8 @@
 package org.example.duwaz.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -9,14 +12,26 @@ import java.util.List;
  */
 public class PaymentInitiateRequest {
 
+    @NotNull
     private BigDecimal totalAmount;
+
     private String deliveryAddress;
+
+    @NotNull
     private Long businessId;
+
+    @NotNull
     private List<ItemDto> items;
 
     public static class ItemDto {
+        @NotNull
         private Long productId;
+
+        @Positive
         private int quantity;
+
+        @NotNull
+        @DecimalMin(value = "0.00", inclusive = false)
         private BigDecimal unitPrice;
 
         public Long getProductId() { return productId; }
