@@ -157,15 +157,15 @@ const AdminDashboardPage = () => {
     retry: 1,
     initialData: { duwazRevenue: 0 }, // Fallback to 0 if query fails
   });
-  const { data: ordersPage, isLoading: ordersLoading } = useQuery({ queryKey: ['admin', 'orders', page], queryFn: () => ordersApi.getAll(page, 20) });
-  const { data: users = [] } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminApi.getUsers });
-  const { data: allDrivers = [] } = useQuery({ queryKey: ['admin', 'drivers'], queryFn: deliveriesApi.getAllDrivers, refetchInterval: 15000 });
-  const { data: allAssignments = [] } = useQuery({ queryKey: ['admin', 'deliveries'], queryFn: deliveriesApi.getAllAssignments, refetchInterval: 15000 });
-  const { data: allProducts = [], isLoading: productsLoading } = useQuery({ queryKey: ['admin', 'products'], queryFn: () => productsApi.getAllForAdmin(), refetchInterval: 30000 });
-  const { data: allShops = [] } = useQuery({ queryKey: ['admin', 'shops'], queryFn: businessesApi.getAll });
+  const { data: ordersPage, isLoading: ordersLoading } = useQuery({ queryKey: ['admin', 'orders', page], queryFn: () => ordersApi.getAll(page, 20), refetchInterval: 4000 });
+  const { data: users = [] } = useQuery({ queryKey: ['admin', 'users'], queryFn: adminApi.getUsers, refetchInterval: 15000 });
+  const { data: allDrivers = [] } = useQuery({ queryKey: ['admin', 'drivers'], queryFn: deliveriesApi.getAllDrivers, refetchInterval: 5000 });
+  const { data: allAssignments = [] } = useQuery({ queryKey: ['admin', 'deliveries'], queryFn: deliveriesApi.getAllAssignments, refetchInterval: 5000 });
+  const { data: allProducts = [], isLoading: productsLoading } = useQuery({ queryKey: ['admin', 'products'], queryFn: () => productsApi.getAllForAdmin(), refetchInterval: 15000 });
+  const { data: allShops = [] } = useQuery({ queryKey: ['admin', 'shops'], queryFn: businessesApi.getAll, refetchInterval: 15000 });
   const { data: categories = [] } = useCategories();
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 15000 });
-  const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 15000 });
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 5000 });
+  const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 5000 });
   const unreadCount = unreadData?.unreadCount ?? 0;
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;

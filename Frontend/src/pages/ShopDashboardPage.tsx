@@ -113,8 +113,8 @@ const ShopDashboardPage = () => {
     queryKey: ['orders', 'shop'],
     queryFn: () => ordersApi.getShopOrders(0, 100),
     enabled: !!shop,
-    refetchInterval: 10000,
-    staleTime: 5000,
+    refetchInterval: 4000,
+    staleTime: 2000,
     refetchOnWindowFocus: true,
   });
 
@@ -164,8 +164,14 @@ const ShopDashboardPage = () => {
     },
     onError: (err: any) => toast({ title: 'Request failed', description: err.message, variant: 'destructive' }),
   });
+  const markMessageReadMutation = useMutation({
+    mutationFn: (id: number) => messagesApi.markRead(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['messages', 'mine'] });
+    },
+  });
 
-  const unreadReplies = myMessages.filter(m => m.replyContent && m.status === 'REPLIED').length;
+  const unreadMessages = myMessages.filter(m => m.status === 'UNREAD').length;
 
   const getSeenOrderIds = (key: string): Set<number> => {
     try {
@@ -191,11 +197,11 @@ const ShopDashboardPage = () => {
     localStorage.setItem(getSeenOrderKey, JSON.stringify(merged));
   }, [shop?.id, JSON.stringify(pendingOrderIds)]);
 
-  // 🔔 Loud notifications for genuinely new shop orders and replies.
+  // 🔔 Loud notifications for genuinely new shop orders and unread messages.
   useNotifications({
     newOrderCount:   unseenPendingOrderIds.length,
     newOrderIds:     unseenPendingOrderIds,
-    newMessageCount: unreadReplies,
+    newMessageCount: unreadMessages,
   });
 
   // Track which orders already have a delivery request sent to Admin
@@ -248,6 +254,13 @@ const ShopDashboardPage = () => {
   const [composeContent, setComposeContent] = useState('');
   const [requestDeliveryOrderId, setRequestDeliveryOrderId] = useState<number | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<StoreMessage | null>(null);
+
+  const handleOpenMessage = (msg: StoreMessage) => {
+    setSelectedMessage(msg);
+    if (msg.status === 'UNREAD') {
+      markMessageReadMutation.mutate(msg.id);
+    }
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
   const openEditShop = () => {
@@ -478,7 +491,7 @@ const ShopDashboardPage = () => {
           </TabsTrigger>
           <TabsTrigger value="messages">
             <MessageSquare className="h-4 w-4 mr-1" />Messages
-            {unreadReplies > 0 && <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5">{unreadReplies}</span>}
+            {unreadMessages > 0 && <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5">{unreadMessages}</span>}
           </TabsTrigger>
           <TabsTrigger value="settings"><Settings className="h-4 w-4 mr-1" />Settings</TabsTrigger>
         </TabsList>
@@ -707,7 +720,7 @@ const ShopDashboardPage = () => {
                   RESOLVED: 'bg-green-100 text-green-700',
                 };
                 return (
-                  <Card key={msg.id} className={`cursor-pointer hover:shadow-md transition-shadow ${hasReply && msg.status === 'REPLIED' ? 'border-blue-300' : ''}`} onClick={() => setSelectedMessage(msg)}>
+                  <Card key={msg.id} className={`cursor-pointer hover:shadow-md transition-shadow ${hasReply && msg.status === 'REPLIED' ? 'border-blue-300' : ''}`} onClick={() => handleOpenMessage(msg)}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">

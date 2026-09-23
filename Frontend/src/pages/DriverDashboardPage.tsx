@@ -367,7 +367,8 @@ const DriverDashboardPage = () => {
   const { data: allDeliveries = [], isLoading } = useQuery({
     queryKey: ['deliveries', 'my'],
     queryFn: deliveriesApi.getMyDeliveries,
-    refetchInterval: 10000,
+    refetchInterval: 4000,
+    staleTime: 2000,
     refetchOnWindowFocus: true,
   });
 
@@ -412,12 +413,12 @@ const DriverDashboardPage = () => {
   const { data: driverMessages = [] } = useQuery({
     queryKey: ['driver', 'messages'],
     queryFn: messagesApi.getMyDriverMessages,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
   const { data: driverUnreadData } = useQuery({
     queryKey: ['driver', 'messages', 'unread'],
     queryFn: messagesApi.getDriverUnreadCount,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
   const driverUnreadCount = driverUnreadData?.unreadCount ?? 0;
 

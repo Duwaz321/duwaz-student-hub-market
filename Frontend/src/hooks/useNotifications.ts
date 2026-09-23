@@ -70,7 +70,7 @@ function clearAttentionBadge() {
 
 function showBrowserNotification(title: string, body: string) {
   if ('vibrate' in navigator) {
-    try { navigator.vibrate([500, 180, 500, 180, 900]); } catch { /* ignore */ }
+    try { navigator.vibrate([200, 120, 240, 120, 600]); } catch { /* ignore */ }
   }
 
   if (!('Notification' in window)) return;
