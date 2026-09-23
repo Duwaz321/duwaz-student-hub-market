@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/catalog")
+@CrossOrigin(origins = "*")
 public class CatalogController {
 
     @Autowired private CategoryRepository categoryRepository;

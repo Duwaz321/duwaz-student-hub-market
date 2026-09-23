@@ -319,8 +319,8 @@ export const AddressAutocomplete = React.forwardRef<
       )}
 
       {/* No Suggestions Message */}
-      {showSuggestions && suggestions.length === 0 && input.trim().length >= 3 && !isLoading && (
-        <div className="relative mt-2 w-full rounded-md border border-border/80 bg-background/95 px-3 py-2 text-center text-xs text-muted-foreground shadow-sm z-10">
+      {showSuggestions && suggestions.length === 0 && input.trim() && !isLoading && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg p-3 text-center text-sm text-muted-foreground z-50">
           No suggestions found. Try entering a different address.
         </div>
       )}

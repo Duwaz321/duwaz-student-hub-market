@@ -18,6 +18,7 @@ interface NavbarProps { onCartClick: () => void; }
 const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [attentionCount, setAttentionCount] = useState(0);
   const { totalItems } = useCart();
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
   const { hasShops, isLoadingShop, clearShops } = useShopContext();
@@ -34,6 +35,21 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
 
   // Close mobile menu on route change
   useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    const updateAttention = () => {
+      try {
+        const stored = Number(localStorage.getItem('duwaz_attention_count') ?? '0');
+        setAttentionCount(Number.isFinite(stored) ? stored : 0);
+      } catch {
+        setAttentionCount(0);
+      }
+    };
+
+    updateAttention();
+    window.addEventListener('duwaz-attention-change', updateAttention as EventListener);
+    return () => window.removeEventListener('duwaz-attention-change', updateAttention as EventListener);
+  }, []);
 
   const handleLogout = () => {
     clearShops();
@@ -73,9 +89,14 @@ const Navbar: React.FC<NavbarProps> = ({ onCartClick }) => {
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 flex items-center justify-between h-16 min-w-0 relative">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 flex-shrink-0 mr-2">
+        <Link to="/" className="flex items-center gap-1 flex-shrink-0 mr-2 relative">
           <span className="font-serif text-xl sm:text-2xl text-duwaz-brown leading-none">Duwaz</span>
           <span className="text-duwaz-brown text-xl sm:text-2xl font-light leading-none">.</span>
+          {attentionCount > 0 && (
+            <span className="absolute -top-1 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-sm">
+              {attentionCount > 99 ? '99+' : attentionCount}
+            </span>
+          )}
         </Link>
 
         {/* Desktop Navigation — absolutely centered so logo/actions don't affect it */}

@@ -6,8 +6,8 @@ const sections = [
     heading: '1. Introduction',
     body: (
       <>
-        <p>DUWAZ is a student marketplace that enables buyers, sellers, and delivery providers to connect for the purpose of buying, selling, and delivering goods and services within a campus or student-community environment.</p>
-        <p>These Terms & Conditions govern access to and use of the DUWAZ platform, mobile experience, and related services. They explain the responsibilities of DUWAZ, buyers, sellers, and third-party service providers where relevant.</p>
+        <p>DUWAZ is a digital student marketplace that connects buyers, sellers, and delivery providers for the purpose of buying, selling, and arranging the delivery of goods and services within a campus and student-community environment.</p>
+        <p>These Terms & Conditions regulate access to and use of the DUWAZ platform, website, mobile experience, and related services. They set out the rights and responsibilities of DUWAZ, buyers, sellers, and other users in a manner consistent with the framework of South African law, including the Consumer Protection Act 68 of 2008, the Electronic Communications and Transactions Act 25 of 2002, and the Protection of Personal Information Act 4 of 2013 (POPIA).</p>
       </>
     ),
   },
@@ -15,27 +15,26 @@ const sections = [
     heading: '2. Acceptance of Terms',
     body: (
       <>
-        <p>By creating an account, browsing, listing products, placing orders, or otherwise using DUWAZ, you agree to these Terms & Conditions and any additional policy or procedure published by DUWAZ from time to time.</p>
-        <p>If you do not agree to these terms, you must not use the platform.</p>
+        <p>By registering an account, browsing listings, placing an order, listing an item, or otherwise using the platform, you agree to these Terms & Conditions and any additional policy or operating rule published by DUWAZ from time to time.</p>
+        <p>If you do not agree to these terms, you must not access or use the marketplace.</p>
       </>
     ),
   },
   {
-    heading: '3. About DUWAZ',
+    heading: '3. Role of DUWAZ',
     body: (
       <>
-        <p>DUWAZ provides a digital marketplace and related features, including product discovery, listings, communications, order placement, and delivery coordination.</p>
-        <p>DUWAZ does not itself manufacture, own, or control every product listed for sale. Individual sellers remain responsible for the accuracy and lawfulness of their own listings and product offering.</p>
+        <p>DUWAZ provides a digital marketplace service that facilitates product discovery, listing management, communication, order placement, and coordination of fulfilment or delivery where applicable.</p>
+        <p>DUWAZ does not necessarily own, supply, or control every product listed for sale. The seller remains responsible for the accuracy, legitimacy, and quality of the goods or services it offers, and for complying with all applicable laws.</p>
       </>
     ),
   },
   {
-    heading: '4. User Accounts',
+    heading: '4. Account Registration and Security',
     body: (
       <>
-        <p>Users must provide accurate, current, and complete information when registering an account.</p>
-        <p>You are responsible for maintaining the confidentiality of your account credentials and for any activity that occurs under your account.</p>
-        <p>DUWAZ may suspend, restrict, or terminate access where there is suspected fraud, abuse, misuse, or a breach of these terms.</p>
+        <p>Users must provide accurate, complete, and current information when creating an account.</p>
+        <p>Each user is responsible for protecting the confidentiality of their account credentials and for all activity carried out through their account. DUWAZ may suspend, restrict, or terminate access where there is evidence of fraud, misuse, unlawful conduct, or material breach of these Terms & Conditions.</p>
       </>
     ),
   },
@@ -43,8 +42,8 @@ const sections = [
     heading: '5. Buyer Responsibilities',
     body: (
       <>
-        <p>Buyers must provide accurate delivery or collection instructions, pay valid amounts, and review product details before placing an order.</p>
-        <p>Buyers must not misuse the marketplace, impersonate other people, or place fraudulent or abusive orders.</p>
+        <p>Buyers must provide accurate delivery or collection details, pay valid amounts, and review listing information carefully before confirming any purchase.</p>
+        <p>Buyers must not misuse the platform, create false listings or orders, impersonate another user, or engage in abusive, fraudulent, or deceptive conduct.</p>
       </>
     ),
   },
@@ -52,166 +51,157 @@ const sections = [
     heading: '6. Seller Responsibilities',
     body: (
       <>
-        <p>Sellers are responsible for the accuracy of product listings, pricing, stock availability, product descriptions, and images.</p>
-        <p>Sellers must ensure that goods offered for sale are lawful, safe, and accurately described. Sellers are responsible for fulfilling and communicating order arrangements as agreed with the buyer.</p>
+        <p>Sellers are responsible for the accuracy of product listings, product descriptions, pricing, stock availability, images, and fulfilment commitments.</p>
+        <p>Sellers must ensure that the goods or services offered are lawful, safe, accurately described, and fit for the purpose represented. Sellers are responsible for fulfilling orders and communicating clearly with buyers in good faith.</p>
       </>
     ),
   },
   {
-    heading: '7. Product Listings',
+    heading: '7. Product Listings and Marketplace Integrity',
     body: (
       <>
-        <p>All listings must be accurate and lawful. Sellers must not mislead buyers about product condition, origin, quality, pricing, or availability.</p>
-        <p>DUWAZ may remove or restrict listings that violate these terms, are misleading, unsafe, or otherwise inappropriate.</p>
+        <p>All listings must be truthful and compliant with applicable law and platform policy. Sellers must not mislead buyers in relation to product condition, quality, origin, availability, pricing, features, or delivery arrangements.</p>
+        <p>DUWAZ may remove, restrict, or investigate listings that are misleading, unlawful, unsafe, inaccurate, or otherwise inconsistent with these terms.</p>
       </>
     ),
   },
   {
-    heading: '8. Product Pricing',
+    heading: '8. Pricing and Payment',
     body: (
       <>
-        <p>Sellers are responsible for setting fair, accurate, and lawful prices for their products.</p>
-        <p>DUWAZ may provide pricing support or marketplace tools, but DUWAZ is not responsible for guaranteeing that any price is accepted by a buyer or that a seller will complete a transaction.</p>
+        <p>Sellers are responsible for setting lawful and accurate prices for their products or services.</p>
+        <p>DUWAZ may provide payment infrastructure and transaction support through third-party service providers, such as Yoco, for the efficient processing of orders. DUWAZ does not guarantee a transaction outcome and is not responsible for failures caused by payment-provider systems, bank processing, network interruption, or fraud risk outside its direct control.</p>
       </>
     ),
   },
   {
-    heading: '9. Orders',
+    heading: '9. Orders and Fulfilment',
     body: (
       <>
-        <p>Orders are accepted subject to product availability, seller confirmation, and marketplace rules. DUWAZ may reject or cancel orders where there is an error, fraud risk, or policy violation.</p>
-        <p>Buyer and seller responsibilities continue after placement, including order status updates, communication, and fulfilment where applicable.</p>
+        <p>Orders are subject to product availability, seller confirmation, and the operational rules of the marketplace. DUWAZ may cancel, hold, or reject an order where there is a pricing error, payment issue, suspected fraud, or policy conflict.</p>
+        <p>Buyer and seller responsibilities continue after an order is placed, including communication, status updates, collection arrangements, delivery coordination, and completion of the transaction where applicable.</p>
       </>
     ),
   },
   {
-    heading: '10. Payments',
+    heading: '10. Collection and Delivery',
     body: (
       <>
-        <p>DUWAZ may provide a payment flow using third-party providers such as Yoco to facilitate transaction collection and payment processing.</p>
-        <p>Payment processing arrangements are subject to the third-party provider terms and the commercial setup used by DUWAZ at the time. DUWAZ does not assume responsibility for any payment provider outage, failed transaction, or external processing error beyond what is explicitly agreed.</p>
+        <p>For collection orders, the buyer and seller must agree on the collection arrangement, time, and location.</p>
+        <p>For delivery orders, DUWAZ may coordinate scheduling or assign a delivery provider where available. Delivery services remain subject to provider availability, route conditions, timing constraints, and the operational policies applicable to that order.</p>
       </>
     ),
   },
   {
-    heading: '11. Collection / Delivery',
+    heading: '11. Refunds and Returns',
     body: (
       <>
-        <p>For collection orders, the buyer and seller must agree on collection arrangements and the designated location.</p>
-        <p>For delivery orders, DUWAZ may coordinate delivery scheduling or driver assignment. Delivery services are subject to the operational rules for the specific order and may depend on availability of the delivery provider, route conditions, and timing.</p>
+        <p>Refunds and returns are governed by the separate <Link to="/refunds" className="font-medium text-[#7b4a2d] underline underline-offset-2">Refunds & Returns Policy</Link> and the legal framework applicable to the transaction, including the Consumer Protection Act where relevant.</p>
+        <p>DUWAZ may assist in dispute handling, but final refund decisions depend on the facts of the order, the seller’s cooperation, the applicable payment and fulfilment arrangements, and any business process approved by DUWAZ.</p>
       </>
     ),
   },
   {
-    heading: '12. Refunds and Returns',
+    heading: '12. Prohibited Goods, Services and Conduct',
     body: (
       <>
-        <p>Refunds and returns are governed by the separate <Link to="/refunds" className="font-medium text-[#7b4a2d] underline underline-offset-2">Refunds & Returns Policy</Link>. Additional commercial rules may apply depending on the order type and seller arrangement.</p>
-        <p>DUWAZ may assist in dispute handling, but final refund decisions and claims depend on the order facts, seller cooperation, and agreed marketplace rules.</p>
+        <p>Users must not list, buy, sell, or facilitate the sale of goods or services that are unlawful, unsafe, fraudulent, counterfeit, restricted, or otherwise prohibited by applicable law or platform policy.</p>
+        <p>Users must not manipulate the marketplace, generate fake reviews or listings, evade payment or fulfilment processes, or conduct abusive behaviour towards other participants.</p>
       </>
     ),
   },
   {
-    heading: '13. Prohibited Products and Activities',
+    heading: '13. Fraud and Abuse Prevention',
     body: (
       <>
-        <p>Users must not list or transact in items or services that are illegal, unsafe, fraudulent, restricted, or otherwise prohibited by applicable law or platform policy.</p>
-        <p>Users must not manipulate the marketplace, create fake listings, misuse reviews, or evade payment or delivery processes.</p>
+        <p>DUWAZ may investigate suspicious or abusive activity, including chargebacks, false orders, fake accounts, misleading messages, or misuse of reviews and ratings.</p>
+        <p>Where fraud, abuse, or policy violations are suspected, DUWAZ may restrict access, suspend listings, suspend accounts, or take other action reasonably necessary to protect the marketplace and its users.</p>
       </>
     ),
   },
   {
-    heading: '14. Fraud and Abuse',
+    heading: '14. Account Suspension and Termination',
     body: (
       <>
-        <p>DUWAZ may investigate suspicious activity, including chargebacks, false order activity, fake account creation, or abuse of reviews or communications.</p>
-        <p>Where fraud or abuse is suspected, DUWAZ may restrict account access, suspend listings, or take other action reasonably necessary to protect the platform and other users.</p>
+        <p>DUWAZ may suspend or terminate access where a user materially breaches these terms, fails to meet account requirements, or engages in unlawful, abusive, or harmful conduct.</p>
+        <p>Users remain responsible for any unresolved orders, payments, or obligations arising before suspension or termination.</p>
       </>
     ),
   },
   {
-    heading: '15. Account Suspension or Termination',
+    heading: '15. Intellectual Property and Content',
     body: (
       <>
-        <p>DUWAZ may suspend or terminate access where a user breaches these Terms & Conditions, fails to meet account requirements, or engages in abusive or unlawful conduct.</p>
-        <p>Users remain responsible for any unresolved orders or obligations arising before suspension or termination.</p>
+        <p>DUWAZ content, branding, software, user interface, and related materials remain the property of DUWAZ or its licensors, except where identifiable rights belong to a third party.</p>
+        <p>Users must not copy, reproduce, or misuse DUWAZ branding, platform content, images, or proprietary information except as expressly permitted in writing.</p>
       </>
     ),
   },
   {
-    heading: '16. Intellectual Property',
+    heading: '16. User-Generated Content',
     body: (
       <>
-        <p>DUWAZ content, branding, software, and interface design remain the property of DUWAZ or its licensors, except where rights belong to third parties.</p>
-        <p>Users must not copy, reproduce, or misuse DUWAZ branding, platform content, or listing images except where expressly permitted.</p>
+        <p>Users may upload product images, shop details, product descriptions, review content, and message communications. By doing so, users confirm that they have the lawful right to share that content and that it does not infringe third-party rights.</p>
+        <p>DUWAZ may review or remove content that is unlawful, misleading, abusive, or otherwise inconsistent with platform standards or applicable law.</p>
       </>
     ),
   },
   {
-    heading: '17. User-Generated Content',
+    heading: '17. Marketplace Disclaimer',
     body: (
       <>
-        <p>Users may upload product images, shop content, reviews, ratings, or messages. By doing so, users confirm that they have the right to share that content and that it does not violate third-party rights.</p>
-        <p>DUWAZ may review or remove content that is unlawful, misleading, abusive, or inconsistent with platform standards.</p>
+        <p>DUWAZ acts as a marketplace facilitator. While DUWAZ may provide support tools, moderation, and operational infrastructure, it does not guarantee the quality, condition, legality, availability, or performance of any product or service listed by an independent seller.</p>
+        <p>Users are expected to exercise their own judgment when interacting with other users, and to make decisions based on the information available on the platform.</p>
       </>
     ),
   },
   {
-    heading: '18. Marketplace Disclaimer',
+    heading: '18. Liability and Risk Allocation',
     body: (
       <>
-        <p>DUWAZ acts as a marketplace facilitator. While DUWAZ may provide support tools and moderation, it does not guarantee the quality, condition, legality, or availability of products or services listed by independent sellers.</p>
-        <p>Users rely on their own judgment when transacting with other users.</p>
+        <p>To the maximum extent permitted by law, DUWAZ shall not be liable for indirect, incidental, consequential, or special damages arising out of the use of the platform, except to the extent that such liability may arise under applicable law.</p>
+        <p>DUWAZ’s liability, if any, will be limited to the extent permitted by law and to the extent caused by DUWAZ’s own negligence or misconduct.</p>
       </>
     ),
   },
   {
-    heading: '19. Limitation of Liability',
+    heading: '19. Third-Party Services',
     body: (
       <>
-        <p>To the maximum extent permitted by applicable law, DUWAZ shall not be liable for indirect, incidental, special, consequential, or punitive damages arising from use of the platform, except where liability is expressly required by law.</p>
-        <p>DUWAZ’s aggregate liability, if any, is limited to the extent permitted by law and to the extent caused by DUWAZ’s own negligence or misconduct.</p>
+        <p>DUWAZ may use third-party service providers to support the marketplace, including payment processors, email services, cloud hosting, digital mapping, delivery coordination, and other operational tools.</p>
+        <p>DUWAZ is not responsible for the implementation, availability, or policies of these third parties, although it may use them to support the platform and user experience.</p>
       </>
     ),
   },
   {
-    heading: '20. Third-Party Services',
+    heading: '20. Privacy and Data Protection',
     body: (
       <>
-        <p>DUWAZ may integrate third-party services, including payment processors, delivery coordination tools, email systems, cloud hosting, and maps or geolocation services.</p>
-        <p>DUWAZ is not responsible for the operations, policies, or failures of those third-party providers, although it may use them to support the marketplace experience.</p>
+        <p>Use of the platform is governed by the <Link to="/privacy" className="font-medium text-[#7b4a2d] underline underline-offset-2">Privacy Policy</Link>. DUWAZ processes personal information only for the purposes disclosed in that policy and for the lawful operation of the marketplace.</p>
       </>
     ),
   },
   {
-    heading: '21. Privacy',
+    heading: '21. Amendments',
     body: (
       <>
-        <p>Use of DUWAZ is subject to the <Link to="/privacy" className="font-medium text-[#7b4a2d] underline underline-offset-2">Privacy Policy</Link>. Personal information is collected and processed only for the purposes disclosed in that policy and for the operation of the marketplace.</p>
+        <p>DUWAZ may amend these Terms & Conditions from time to time in response to operational changes, legal developments, or marketplace requirements. Continued use of the platform after any amendment is published constitutes acceptance of the updated terms.</p>
       </>
     ),
   },
   {
-    heading: '22. Changes to These Terms',
+    heading: '22. Governing Law and Disputes',
     body: (
       <>
-        <p>DUWAZ may update these Terms & Conditions from time to time. Continued use of the platform after updates are published constitutes acceptance of the revised terms.</p>
+        <p>These Terms & Conditions are governed by the laws of the Republic of South Africa, without regard to conflict of law rules. Users agree that any disputes arising from or in connection with the platform will be subject to the jurisdiction of the South African courts having authority over the matter.</p>
       </>
     ),
   },
   {
-    heading: '23. Governing Law',
+    heading: '23. Contact Information',
     body: (
       <>
-        <p>These Terms & Conditions are governed by the laws of the Republic of South Africa, without regard to conflict of law rules.</p>
-      </>
-    ),
-  },
-  {
-    heading: '24. Contact Information',
-    body: (
-      <>
-        <p>For questions, requests, or notices, please contact the DUWAZ support team using the business contact details displayed on the platform or the designated support email address.</p>
+        <p>For questions, notices, or support requests, users may contact the DUWAZ support team through the contact details displayed on the platform or the designated support email address.</p>
         <p>Use placeholders as required: [DUWAZ LEGAL ENTITY NAME], [BUSINESS ADDRESS], [CONTACT EMAIL], [SUPPORT EMAIL].</p>
       </>
     ),
@@ -223,7 +213,7 @@ const TermsPage = () => (
     title="Terms & Conditions"
     intro={
       <>
-        <p>These terms govern how users access and use DUWAZ, a marketplace connecting buyers, sellers, and delivery providers.</p>
+        <p>These terms govern how users access and use DUWAZ, a student marketplace that connects buyers, sellers, and delivery providers in a trusted digital commerce environment.</p>
       </>
     }
     sections={sections}

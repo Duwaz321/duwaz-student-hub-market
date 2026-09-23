@@ -372,11 +372,6 @@ public class GoogleMapsService {
 
         String normalizedInput = input.trim().toLowerCase(Locale.ROOT).replace("&", "and");
         String sanitizedInput = normalizedInput.replaceAll("[^a-z0-9 ]", "").trim();
-
-        if (sanitizedInput.length() < 3) {
-            return new ArrayList<>();
-        }
-
         List<AddressSuggestionDto> suggestions = new ArrayList<>();
 
         String[] commonLocations = {
@@ -489,14 +484,12 @@ public class GoogleMapsService {
         };
 
         for (String token : searchableTokens) {
-            boolean isPrefixMatch = normalizedInput.startsWith(token) || token.startsWith(normalizedInput);
-            boolean isLocationMatch = lowerLocation.contains(normalizedInput) || lowerLocation.contains(token);
-            if (isPrefixMatch || isLocationMatch) {
+            if (normalizedInput.contains(token) || token.contains(normalizedInput) || lowerLocation.contains(normalizedInput) || lowerLocation.contains(token)) {
                 return true;
             }
         }
 
-        return lowerLocation.contains(normalizedInput) || lowerLocation.startsWith(normalizedInput);
+        return lowerLocation.contains(normalizedInput);
     }
 
     /**

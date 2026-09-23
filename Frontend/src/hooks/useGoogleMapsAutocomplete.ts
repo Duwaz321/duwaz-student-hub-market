@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useToast } from './use-toast';
-import { getGeolocationErrorResult } from '@/lib/geolocation';
 
 export interface AddressSuggestion {
   placeId: string;
@@ -46,7 +45,6 @@ export interface AddressDetails {
 export const useGoogleMapsAutocomplete = () => {
   const { toast } = useToast();
   const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
-  const MIN_QUERY_LENGTH = 3;
 
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -64,11 +62,8 @@ export const useGoogleMapsAutocomplete = () => {
    * Fetch autocomplete suggestions from backend
    */
   const fetchAutocompleteSuggestions = useCallback(async (query: string) => {
-    const trimmedQuery = query.trim();
-
-    if (!trimmedQuery || trimmedQuery.length < MIN_QUERY_LENGTH) {
+    if (!query || query.trim().length < 2) {
       setSuggestions([]);
-      setError(null);
       return;
     }
 
@@ -231,24 +226,17 @@ export const useGoogleMapsAutocomplete = () => {
           resolve(location);
         },
         (error) => {
-          console.warn('Geolocation error:', error);
-
-          const result = getGeolocationErrorResult(error);
-
-          if (result.shouldShowToast) {
-            toast({
-              title: 'Location unavailable',
-              description: result.userMessage,
-              variant: 'destructive',
-            });
-          }
-
+          console.error('Geolocation error:', error);
+          toast({
+            title: 'Location access denied',
+            description: 'Unable to access your location. Please enable location permissions.',
+            variant: 'destructive',
+          });
           resolve(null);
         },
         {
-          timeout: 15000,
+          timeout: 10000,
           maximumAge: 300000, // 5 minutes
-          enableHighAccuracy: true,
         }
       );
     });

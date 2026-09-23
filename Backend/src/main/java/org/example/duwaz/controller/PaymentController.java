@@ -2,7 +2,6 @@ package org.example.duwaz.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
 import org.example.duwaz.classesFolder.*;
 import org.example.duwaz.classesFolder.Order.PaymentStatus;
 import org.example.duwaz.dto.PaymentInitiateRequest;
@@ -25,6 +24,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/payment")
+@CrossOrigin(origins = "*")
 public class PaymentController {
 
     @Autowired private OrderRepository orderRepository;
@@ -46,7 +46,7 @@ public class PaymentController {
     // ── Step 1: Initiate Yoco payment ──────────────────────────────────────────
     @PostMapping("/initiate")
     public ResponseEntity<?> initiatePayment(
-            @Valid @RequestBody PaymentInitiateRequest req,
+            @RequestBody PaymentInitiateRequest req,
             Authentication auth) {
         try {
             // Resolve student

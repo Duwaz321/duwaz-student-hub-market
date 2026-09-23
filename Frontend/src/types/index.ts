@@ -67,6 +67,8 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED';
 
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+
 export interface OrderItem {
   id: number;
   product?: Product;
@@ -83,6 +85,7 @@ export interface Order {
   totalAmount: number;
   orderDate: string;
   status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   deliveryAddress?: string;
   cancellationReason?: string;
 }

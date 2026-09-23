@@ -40,7 +40,7 @@ const LegalPage = ({ title, intro, sections }: LegalPageProps) => {
           <footer className="border-t border-[#f0e4dc] bg-[#faf5f2] px-5 py-6 sm:px-8 md:px-10">
             <p className="text-sm font-medium text-[#4b2f22]">Last updated: [DATE]</p>
             <p className="mt-3 text-xs leading-6 text-[#5d4438] md:text-sm">
-              These documents are draft commercial/privacy policies and should be reviewed by a qualified South African legal/compliance professional before DUWAZ is launched commercially.
+              These documents are draft marketplace policies prepared for business review and final legal sign-off. They are written with reference to South African law, including the Protection of Personal Information Act 4 of 2013 (POPIA), the Consumer Protection Act 68 of 2008, and the Electronic Communications and Transactions Act 25 of 2002, but they do not constitute legal advice and should be reviewed by a qualified South African legal practitioner before commercial launch.
             </p>
           </footer>
         </div>

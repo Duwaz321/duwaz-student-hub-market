@@ -94,15 +94,6 @@ public class OrderService {
     public Order updateStatus(Long orderId, OrderStatus newStatus, String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
-
-        if ((newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PREPARING ||
-                newStatus == OrderStatus.READY_FOR_PICKUP || newStatus == OrderStatus.OUT_FOR_DELIVERY ||
-                newStatus == OrderStatus.DELIVERED)
-                && "YOCO".equalsIgnoreCase(order.getPaymentMethod())
-                && order.getPaymentStatus() != Order.PaymentStatus.PAID) {
-            throw new RuntimeException("Order cannot be sent to the shop before payment is successful.");
-        }
-
         order.setStatus(newStatus);
         if (reason != null && !reason.isEmpty()) {
             order.setCancellationReason(reason);

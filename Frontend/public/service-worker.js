@@ -8,12 +8,13 @@ self.addEventListener('push', event => {
   }
 
   let notificationData = {
-    title: 'Duwaz Notification',
-    body: 'You have a new notification',
+    title: 'Duwaz needs your attention',
+    body: 'You have something that needs your attention.',
     icon: '/duwaz-icon.png',
     badge: '/duwaz-badge.png',
     tag: 'duwaz-notification',
-    requireInteraction: false,
+    requireInteraction: true,
+    vibrate: [500, 180, 500, 180, 900],
   };
 
   try {
@@ -37,6 +38,7 @@ self.addEventListener('push', event => {
       badge: notificationData.badge,
       tag: notificationData.tag,
       requireInteraction: notificationData.requireInteraction,
+      vibrate: notificationData.vibrate || [500, 180, 500, 180, 900],
       data: notificationData.data,
     })
   );

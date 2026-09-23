@@ -5,132 +5,106 @@ const sections = [
     heading: '1. Overview',
     body: (
       <>
-        <p>This Refunds & Returns Policy sets out the general framework for how refund and return requests may be handled on the DUWAZ marketplace.</p>
-        <p>Actual refunds may depend on the specific order type, seller arrangement, payment method, and the facts of each dispute.</p>
+        <p>This Refunds & Returns Policy sets out the general framework for how refund, return, and dispute requests may be handled on the DUWAZ marketplace.</p>
+        <p>Final outcomes depend on the specific order type, the seller’s fulfilment arrangements, the payment method used, the evidence available, and the legal framework applicable to the transaction, including the Consumer Protection Act 68 of 2008 where relevant.</p>
       </>
     ),
   },
   {
-    heading: '2. When a Buyer Can Request a Refund',
+    heading: '2. Grounds for a Refund Request',
     body: (
       <>
-        <p>Buyers may request a refund where the product is damaged, incorrect, missing, not available, or materially different from the listing description.</p>
-        <p>DUWAZ may require a buyer to provide evidence, such as photos or a description of the issue, before reviewing a request.</p>
+        <p>Buyers may request a refund where a product is damaged, incorrect, missing, unavailable, materially different from the listing description, or otherwise not delivered in accordance with the agreed terms.</p>
+        <p>DUWAZ may require the buyer to provide evidence, such as photographs, written notes, or order records, before reviewing the request.</p>
       </>
     ),
   },
   {
-    heading: '3. Damaged Products',
+    heading: '3. Damaged, Defective or Incorrect Goods',
     body: (
       <>
-        <p>If a product arrives damaged, is defective, or is materially inconsistent with the listing, the buyer should notify DUWAZ and the seller promptly.</p>
-        <p>Refund decisions are assessed based on the order facts, supporting evidence, and the seller’s response.</p>
+        <p>If a product arrives damaged, defective, or materially inconsistent with the listing, the buyer should report the issue promptly and provide reasonable evidence of the problem.</p>
+        <p>DUWAZ may assess the matter and determine whether a refund, partial refund, replacement, or other resolution is appropriate based on the facts and the seller’s response.</p>
       </>
     ),
   },
   {
-    heading: '4. Incorrect Products',
+    heading: '4. Missing Items and Unfulfilled Orders',
     body: (
       <>
-        <p>Where a buyer receives the wrong item, a different variant, or a product that does not match the listing, the buyer may request a review.</p>
-        <p>DUWAZ may approve a refund, partial refund, replacement, or other resolution depending on the circumstances.</p>
+        <p>If an order is not delivered, is incomplete, or cannot be fulfilled as represented, the buyer should notify DUWAZ without delay and provide relevant information about the missing product or order issue.</p>
+        <p>DUWAZ may review the order status, seller communication, payment status, and delivery records before deciding whether a refund is appropriate.</p>
       </>
     ),
   },
   {
-    heading: '5. Missing Products',
+    heading: '5. Product Availability and Cancellation',
     body: (
       <>
-        <p>If a product is not delivered or is missing from the order, the buyer should notify DUWAZ as soon as the issue is identified.</p>
-        <p>DUWAZ may review the order record, delivery status, and seller records before determining whether a refund is appropriate.</p>
+        <p>If a product becomes unavailable after an order is placed or the seller cannot fulfil the order, the buyer may be entitled to a refund or alternative resolution depending on the circumstances and the stage of the order.</p>
+        <p>Cancellation requests may be accepted or rejected based on order status, seller activity, and the commercial arrangements in place.</p>
       </>
     ),
   },
   {
-    heading: '6. Product Not Available',
+    heading: '6. Seller Responsibilities',
     body: (
       <>
-        <p>If a product is no longer available after an order is placed, the buyer may be entitled to a refund or alternative arrangement depending on the circumstances and the seller’s fulfilment status.</p>
+        <p>Sellers are responsible for providing accurate listings, fulfilling orders in good faith, and responding promptly to buyer disputes or refund requests.</p>
+        <p>Where a seller is at fault, the seller may be required to cooperate with a refund, replacement, return, or other corrective action under the applicable marketplace process.</p>
       </>
     ),
   },
   {
-    heading: '7. Order Cancellation',
+    heading: '7. Buyer Responsibilities',
     body: (
       <>
-        <p>Order cancellations may be possible before fulfilment, subject to the status of the order, seller activity, and any order-specific rules.</p>
-        <p>Where a cancellation is accepted, the refund process may depend on the payment method and the stage of the order.</p>
+        <p>Buyers are expected to inspect goods promptly upon receipt, report issues without unnecessary delay, and provide reasonable evidence when requesting a refund or return.</p>
+        <p>Buyers must not misuse the refund process, submit false claims, or act in bad faith.</p>
       </>
     ),
   },
   {
-    heading: '8. Seller Responsibilities',
+    heading: '8. Collection and Delivery Orders',
     body: (
       <>
-        <p>Sellers are responsible for providing accurate listings, fulfilling orders in good faith, and responding promptly to buyer refund or dispute issues.</p>
-        <p>Where a seller is at fault, the seller may be required to cooperate with a refund, return, or corrective action under the applicable marketplace process.</p>
+        <p>For collection orders, disputes may relate to failure to make the product available, mismatch between the listing and product, or failure to honour the agreed collection arrangement.</p>
+        <p>For delivery orders, disputes may relate to damage, delay, missing items, or incorrect delivery. Buyers should report issues as soon as reasonably possible so that DUWAZ can assess the matter.</p>
       </>
     ),
   },
   {
-    heading: '9. Buyer Responsibilities',
+    heading: '9. Payment and Refund Timing',
     body: (
       <>
-        <p>Buyers are expected to inspect products upon receipt, report issues promptly, and provide reasonable evidence of the problem.</p>
-        <p>Buyers must not misuse the refund process or make false claims.</p>
+        <p>Refunds may be issued to the original payment method or through another arrangement approved by the marketplace and the relevant payment provider.</p>
+        <p>Refund timing may depend on the payment provider, the payment method used, and the processing method in place at the time of the order.</p>
       </>
     ),
   },
   {
-    heading: '10. Collection Orders',
+    heading: '10. Review and Dispute Resolution',
     body: (
       <>
-        <p>For collection orders, disputes may involve the seller failing to make the item available, mismatched product details, or collection arrangements not being honoured.</p>
-        <p>DUWAZ may assist with communication and review, but refund outcomes depend on the actual facts and any agreed commercial process.</p>
+        <p>Where a buyer and seller dispute the facts of an order, DUWAZ may review the order record, communication history, delivery records, and evidence supplied by both sides before making a reasonable determination.</p>
+        <p>DUWAZ may decline a claim where the issue is unsupported by evidence or where the buyer has not followed the required marketplace process.</p>
       </>
     ),
   },
   {
-    heading: '11. Delivery Orders',
+    heading: '11. Consumer Protection Considerations',
     body: (
       <>
-        <p>For delivery orders, disputes may relate to damage, delay, missing items, or incorrect delivery. Buyers should report issues as soon as possible.</p>
-        <p>DUWAZ may require evidence and may coordinate with the seller and delivery provider when reviewing the matter.</p>
+        <p>DUWAZ intends to operate in a manner consistent with the Consumer Protection Act 68 of 2008 and other applicable South African law where relevant to consumer rights and marketplace conduct.</p>
+        <p>This policy does not replace or supersede any rights, protections, or remedies that apply to a buyer or seller under applicable law, and the final legal position will depend on the specific facts and the governing law.</p>
       </>
     ),
   },
   {
-    heading: '12. Payment Refunds',
+    heading: '12. Contact for Order Issues',
     body: (
       <>
-        <p>Refunds may be issued to the original payment method or through another arrangement approved by the marketplace and relevant payment provider.</p>
-        <p>Refund timing may depend on the payment provider, the payment method used, and the business process in place at the time of the order.</p>
-      </>
-    ),
-  },
-  {
-    heading: '13. Refund Processing',
-    body: (
-      <>
-        <p>DUWAZ does not guarantee immediate or automatic refunds. Refunds may be manually reviewed and processed after investigation and approval.</p>
-        <p>DUWAZ may use reasonable procedures to confirm the validity of the request before a refund is approved.</p>
-      </>
-    ),
-  },
-  {
-    heading: '14. Disputes',
-    body: (
-      <>
-        <p>Where a buyer and seller dispute the facts of an order, DUWAZ may review the order record, communication history, and supporting evidence to determine a fair outcome.</p>
-        <p>DUWAZ may decline a claim where the issue is not supported by evidence or where the buyer has not followed the required process.</p>
-      </>
-    ),
-  },
-  {
-    heading: '15. Contacting Support',
-    body: (
-      <>
-        <p>To request a refund, report a damaged item, or ask for help with an order issue, contact the DUWAZ support team through the platform or the designated support email address.</p>
+        <p>To request a refund, report a damaged or incorrect order, or ask for assistance with a fulfilment issue, users should contact the DUWAZ support team through the platform or the designated support email address.</p>
         <p>Use placeholders as needed: [CONTACT EMAIL], [SUPPORT EMAIL].</p>
       </>
     ),
@@ -142,7 +116,7 @@ const RefundsPage = () => (
     title="Refunds & Returns"
     intro={
       <>
-        <p>This policy explains the standard approach to refund and return requests on the DUWAZ marketplace.</p>
+        <p>This policy sets out the standard approach DUWAZ may use for handling refund, return, and order-dispute requests in a fair and transparent manner.</p>
       </>
     }
     sections={sections}
