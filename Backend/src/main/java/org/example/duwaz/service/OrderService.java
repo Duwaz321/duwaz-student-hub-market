@@ -4,8 +4,10 @@ import org.example.duwaz.classesFolder.Order;
 import org.example.duwaz.classesFolder.Order.OrderStatus;
 import org.example.duwaz.classesFolder.OrderItem;
 import org.example.duwaz.classesFolder.Product;
+import org.example.duwaz.classesFolder.Student;
 import org.example.duwaz.repo.OrderRepository;
 import org.example.duwaz.repo.ProductRepository;
+import org.example.duwaz.repo.StudentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -23,10 +26,17 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final StudentRepository studentRepository;
+    private final EmailService emailService;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderService(OrderRepository orderRepository,
+                       ProductRepository productRepository,
+                       StudentRepository studentRepository,
+                       EmailService emailService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.studentRepository = studentRepository;
+        this.emailService = emailService;
     }
 
     public Order createOrder(Order order) {
@@ -56,7 +66,37 @@ public class OrderService {
         BigDecimal deliveryFee = deliveryRequired ? MIN_DELIVERY_FEE : BigDecimal.ZERO;
         order.setDeliveryFee(deliveryFee);
         order.setTotalAmount(productSubtotal.add(deliveryFee));
-        return orderRepository.save(order);
+
+        Order savedOrder = orderRepository.save(order);
+
+        if (savedOrder.getBusiness() != null && savedOrder.getBusiness().getStudent() != null) {
+            var shopOwnerEmail = savedOrder.getBusiness().getStudent().getEmail();
+            if (shopOwnerEmail != null && !shopOwnerEmail.isBlank()) {
+                emailService.sendNewOrderEmailToShopOwner(
+                        shopOwnerEmail,
+                        savedOrder.getBusiness().getBusinessName(),
+                        savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
+                        savedOrder.getId(),
+                        savedOrder.getTotalAmount()
+                );
+            }
+        }
+
+        List<String> adminEmails = studentRepository.findByRole(Student.Role.ADMIN).stream()
+                .map(Student::getEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .collect(Collectors.toList());
+        if (!adminEmails.isEmpty()) {
+            emailService.sendNewOrderEmailToAdmins(
+                    savedOrder.getBusiness() != null ? savedOrder.getBusiness().getBusinessName() : "Your shop",
+                    savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
+                    savedOrder.getId(),
+                    savedOrder.getTotalAmount(),
+                    adminEmails
+            );
+        }
+
+        return savedOrder;
     }
 
     public List<Order> getAllOrders() {
@@ -98,7 +138,38 @@ public class OrderService {
         if (reason != null && !reason.isEmpty()) {
             order.setCancellationReason(reason);
         }
-        return orderRepository.save(order);
+
+        Order savedOrder = orderRepository.save(order);
+
+        String shopOwnerEmail = savedOrder.getBusiness() != null && savedOrder.getBusiness().getStudent() != null
+                ? savedOrder.getBusiness().getStudent().getEmail() : null;
+        if (shopOwnerEmail != null && !shopOwnerEmail.isBlank()) {
+            emailService.sendOrderStatusEmailToShopOwner(
+                    shopOwnerEmail,
+                    savedOrder.getBusiness().getBusinessName(),
+                    savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
+                    savedOrder.getId(),
+                    savedOrder.getStatus().name(),
+                    reason
+            );
+        }
+
+        List<String> adminEmails = studentRepository.findByRole(Student.Role.ADMIN).stream()
+                .map(Student::getEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .collect(Collectors.toList());
+        if (!adminEmails.isEmpty()) {
+            emailService.sendOrderStatusEmailToAdmins(
+                    savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
+                    savedOrder.getBusiness() != null ? savedOrder.getBusiness().getBusinessName() : "Shop",
+                    savedOrder.getId(),
+                    savedOrder.getStatus().name(),
+                    reason,
+                    adminEmails
+            );
+        }
+
+        return savedOrder;
     }
 
     public void deleteOrder(Long id) {
