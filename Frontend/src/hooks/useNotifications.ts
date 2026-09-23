@@ -150,6 +150,7 @@ export function useNotifications({
   const prevOrders   = useRef<number | null>(null);
   const prevMessages = useRef<number | null>(null);
   const prevDelivery = useRef<number | null>(null);
+  const alertLoopRef = useRef<number | null>(null);
 
   // Request permission once on mount
   useEffect(() => {
@@ -157,6 +158,57 @@ export function useNotifications({
       Notification.requestPermission();
     }
   }, []);
+
+  // Keep the alert active until the issue is resolved, so the shop/admin/driver
+  // keeps hearing a clear signal while there is still pending work to act on.
+  useEffect(() => {
+    const activeAlertCount = Math.max(newOrderCount, newDeliveryCount, newMessageCount);
+    const hasActiveAlert = activeAlertCount > 0;
+
+    if (!hasActiveAlert) {
+      if (alertLoopRef.current !== null) {
+        window.clearInterval(alertLoopRef.current);
+        alertLoopRef.current = null;
+      }
+      return;
+    }
+
+    const playActiveAlert = () => {
+      if (newOrderCount > 0) {
+        playSound('order');
+        showBrowserNotification(
+          'Duwaz needs your attention',
+          `You have ${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} waiting.`
+        );
+      } else if (newDeliveryCount > 0) {
+        playSound('delivery');
+        showBrowserNotification(
+          'Duwaz needs your attention',
+          `You have ${newDeliveryCount} delivery assignment${newDeliveryCount > 1 ? 's' : ''} waiting.`
+        );
+      } else if (newMessageCount > 0) {
+        playSound('message');
+        showBrowserNotification(
+          'Duwaz needs your attention',
+          `You have ${newMessageCount} unread message${newMessageCount > 1 ? 's' : ''}.`
+        );
+      }
+
+      if (document.visibilityState !== 'visible') {
+        setAttentionBadge(activeAlertCount);
+      }
+    };
+
+    playActiveAlert();
+    alertLoopRef.current = window.setInterval(playActiveAlert, 7000);
+
+    return () => {
+      if (alertLoopRef.current !== null) {
+        window.clearInterval(alertLoopRef.current);
+        alertLoopRef.current = null;
+      }
+    };
+  }, [newOrderCount, newDeliveryCount, newMessageCount]);
 
   // Orders: compare IDs so we only flag truly new pending orders.
   useEffect(() => {
@@ -171,9 +223,7 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${newIds.length} new order${newIds.length > 1 ? 's' : ''} waiting.`
       );
-      if (document.visibilityState === 'hidden') {
-        setAttentionBadge(newIds.length);
-      }
+      setAttentionBadge(newIds.length);
     }
 
     writeSeenIds(seenKey, [...seen, ...currentIds]);
@@ -194,9 +244,7 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${diff} unread message${diff > 1 ? 's' : ''}.`
       );
-      if (document.visibilityState === 'hidden') {
-        setAttentionBadge(diff);
-      }
+      setAttentionBadge(diff);
     }
     prevMessages.current = newMessageCount;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,9 +263,7 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${newIds.length} new delivery assignment${newIds.length > 1 ? 's' : ''}.`
       );
-      if (document.visibilityState === 'hidden') {
-        setAttentionBadge(newIds.length);
-      }
+      setAttentionBadge(newIds.length);
     }
 
     writeSeenIds(seenKey, [...seen, ...currentIds]);
@@ -238,15 +284,13 @@ export function useNotifications({
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        clearAttentionBadge();
-        return;
-      }
-
       const totalAttention = (newOrderCount || 0) + (newMessageCount || 0) + (newDeliveryCount || 0);
       if (totalAttention > 0) {
         setAttentionBadge(totalAttention);
+        return;
       }
+
+      clearAttentionBadge();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
