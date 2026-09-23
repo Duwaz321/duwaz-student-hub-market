@@ -193,7 +193,7 @@ export function useNotifications({
   // Keep the alert active until the issue is resolved, so the shop/admin/driver
   // keeps hearing a clear signal while there is still pending work to act on.
   useEffect(() => {
-    const activeAlertCount = Math.max(newOrderCount, newDeliveryCount, newMessageCount);
+    const activeAlertCount = (newOrderCount || 0) + (newDeliveryCount || 0) + (newMessageCount || 0);
     const hasActiveAlert = activeAlertCount > 0;
 
     if (!hasActiveAlert) {
@@ -226,6 +226,9 @@ export function useNotifications({
       }
     };
 
+    // Always render the badge for active work on first load so unread messages and
+    // pending orders are visible immediately instead of waiting for a later count change.
+    setAttentionBadge(activeAlertCount);
     playActiveAlert();
     alertLoopRef.current = window.setInterval(playActiveAlert, 7000);
 
@@ -250,7 +253,11 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${newIds.length} new order${newIds.length > 1 ? 's' : ''} waiting.`
       );
-      setAttentionBadge(newIds.length);
+    }
+
+    // Maintain the visible badge based on live pending work, not only on diff.
+    if (newOrderCount > 0) {
+      setAttentionBadge(newOrderCount);
     }
 
     writeSeenIds(seenKey, [...seen, ...currentIds]);
@@ -262,6 +269,9 @@ export function useNotifications({
   useEffect(() => {
     if (prevMessages.current === null) {
       prevMessages.current = newMessageCount;
+      if (newMessageCount > 0) {
+        setAttentionBadge(newMessageCount);
+      }
       return;
     }
     if (newMessageCount > prevMessages.current) {
@@ -271,7 +281,9 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${diff} unread message${diff > 1 ? 's' : ''}.`
       );
-      setAttentionBadge(diff);
+    }
+    if (newMessageCount > 0) {
+      setAttentionBadge(newMessageCount);
     }
     prevMessages.current = newMessageCount;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -290,7 +302,10 @@ export function useNotifications({
         'Duwaz needs your attention',
         `You have ${newIds.length} new delivery assignment${newIds.length > 1 ? 's' : ''}.`
       );
-      setAttentionBadge(newIds.length);
+    }
+
+    if (newDeliveryCount > 0) {
+      setAttentionBadge(newDeliveryCount);
     }
 
     writeSeenIds(seenKey, [...seen, ...currentIds]);
