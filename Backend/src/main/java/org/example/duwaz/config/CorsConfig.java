@@ -16,16 +16,17 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(
-                    "http://localhost:5173",
-                    "http://localhost:5174",
-                    "http://localhost:8081",
-                    "http://localhost:3000",
+                .allowedOriginPatterns(
+                    "http://localhost:*",
+                    "https://localhost:*",
+                    "https://*.duwaz.co.za",
+                    "http://*.duwaz.co.za",
                     "https://duwaz.co.za",
                     "https://www.duwaz.co.za"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
+                .allowedHeaders("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-CSRF-Token")
+                .exposedHeaders("Authorization")
                 .allowCredentials(false)
                 .maxAge(3600);
     }
