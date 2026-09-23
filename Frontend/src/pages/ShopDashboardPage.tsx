@@ -167,11 +167,34 @@ const ShopDashboardPage = () => {
 
   const unreadReplies = myMessages.filter(m => m.replyContent && m.status === 'REPLIED').length;
 
-  // 🔔 Loud notifications for genuinely new shop orders and replies.
+  const getSeenOrderIds = (key: string): Set<number> => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+    } catch {
+      return new Set();
+    }
+  };
+
+  const getSeenOrderKey = `duwaz_seen_shop_orders_${shop?.id ?? 'unknown'}`;
   const pendingOrderIds = shopOrders.filter((o: any) => o.status === 'PENDING').map((o: any) => Number(o.id)).filter(Number.isFinite);
+  const seenPendingOrderIds = getSeenOrderIds(getSeenOrderKey);
+  const unseenPendingOrderIds = pendingOrderIds.filter(id => !seenPendingOrderIds.has(id));
+
+  useEffect(() => {
+    if (!shop?.id) return;
+    const seen = getSeenOrderIds(getSeenOrderKey);
+    const merged = [...new Set([...seen, ...pendingOrderIds])];
+    localStorage.setItem(getSeenOrderKey, JSON.stringify(merged));
+  }, [shop?.id, JSON.stringify(pendingOrderIds)]);
+
+  // 🔔 Loud notifications for genuinely new shop orders and replies.
   useNotifications({
-    newOrderCount:   pendingOrderIds.length,
-    newOrderIds:     pendingOrderIds,
+    newOrderCount:   unseenPendingOrderIds.length,
+    newOrderIds:     unseenPendingOrderIds,
     newMessageCount: unreadReplies,
   });
 
@@ -374,7 +397,7 @@ const ShopDashboardPage = () => {
     </div>
   );
 
-  const pendingCount = shopOrders.filter(o => o.status === 'PENDING').length;
+  const pendingCount = unseenPendingOrderIds.length;
 
   return (
     <div className="container mx-auto px-4 py-6">
