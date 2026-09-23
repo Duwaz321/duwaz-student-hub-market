@@ -229,8 +229,10 @@ export function useNotifications({
     // Always render the badge for active work on first load so unread messages and
     // pending orders are visible immediately instead of waiting for a later count change.
     setAttentionBadge(activeAlertCount);
+    // Keep the attention alarm running until the live order/message is handled.
+    // This gives a strong persistent signal for pending work instead of a one-off beep.
     playActiveAlert();
-    alertLoopRef.current = window.setInterval(playActiveAlert, 7000);
+    alertLoopRef.current = window.setInterval(playActiveAlert, 3000);
 
     return () => {
       if (alertLoopRef.current !== null) {
