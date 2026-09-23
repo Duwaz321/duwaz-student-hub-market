@@ -94,21 +94,56 @@ function showBrowserNotification(title: string, body: string) {
 
 interface NotifyOptions {
   newOrderCount?:    number;
+  newOrderIds?:      number[];
   newMessageCount?:  number;
   newDeliveryCount?: number;
+  newDeliveryIds?:   number[];
+}
+
+function getSeenStorageKey(kind: 'orders' | 'deliveries') {
+  try {
+    const rawUser = localStorage.getItem('duwaz_user');
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    const userId = user?.userId ?? 'guest';
+    const role = user?.role ?? 'guest';
+    return `duwaz_seen_${kind}_${role}_${userId}`;
+  } catch {
+    return `duwaz_seen_${kind}_guest`;
+  }
+}
+
+function readSeenIds(key: string): Set<number> {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSeenIds(key: string, ids: number[]) {
+  try {
+    const unique = [...new Set(ids.filter(id => Number.isFinite(id)))].sort((a, b) => a - b);
+    localStorage.setItem(key, JSON.stringify(unique));
+    window.dispatchEvent(new CustomEvent('duwaz-attention-change', { detail: { count: unique.length } }));
+  } catch { /* ignore */ }
 }
 
 /**
  * Plays a sound and shows a browser notification when counts increase.
  *
- * Key fix: baseline is recorded only AFTER the data has loaded (i.e. count > 0
- * or after first non-undefined value). This prevents false alerts on mount
- * and stops the reload loop caused by re-rendering on every poll cycle.
+ * The real fix here is to compare actual IDs, not just the total count. That way
+ * we only report genuinely new orders/deliveries while ignoring older pending work.
  */
 export function useNotifications({
   newOrderCount    = 0,
+  newOrderIds      = [],
   newMessageCount  = 0,
   newDeliveryCount = 0,
+  newDeliveryIds   = [],
 }: NotifyOptions) {
 
   // null = not yet initialised (waiting for first real data)
@@ -123,27 +158,28 @@ export function useNotifications({
     }
   }, []);
 
-  // Orders
+  // Orders: compare IDs so we only flag truly new pending orders.
   useEffect(() => {
-    if (prevOrders.current === null) {
-      // Record baseline on first data arrival — do NOT alert
-      prevOrders.current = newOrderCount;
-      return;
-    }
-    if (newOrderCount > prevOrders.current) {
-      const diff = newOrderCount - prevOrders.current;
+    const seenKey = getSeenStorageKey('orders');
+    const seen = readSeenIds(seenKey);
+    const currentIds = newOrderIds.filter(id => Number.isFinite(id));
+    const newIds = currentIds.filter(id => !seen.has(id));
+
+    if (newIds.length > 0) {
       playSound('order');
       showBrowserNotification(
         'Duwaz needs your attention',
-        `You have ${diff} new order${diff > 1 ? 's' : ''} waiting.`
+        `You have ${newIds.length} new order${newIds.length > 1 ? 's' : ''} waiting.`
       );
       if (document.visibilityState === 'hidden') {
-        setAttentionBadge(diff);
+        setAttentionBadge(newIds.length);
       }
     }
+
+    writeSeenIds(seenKey, [...seen, ...currentIds]);
     prevOrders.current = newOrderCount;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newOrderCount]);
+  }, [newOrderCount, JSON.stringify(newOrderIds)]);
 
   // Messages
   useEffect(() => {
@@ -166,26 +202,28 @@ export function useNotifications({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newMessageCount]);
 
-  // Deliveries (driver)
+  // Deliveries (driver): compare actual assignment IDs so older job counts don't keep firing.
   useEffect(() => {
-    if (prevDelivery.current === null) {
-      prevDelivery.current = newDeliveryCount;
-      return;
-    }
-    if (newDeliveryCount > prevDelivery.current) {
-      const diff = newDeliveryCount - prevDelivery.current;
+    const seenKey = getSeenStorageKey('deliveries');
+    const seen = readSeenIds(seenKey);
+    const currentIds = newDeliveryIds.filter(id => Number.isFinite(id));
+    const newIds = currentIds.filter(id => !seen.has(id));
+
+    if (newIds.length > 0) {
       playSound('delivery');
       showBrowserNotification(
         'Duwaz needs your attention',
-        `You have ${diff} new delivery assignment${diff > 1 ? 's' : ''}.`
+        `You have ${newIds.length} new delivery assignment${newIds.length > 1 ? 's' : ''}.`
       );
       if (document.visibilityState === 'hidden') {
-        setAttentionBadge(diff);
+        setAttentionBadge(newIds.length);
       }
     }
+
+    writeSeenIds(seenKey, [...seen, ...currentIds]);
     prevDelivery.current = newDeliveryCount;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newDeliveryCount]);
+  }, [newDeliveryCount, JSON.stringify(newDeliveryIds)]);
 
   // Keep the installed app badge/title in sync so the home-screen icon visibly
   // signals there is something that needs the shop owner’s attention.

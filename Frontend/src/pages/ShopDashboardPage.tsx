@@ -113,8 +113,9 @@ const ShopDashboardPage = () => {
     queryKey: ['orders', 'shop'],
     queryFn: () => ordersApi.getShopOrders(0, 100),
     enabled: !!shop,
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: 10000,
+    staleTime: 5000,
+    refetchOnWindowFocus: true,
   });
 
   // Handle both paginated response {content:[]} and plain array []
@@ -166,11 +167,11 @@ const ShopDashboardPage = () => {
 
   const unreadReplies = myMessages.filter(m => m.replyContent && m.status === 'REPLIED').length;
 
-  // 🔔 Loud notifications for new orders and messages
-  // Use stable counts to avoid firing on every re-render
-  const pendingOrderCount = shopOrders.filter((o: any) => o.status === 'PENDING').length;
+  // 🔔 Loud notifications for genuinely new shop orders and replies.
+  const pendingOrderIds = shopOrders.filter((o: any) => o.status === 'PENDING').map((o: any) => Number(o.id)).filter(Number.isFinite);
   useNotifications({
-    newOrderCount:   pendingOrderCount,
+    newOrderCount:   pendingOrderIds.length,
+    newOrderIds:     pendingOrderIds,
     newMessageCount: unreadReplies,
   });
 

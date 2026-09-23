@@ -367,7 +367,8 @@ const DriverDashboardPage = () => {
   const { data: allDeliveries = [], isLoading } = useQuery({
     queryKey: ['deliveries', 'my'],
     queryFn: deliveriesApi.getMyDeliveries,
-    refetchInterval: 15000, // poll every 15s
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: profile } = useQuery({
@@ -424,10 +425,16 @@ const DriverDashboardPage = () => {
     (a) => a.deliveryStatus !== 'DELIVERED' && a.deliveryStatus !== 'DELIVERY_FAILED' && a.deliveryStatus !== 'CANCELLED'
   );
 
-  // 🔔 Loud notifications for new deliveries and messages
+  // 🔔 Loud notifications for genuinely new assignments and unread messages
+  const newAssignmentIds = activeDeliveries
+    .filter((a) => a.deliveryStatus === 'ASSIGNED')
+    .map((a) => Number(a.id))
+    .filter(Number.isFinite);
+
   useNotifications({
-    newDeliveryCount: activeDeliveries.filter(a => a.deliveryStatus === 'ASSIGNED').length,
-    newMessageCount:  driverUnreadCount,
+    newDeliveryCount: newAssignmentIds.length,
+    newDeliveryIds: newAssignmentIds,
+    newMessageCount: driverUnreadCount,
   });
 
   const [viewingDriverMsg, setViewingDriverMsg] = useState<StoreMessage | null>(null);

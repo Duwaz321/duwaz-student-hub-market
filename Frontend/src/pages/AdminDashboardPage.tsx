@@ -169,10 +169,12 @@ const AdminDashboardPage = () => {
   const unreadCount = unreadData?.unreadCount ?? 0;
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;
+  const pendingOrderIds = orders.filter((o: any) => o.status === 'PENDING').map((o: any) => Number(o.id)).filter(Number.isFinite);
 
-  // 🔔 Loud notifications for new messages and pending orders
+  // 🔔 Loud notifications for truly new pending orders and unread admin messages
   useNotifications({
-    newOrderCount:   orders.filter((o: any) => o.status === 'PENDING').length,
+    newOrderCount: pendingOrderIds.length,
+    newOrderIds: pendingOrderIds,
     newMessageCount: unreadCount,
   });
 
