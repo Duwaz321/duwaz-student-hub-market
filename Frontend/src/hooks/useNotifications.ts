@@ -2,15 +2,35 @@ import { useEffect, useRef } from 'react';
 
 type SoundType = 'order' | 'message' | 'delivery';
 
+let audioContext: AudioContext | null = null;
+
+function unlockAudioContext() {
+  const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioCtor) return;
+
+  if (!audioContext) {
+    audioContext = new AudioCtor();
+  }
+
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => undefined);
+  }
+}
+
 function playSound(type: SoundType) {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    unlockAudioContext();
+    const ctx = audioContext ?? new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!ctx) return;
     const configs: Record<SoundType, { freqs: number[]; duration: number; volume: number }> = {
       order:    { freqs: [880, 1100, 1320], duration: 0.18, volume: 0.9 },
       message:  { freqs: [660, 880],        duration: 0.15, volume: 0.7 },
       delivery: { freqs: [440, 440, 440],   duration: 0.1,  volume: 0.85 },
     };
     const { freqs, duration, volume } = configs[type];
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => undefined);
+    }
     freqs.forEach((freq, i) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -24,7 +44,11 @@ function playSound(type: SoundType) {
       osc.start(t);
       osc.stop(t + duration + 0.01);
     });
-    setTimeout(() => ctx.close(), (freqs.length * (duration + 0.05) + 0.5) * 1000);
+    setTimeout(() => {
+      if (audioContext && audioContext.state === 'running') {
+        audioContext.resume().catch(() => undefined);
+      }
+    }, 100);
   } catch { /* silent fail */ }
 }
 
@@ -157,6 +181,13 @@ export function useNotifications({
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+
+    const unlock = () => unlockAudioContext();
+    const events = ['pointerdown', 'keydown', 'touchstart', 'click'];
+    events.forEach((eventName) => window.addEventListener(eventName, unlock, { passive: true }));
+    return () => {
+      events.forEach((eventName) => window.removeEventListener(eventName, unlock));
+    };
   }, []);
 
   // Keep the alert active until the issue is resolved, so the shop/admin/driver
@@ -174,28 +205,24 @@ export function useNotifications({
     }
 
     const playActiveAlert = () => {
-      if (newOrderCount > 0) {
-        playSound('order');
-        showBrowserNotification(
-          'Duwaz needs your attention',
-          `You have ${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} waiting.`
-        );
-      } else if (newDeliveryCount > 0) {
-        playSound('delivery');
-        showBrowserNotification(
-          'Duwaz needs your attention',
-          `You have ${newDeliveryCount} delivery assignment${newDeliveryCount > 1 ? 's' : ''} waiting.`
-        );
-      } else if (newMessageCount > 0) {
-        playSound('message');
-        showBrowserNotification(
-          'Duwaz needs your attention',
-          `You have ${newMessageCount} unread message${newMessageCount > 1 ? 's' : ''}.`
-        );
-      }
+      const title = newOrderCount > 0
+        ? `You have ${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} waiting.`
+        : newDeliveryCount > 0
+          ? `You have ${newDeliveryCount} delivery assignment${newDeliveryCount > 1 ? 's' : ''} waiting.`
+          : `You have ${newMessageCount} unread message${newMessageCount > 1 ? 's' : ''}.`;
 
-      if (document.visibilityState !== 'visible') {
-        setAttentionBadge(activeAlertCount);
+      if (newOrderCount > 0) playSound('order');
+      else if (newDeliveryCount > 0) playSound('delivery');
+      else if (newMessageCount > 0) playSound('message');
+
+      showBrowserNotification('Duwaz needs your attention', title);
+      setAttentionBadge(activeAlertCount);
+
+      const previousTitle = document.title;
+      const hasVisibleTitle = document.visibilityState === 'visible';
+      if (hasVisibleTitle) {
+        document.title = `(${activeAlertCount}) Duwaz`;
+        window.setTimeout(() => { document.title = previousTitle; }, 1800);
       }
     };
 
