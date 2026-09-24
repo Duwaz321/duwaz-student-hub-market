@@ -1,0 +1,26 @@
+{
+  "name": "Duwaz Marketplace",
+  "short_name": "Duwaz",
+  "description": "Student-to-student shopping, orders, and shop management.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ee",
+  "theme_color": "#4b2e1f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/DuwazLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/DuwazLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": []
+}

@@ -55,22 +55,35 @@ function playSound(type: SoundType) {
 const ATTENTION_STORAGE_KEY = 'duwaz_attention_count';
 
 function setAttentionBadge(count: number) {
+  const safeCount = Math.max(0, Number.isFinite(count) ? count : 0);
+
   try {
-    localStorage.setItem(ATTENTION_STORAGE_KEY, String(Math.max(1, count)));
-    window.dispatchEvent(new CustomEvent('duwaz-attention-change', { detail: { count: Math.max(1, count) } }));
+    if (safeCount > 0) {
+      localStorage.setItem(ATTENTION_STORAGE_KEY, String(safeCount));
+    } else {
+      localStorage.removeItem(ATTENTION_STORAGE_KEY);
+    }
+    window.dispatchEvent(new CustomEvent('duwaz-attention-change', { detail: { count: safeCount } }));
   } catch { /* ignore */ }
 
   try {
     if ('setAppBadge' in navigator && typeof navigator.setAppBadge === 'function') {
-      navigator.setAppBadge(count).catch(() => undefined);
+      if (safeCount > 0) {
+        navigator.setAppBadge(safeCount).catch(() => undefined);
+      } else {
+        navigator.clearAppBadge?.().catch(() => undefined);
+      }
       return;
     }
   } catch { /* ignore */ }
 
-  if (count > 0 && document.visibilityState !== 'visible') {
-    const previousTitle = document.title;
-    document.title = `(${count}) Duwaz needs your attention`;
+  if (safeCount > 0 && document.visibilityState !== 'visible') {
+    const previousTitle = (document as any).__duwaz_prevTitle || document.title;
+    document.title = `(${safeCount}) Duwaz needs your attention`;
     (document as any).__duwaz_prevTitle = previousTitle;
+  } else if (safeCount === 0 && (document as any).__duwaz_prevTitle) {
+    document.title = (document as any).__duwaz_prevTitle;
+    delete (document as any).__duwaz_prevTitle;
   }
 }
 
