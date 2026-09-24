@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useProducts } from '@/hooks/useProducts';
+import { transactionsApi } from '@/services/api';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import type { AddressDetails } from '@/hooks/useGoogleMapsAutocomplete';
 
@@ -45,6 +47,17 @@ const CartPage = () => {
   const { isAuthenticated, user } = useAuth();
   const { items, subtotal, addItem, removeItem, updateQuantity, clearCart } = useCart();
   const { data: allProducts = [] } = useProducts();
+  const { data: loyaltySummary } = useQuery({
+    queryKey: ['transactions', 'summary'],
+    queryFn: () => transactionsApi.getMySummary(),
+    enabled: isAuthenticated,
+    staleTime: 30000,
+    retry: 1,
+    initialData: { totalSpend: 0, totalPoints: 0, pointsValue: 0, rewardHistory: [], transactions: [] },
+  });
+
+  const totalPoints = Number((loyaltySummary as any)?.totalPoints ?? 0);
+  const pointsValue = Number((loyaltySummary as any)?.pointsValue ?? 0);
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [useMyResidence, setUseMyResidence] = useState(true);
@@ -155,6 +168,11 @@ const CartPage = () => {
       .slice(0, 3)
       .map((product) => ({ ...product, reason: 'Often bought together' }));
   }, [allProducts, items]);
+
+  const suggestedBundleTotal = suggestedAddOns.reduce((sum, product: any) => sum + Number(product.price ?? 0), 0);
+  const estimatedLoyaltySavings = totalPoints > 0
+    ? Math.min(suggestedBundleTotal, Math.max(pointsValue, 0))
+    : suggestedBundleTotal * 0.1;
 
   const handleAddSuggestedItem = (product: any) => {
     addItem({
@@ -364,6 +382,29 @@ const CartPage = () => {
                     </h2>
                   </div>
                   <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">Combo picks</span>
+                </div>
+
+                <div className="rounded-xl border border-amber-200 bg-white/80 p-3">
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>Bundle preview</span>
+                    <span className="font-semibold text-amber-700">R{suggestedBundleTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Current cart</span>
+                    <span className="font-semibold">R{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">With suggested add-ons</span>
+                    <span className="font-bold text-duwaz-brown">R{(subtotal + suggestedBundleTotal).toFixed(2)}</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-2 text-xs">
+                    <span className="text-emerald-700">
+                      {totalPoints > 0 ? `${totalPoints} pts available` : 'Potential loyalty rewards save'}
+                    </span>
+                    <span className="font-bold text-emerald-700">
+                      R{estimatedLoyaltySavings.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
