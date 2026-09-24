@@ -186,18 +186,26 @@ const ShopDashboardPage = () => {
   };
 
   const getSeenOrderKey = `duwaz_seen_shop_orders_${shop?.id ?? 'unknown'}`;
-  const pendingOrderIds = shopOrders.filter((o: any) => o.status === 'PENDING').map((o: any) => Number(o.id)).filter(Number.isFinite);
+  const orderNeedsAttention = (order: any) => {
+    const status = String(order?.status ?? '').toUpperCase();
+    return !['CANCELLED', 'DELIVERED', 'REFUNDED'].includes(status);
+  };
+  const attentionOrderIds = shopOrders
+    .filter(orderNeedsAttention)
+    .map((o: any) => Number(o.id))
+    .filter(Number.isFinite);
   const seenPendingOrderIds = getSeenOrderIds(getSeenOrderKey);
-  const unseenPendingOrderIds = pendingOrderIds.filter(id => !seenPendingOrderIds.has(id));
+  const unseenPendingOrderIds = attentionOrderIds.filter(id => !seenPendingOrderIds.has(id));
 
   useEffect(() => {
     if (!shop?.id) return;
     const seen = getSeenOrderIds(getSeenOrderKey);
-    const merged = [...new Set([...seen, ...pendingOrderIds])];
+    const merged = [...new Set([...seen, ...attentionOrderIds])];
     localStorage.setItem(getSeenOrderKey, JSON.stringify(merged));
-  }, [shop?.id, JSON.stringify(pendingOrderIds)]);
+  }, [shop?.id, JSON.stringify(attentionOrderIds)]);
 
-  // 🔔 Loud notifications for genuinely new shop orders and unread messages.
+  // 🔔 Loud notifications for every active shop order and unread messages.
+  // The order remains attention-worthy until the admin or shop resolves it.
   useNotifications({
     newOrderCount:   unseenPendingOrderIds.length,
     newOrderIds:     unseenPendingOrderIds,

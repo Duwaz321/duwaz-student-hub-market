@@ -169,12 +169,20 @@ const AdminDashboardPage = () => {
   const unreadCount = unreadData?.unreadCount ?? 0;
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;
-  const pendingOrderIds = orders.filter((o: any) => o.status === 'PENDING').map((o: any) => Number(o.id)).filter(Number.isFinite);
+  const orderNeedsAttention = (o: Order) => {
+    const status = String(o.status ?? '').toUpperCase();
+    return !['CANCELLED', 'DELIVERED', 'REFUNDED'].includes(status);
+  };
+  const attentionOrderIds = orders
+    .filter(orderNeedsAttention)
+    .map((o: any) => Number(o.id))
+    .filter(Number.isFinite);
 
-  // 🔔 Loud notifications for truly new pending orders and unread admin messages
+  // 🔔 Loud notifications for all live orders and unread admin messages.
+  // Any order still active needs attention until the admin or shop resolves it.
   useNotifications({
-    newOrderCount: pendingOrderIds.length,
-    newOrderIds: pendingOrderIds,
+    newOrderCount: attentionOrderIds.length,
+    newOrderIds: attentionOrderIds,
     newMessageCount: unreadCount,
   });
 
@@ -224,7 +232,10 @@ const AdminDashboardPage = () => {
 
   const markReadMutation = useMutation({
     mutationFn: (id: number) => messagesApi.markRead(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'messages', 'unread-count'] });
+    }
   });
 
   const replyMutation = useMutation({
@@ -591,8 +602,8 @@ const AdminDashboardPage = () => {
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${sColors[msg.status] ?? ''}`}>{msg.status}</span>
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); markReadMutation.mutate(msg.id); }}>View</Button>
-                          {msg.status !== 'RESOLVED' && <Button size="sm" variant="outline" className="h-7 text-xs border-blue-300 text-blue-600" onClick={() => { setReplyingTo(msg); setReplyContent(''); markReadMutation.mutate(msg.id); }}><Send className="h-3 w-3 mr-1" />Reply</Button>}
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}>View</Button>
+                          {msg.status !== 'RESOLVED' && <Button size="sm" variant="outline" className="h-7 text-xs border-blue-300 text-blue-600" onClick={() => { setReplyingTo(msg); setReplyContent(''); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}><Send className="h-3 w-3 mr-1" />Reply</Button>}
                           {isDelivery && msg.order && (
                             msg.status === 'RESOLVED' ? (
                               <span className="h-7 flex items-center text-xs px-2 rounded-full bg-green-100 text-green-700 font-medium">
