@@ -166,7 +166,6 @@ const AdminDashboardPage = () => {
   const { data: categories = [] } = useCategories();
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 5000 });
   const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 5000 });
-  const unreadCount = unreadData?.unreadCount ?? 0;
   const getSeenMessageIds = (): Set<number> => {
     try {
       const raw = localStorage.getItem('duwaz_seen_admin_messages');
@@ -190,6 +189,9 @@ const AdminDashboardPage = () => {
     .map((msg: StoreMessage) => Number(msg.id))
     .filter(Number.isFinite)
     .filter((id: number) => !getSeenMessageIds().has(id));
+  const unreadCount = unseenUnreadMessageIds.length;
+  const unreadCountFromApi = unreadData?.unreadCount ?? 0;
+  const effectiveUnreadCount = Math.max(0, Math.min(unreadCount, unreadCountFromApi || unreadCount));
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;
   const orderNeedsAttention = (o: Order) => {
@@ -392,7 +394,7 @@ const AdminDashboardPage = () => {
           <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" />Users</TabsTrigger>
           <TabsTrigger value="messages">
             <MessageSquare className="h-4 w-4 mr-1" />Messages
-            {unreadCount > 0 && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{unreadCount}</span>}
+            {effectiveUnreadCount > 0 && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{effectiveUnreadCount}</span>}
           </TabsTrigger>
         </TabsList>
 
