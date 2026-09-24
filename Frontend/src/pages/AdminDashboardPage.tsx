@@ -173,16 +173,37 @@ const AdminDashboardPage = () => {
     const status = String(o.status ?? '').toUpperCase();
     return !['CANCELLED', 'DELIVERED', 'REFUNDED'].includes(status);
   };
+
+  const getSeenAttentionOrders = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('duwaz_seen_admin_order_attention');
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+    } catch {
+      return new Set();
+    }
+  };
+
+  const markOrderAttentionSeen = (orderId: number) => {
+    try {
+      const seen = getSeenAttentionOrders();
+      seen.add(orderId);
+      localStorage.setItem('duwaz_seen_admin_order_attention', JSON.stringify([...seen].sort((a, b) => a - b)));
+    } catch { /* ignore */ }
+  };
+
   const attentionOrderIds = orders
     .filter(orderNeedsAttention)
     .map((o: any) => Number(o.id))
     .filter(Number.isFinite);
+  const unseenAttentionOrderIds = attentionOrderIds.filter(id => !getSeenAttentionOrders().has(id));
 
-  // 🔔 Loud notifications for all live orders and unread admin messages.
-  // Any order still active needs attention until the admin or shop resolves it.
+  // 🔔 Only notify for genuinely new, unresolved orders and unread admin messages.
   useNotifications({
-    newOrderCount: attentionOrderIds.length,
-    newOrderIds: attentionOrderIds,
+    newOrderCount: unseenAttentionOrderIds.length,
+    newOrderIds: unseenAttentionOrderIds,
     newMessageCount: unreadCount,
   });
 
@@ -196,7 +217,8 @@ const AdminDashboardPage = () => {
   // Mutations
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => ordersApi.updateStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      markOrderAttentionSeen(variables.id);
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
       toast({ title: 'Status updated' });
     },
@@ -386,7 +408,7 @@ const AdminDashboardPage = () => {
                               <td className="py-2 px-3"><span className={`px-2 py-0.5 text-xs rounded-full ${className}`}>{label}</span></td>
                               <td className="py-2 px-3">
                                 <div className="flex gap-1">
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setSelectedOrder(order)}><Eye className="h-3 w-3" /></Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { markOrderAttentionSeen(order.id); setSelectedOrder(order); }}><Eye className="h-3 w-3" /></Button>
                                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => setDeleteOrderId(order.id)}><Trash2 className="h-3 w-3" /></Button>
                                 </div>
                               </td>

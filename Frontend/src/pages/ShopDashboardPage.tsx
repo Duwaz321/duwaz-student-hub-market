@@ -131,7 +131,12 @@ const ShopDashboardPage = () => {
   const { mutate: adjustStock } = useAdjustStock();
   const updateOrderMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => ordersApi.updateStatus(id, status),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders', 'shop'] }); qc.invalidateQueries({ queryKey: ['shop', 'stats'] }); toast({ title: 'Order updated' }); },
+    onSuccess: (_data, vars) => {
+      markOrderAttentionSeen(vars.id);
+      qc.invalidateQueries({ queryKey: ['orders', 'shop'] });
+      qc.invalidateQueries({ queryKey: ['shop', 'stats'] });
+      toast({ title: 'Order updated' });
+    },
     onError: (err: any) => toast({ title: 'Failed', description: err.message, variant: 'destructive' }),
   });
 
@@ -197,15 +202,15 @@ const ShopDashboardPage = () => {
   const seenPendingOrderIds = getSeenOrderIds(getSeenOrderKey);
   const unseenPendingOrderIds = attentionOrderIds.filter(id => !seenPendingOrderIds.has(id));
 
-  useEffect(() => {
-    if (!shop?.id) return;
-    const seen = getSeenOrderIds(getSeenOrderKey);
-    const merged = [...new Set([...seen, ...attentionOrderIds])];
-    localStorage.setItem(getSeenOrderKey, JSON.stringify(merged));
-  }, [shop?.id, JSON.stringify(attentionOrderIds)]);
+  const markOrderAttentionSeen = (orderId: number) => {
+    try {
+      const seen = getSeenOrderIds(getSeenOrderKey);
+      seen.add(orderId);
+      localStorage.setItem(getSeenOrderKey, JSON.stringify([...seen].sort((a, b) => a - b)));
+    } catch { /* ignore */ }
+  };
 
-  // 🔔 Loud notifications for every active shop order and unread messages.
-  // The order remains attention-worthy until the admin or shop resolves it.
+  // 🔔 Only notify for genuinely new unresolved orders and unread messages.
   useNotifications({
     newOrderCount:   unseenPendingOrderIds.length,
     newOrderIds:     unseenPendingOrderIds,
