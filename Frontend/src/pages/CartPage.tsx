@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trash, MapPin, Home, Pencil, Store, Banknote, Package, CreditCard, CheckCircle, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useProducts } from '@/hooks/useProducts';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import type { AddressDetails } from '@/hooks/useGoogleMapsAutocomplete';
 
@@ -42,7 +43,8 @@ const CartPage = () => {
   const { toast }    = useToast();
   const navigate     = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { items, subtotal, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, subtotal, addItem, removeItem, updateQuantity, clearCart } = useCart();
+  const { data: allProducts = [] } = useProducts();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [useMyResidence, setUseMyResidence] = useState(true);
@@ -57,6 +59,115 @@ const CartPage = () => {
 
   const deliveryFee = needsAddress ? MIN_DELIVERY_FEE : 0;
   const total = subtotal + deliveryFee;
+
+  const suggestedAddOns = useMemo(() => {
+    const cartItems = items.filter(item => item.productType !== 'SERVICE');
+    if (cartItems.length === 0) return [];
+
+    const cartText = cartItems
+      .map(item => `${item.name} ${(item as any).category ?? ''}`)
+      .join(' ')
+      .toLowerCase();
+
+    const productMatches = [
+      {
+        names: ['burger', 'pizza', 'wrap', 'sandwich', 'pasta', 'rice', 'meal', 'bowl', 'chicken', 'grill', 'taco', 'fries', 'chips'],
+        compliments: ['drink', 'juice', 'cola', 'coke', 'water', 'soda', 'energy', 'milkshake', 'lemonade'],
+        reason: 'Popular pairing with a meal',
+      },
+      {
+        names: ['drink', 'juice', 'water', 'cola', 'coke', 'soda', 'energy', 'lemonade', 'milkshake'],
+        compliments: ['burger', 'pizza', 'sandwich', 'fries', 'chips', 'snack', 'wrap', 'nugget', 'cookie'],
+        reason: 'Great with this drink',
+      },
+      {
+        names: ['coffee', 'tea', 'muffin', 'cake', 'cookie', 'brownie', 'dessert', 'pastry'],
+        compliments: ['coffee', 'tea', 'cake', 'cookie', 'brownie', 'dessert', 'muffin'],
+        reason: 'A classic add-on',
+      },
+      {
+        names: ['salad', 'soup', 'wrap', 'rice', 'bowl'],
+        compliments: ['drink', 'juice', 'water', 'smoothie', 'tea'],
+        reason: 'Complements your choice',
+      },
+    ];
+
+    const matchingRule = productMatches.find(rule =>
+      rule.names.some(keyword => cartText.includes(keyword))
+    ) ?? productMatches[0];
+
+    const scoredProducts = (allProducts as any[])
+      .filter((product) => {
+        if (!product || (product as any).productType === 'SERVICE') return false;
+        if (items.some(item => item.id === product.id)) return false;
+        if (!product.name) return false;
+        const stock = Number(product.stockQuantity ?? 1);
+        if (!Number.isFinite(stock) || stock <= 0) return false;
+        return true;
+      })
+      .map((product) => {
+        const text = `${product.name ?? ''} ${product.categoryName ?? ''} ${product.category?.name ?? ''}`.toLowerCase();
+        let score = 0;
+        let reason = 'Customers often add this too';
+
+        if (matchingRule.names.some(keyword => cartText.includes(keyword))) {
+          if (matchingRule.compliments.some(keyword => text.includes(keyword))) {
+            score += 14;
+            reason = matchingRule.reason;
+          }
+        }
+
+        if (cartItems.some(item => {
+          const itemText = item.name.toLowerCase();
+          return itemText.includes('burger') && text.includes('drink')
+            || itemText.includes('pizza') && text.includes('drink')
+            || itemText.includes('wrap') && text.includes('drink')
+            || itemText.includes('drink') && (text.includes('burger') || text.includes('pizza') || text.includes('fries') || text.includes('chips'));
+        })) score += 6;
+
+        const itemShopMatch = cartItems.some(item => {
+          const cartShopId = item.shopId;
+          if (!cartShopId) return false;
+          return (product.businessId ?? product.business?.id) === cartShopId;
+        });
+        if (itemShopMatch) score += 4;
+
+        const sameKeywordBoost = productMatches.some(rule =>
+          rule.names.some(keyword => text.includes(keyword) && cartText.includes(keyword))
+        );
+        if (sameKeywordBoost) score += 4;
+
+        return { product, score, reason };
+      })
+      .filter(entry => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map(entry => ({ ...entry.product, reason: entry.reason }));
+
+    if (scoredProducts.length > 0) return scoredProducts;
+
+    return (allProducts as any[])
+      .filter((product) => {
+        if (!product || items.some(item => item.id === product.id) || (product as any).productType === 'SERVICE') return false;
+        const stock = Number(product.stockQuantity ?? 1);
+        return Number.isFinite(stock) && stock > 0;
+      })
+      .slice(0, 3)
+      .map((product) => ({ ...product, reason: 'Often bought together' }));
+  }, [allProducts, items]);
+
+  const handleAddSuggestedItem = (product: any) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price ?? 0),
+      image: product.imageUrl ?? product.image ?? '/placeholder.svg',
+      shopName: product.businessName ?? product.business?.businessName ?? 'Duwaz Shop',
+      shopId: product.businessId ?? product.business?.id,
+      productType: (product as any).productType ?? 'PRODUCT',
+    });
+    toast({ title: 'Added suggestion', description: `${product.name} was added to your cart.` });
+  };
 
   const handleRemove = (id: number, name: string) => {
     removeItem(id);
@@ -241,6 +352,37 @@ const CartPage = () => {
 
           {/* ── Right column ── */}
           <div className="space-y-4">
+
+            {suggestedAddOns.length > 0 && (
+              <div className="bg-gradient-to-br from-amber-50 via-white to-orange-50 rounded-2xl border border-amber-200 shadow-sm p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Suggested add-ons</p>
+                    <h2 className="text-lg font-bold flex items-center gap-2 mt-1">
+                      <Sparkles className="h-4 w-4 text-amber-600" />
+                      Complete your order
+                    </h2>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">Combo picks</span>
+                </div>
+
+                <div className="space-y-3">
+                  {suggestedAddOns.map((product: any) => (
+                    <div key={product.id} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-white/80 p-2.5">
+                      <img src={product.imageUrl ?? product.image ?? '/placeholder.svg'} alt={product.name} className="w-14 h-14 rounded-lg object-cover border border-border/60" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{product.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{product.reason}</p>
+                        <p className="text-xs font-semibold text-duwaz-brown mt-0.5">R{Number(product.price ?? 0).toFixed(2)}</p>
+                      </div>
+                      <Button size="sm" className="bg-duwaz-brown hover:bg-duwaz-brown/90 text-white h-9 px-3" onClick={() => handleAddSuggestedItem(product)}>
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Delivery address — hidden for collection AND services */}
             {needsAddress && (
