@@ -171,12 +171,36 @@ const ShopDashboardPage = () => {
   });
   const markMessageReadMutation = useMutation({
     mutationFn: (id: number) => messagesApi.markRead(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      markMessageSeen(id);
       qc.invalidateQueries({ queryKey: ['messages', 'mine'] });
     },
   });
 
   const unreadMessages = myMessages.filter(m => m.status === 'UNREAD').length;
+  const getSeenMessageIds = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem(`duwaz_seen_shop_messages_${shop?.id ?? 'unknown'}`);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+    } catch {
+      return new Set();
+    }
+  };
+  const markMessageSeen = (messageId: number) => {
+    try {
+      const seen = getSeenMessageIds();
+      seen.add(messageId);
+      localStorage.setItem(`duwaz_seen_shop_messages_${shop?.id ?? 'unknown'}`, JSON.stringify([...seen].sort((a, b) => a - b)));
+    } catch { /* ignore */ }
+  };
+  const unseenUnreadMessageIds = myMessages
+    .filter(m => m.status === 'UNREAD')
+    .map(m => Number(m.id))
+    .filter(Number.isFinite)
+    .filter(id => !getSeenMessageIds().has(id));
 
   const getSeenOrderIds = (key: string): Set<number> => {
     try {
@@ -214,7 +238,7 @@ const ShopDashboardPage = () => {
   useNotifications({
     newOrderCount:   unseenPendingOrderIds.length,
     newOrderIds:     unseenPendingOrderIds,
-    newMessageCount: unreadMessages,
+    newMessageCount: unseenUnreadMessageIds.length,
   });
 
   // Track which orders already have a delivery request sent to Admin
@@ -270,6 +294,7 @@ const ShopDashboardPage = () => {
 
   const handleOpenMessage = (msg: StoreMessage) => {
     setSelectedMessage(msg);
+    markMessageSeen(msg.id);
     if (msg.status === 'UNREAD') {
       markMessageReadMutation.mutate(msg.id);
     }

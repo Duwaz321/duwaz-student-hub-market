@@ -167,6 +167,29 @@ const AdminDashboardPage = () => {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 5000 });
   const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 5000 });
   const unreadCount = unreadData?.unreadCount ?? 0;
+  const getSeenMessageIds = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('duwaz_seen_admin_messages');
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+    } catch {
+      return new Set();
+    }
+  };
+  const markMessageSeen = (messageId: number) => {
+    try {
+      const seen = getSeenMessageIds();
+      seen.add(messageId);
+      localStorage.setItem('duwaz_seen_admin_messages', JSON.stringify([...seen].sort((a, b) => a - b)));
+    } catch { /* ignore */ }
+  };
+  const unseenUnreadMessageIds = (messages as StoreMessage[])
+    .filter((msg: StoreMessage) => msg.status === 'UNREAD')
+    .map((msg: StoreMessage) => Number(msg.id))
+    .filter(Number.isFinite)
+    .filter((id: number) => !getSeenMessageIds().has(id));
   const orders: Order[] = ordersPage?.content ?? [];
   const totalPages = ordersPage?.totalPages ?? 1;
   const orderNeedsAttention = (o: Order) => {
@@ -204,7 +227,7 @@ const AdminDashboardPage = () => {
   useNotifications({
     newOrderCount: unseenAttentionOrderIds.length,
     newOrderIds: unseenAttentionOrderIds,
-    newMessageCount: unreadCount,
+    newMessageCount: unseenUnreadMessageIds.length,
   });
 
   const filteredOrders = orders.filter(o => {
@@ -254,7 +277,8 @@ const AdminDashboardPage = () => {
 
   const markReadMutation = useMutation({
     mutationFn: (id: number) => messagesApi.markRead(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      markMessageSeen(id);
       queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'messages', 'unread-count'] });
     }
@@ -624,8 +648,8 @@ const AdminDashboardPage = () => {
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${sColors[msg.status] ?? ''}`}>{msg.status}</span>
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}>View</Button>
-                          {msg.status !== 'RESOLVED' && <Button size="sm" variant="outline" className="h-7 text-xs border-blue-300 text-blue-600" onClick={() => { setReplyingTo(msg); setReplyContent(''); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}><Send className="h-3 w-3 mr-1" />Reply</Button>}
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); markMessageSeen(msg.id); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}>View</Button>
+                          {msg.status !== 'RESOLVED' && <Button size="sm" variant="outline" className="h-7 text-xs border-blue-300 text-blue-600" onClick={() => { setReplyingTo(msg); setReplyContent(''); markMessageSeen(msg.id); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}><Send className="h-3 w-3 mr-1" />Reply</Button>}
                           {isDelivery && msg.order && (
                             msg.status === 'RESOLVED' ? (
                               <span className="h-7 flex items-center text-xs px-2 rounded-full bg-green-100 text-green-700 font-medium">

@@ -421,6 +421,29 @@ const DriverDashboardPage = () => {
     refetchInterval: 5000,
   });
   const driverUnreadCount = driverUnreadData?.unreadCount ?? 0;
+  const getSeenDriverMessageIds = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('duwaz_seen_driver_messages');
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)));
+    } catch {
+      return new Set();
+    }
+  };
+  const markDriverMessageSeen = (messageId: number) => {
+    try {
+      const seen = getSeenDriverMessageIds();
+      seen.add(messageId);
+      localStorage.setItem('duwaz_seen_driver_messages', JSON.stringify([...seen].sort((a, b) => a - b)));
+    } catch { /* ignore */ }
+  };
+  const unseenDriverMessageIds = (driverMessages as StoreMessage[])
+    .filter((msg: StoreMessage) => msg.status === 'UNREAD')
+    .map((msg: StoreMessage) => Number(msg.id))
+    .filter(Number.isFinite)
+    .filter((id: number) => !getSeenDriverMessageIds().has(id));
 
   const activeDeliveries = allDeliveries.filter(
     (a) => a.deliveryStatus !== 'DELIVERED' && a.deliveryStatus !== 'DELIVERY_FAILED' && a.deliveryStatus !== 'CANCELLED'
@@ -435,7 +458,7 @@ const DriverDashboardPage = () => {
   useNotifications({
     newDeliveryCount: newAssignmentIds.length,
     newDeliveryIds: newAssignmentIds,
-    newMessageCount: driverUnreadCount,
+    newMessageCount: unseenDriverMessageIds.length,
   });
 
   const [viewingDriverMsg, setViewingDriverMsg] = useState<StoreMessage | null>(null);
@@ -444,7 +467,10 @@ const DriverDashboardPage = () => {
 
   const driverMarkReadMutation = useMutation({
     mutationFn: (id: number) => messagesApi.driverMarkRead(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['driver', 'messages'] }),
+    onSuccess: (_data, id) => {
+      markDriverMessageSeen(id);
+      qc.invalidateQueries({ queryKey: ['driver', 'messages'] });
+    },
   });
   const driverReplyMutation = useMutation({
     mutationFn: ({ id, replyContent }: { id: number; replyContent: string }) =>
@@ -652,7 +678,7 @@ const DriverDashboardPage = () => {
                   const isDeliveryAssignment = msg.messageType === 'DRIVER_MESSAGE';
                   return (
                     <Card key={msg.id} className={`cursor-pointer transition-shadow hover:shadow-md ${isUnread ? 'border-blue-300 bg-blue-50/30' : ''}`}
-                      onClick={() => { setViewingDriverMsg(msg); driverMarkReadMutation.mutate(msg.id); }}>
+                      onClick={() => { setViewingDriverMsg(msg); markDriverMessageSeen(msg.id); if (isUnread) driverMarkReadMutation.mutate(msg.id); }}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
