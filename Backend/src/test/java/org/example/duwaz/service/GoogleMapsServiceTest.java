@@ -24,4 +24,20 @@ class GoogleMapsServiceTest {
         assertTrue(waterfrontSuggestions.stream().anyMatch(s ->
                 s.getDescription() != null && s.getDescription().toLowerCase().contains("waterfront")));
     }
+
+    @Test
+    void fallbackSuggestionsMatchQueryAndDoNotReturnUnrelatedLocations() {
+        GoogleMapsService service = new GoogleMapsService();
+        ReflectionTestUtils.setField(service, "googleMapsEnabled", false);
+
+        var observatorySuggestions = service.getAddressAutocompleteSuggestions("obs", null, null);
+        assertTrue(observatorySuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("observatory")));
+
+        var unrelatedSuggestions = service.getAddressAutocompleteSuggestions("xyz nowhere", null, null);
+        assertTrue(unrelatedSuggestions.isEmpty());
+
+        var shortTokenSuggestions = service.getAddressAutocompleteSuggestions("x y", null, null);
+        assertTrue(shortTokenSuggestions.isEmpty());
+    }
 }

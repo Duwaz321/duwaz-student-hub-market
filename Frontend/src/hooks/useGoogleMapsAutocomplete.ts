@@ -91,19 +91,6 @@ export const useGoogleMapsAutocomplete = () => {
       console.error('Autocomplete error:', err);
       setError(err instanceof Error ? err.message : 'Failed to get suggestions');
       setSuggestions([]);
-      
-      // Show fallback suggestions if API fails
-      if (query.toLowerCase().includes('obs')) {
-        setSuggestions([
-          {
-            placeId: 'fallback-obs',
-            description: 'Observatory, Cape Town, South Africa',
-            mainText: 'Observatory',
-            secondaryText: 'Cape Town, South Africa',
-            types: ['locality', 'political'],
-          },
-        ]);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -135,12 +122,22 @@ export const useGoogleMapsAutocomplete = () => {
     setError(null);
 
     try {
-      // Fetch full details from backend
-      const response = await fetch(`${API_BASE_URL}/api/locations/place/${suggestion.placeId}`);
+      // Fallback IDs are local suggestions, not Google Place IDs.
+      const response = suggestion.placeId.startsWith('fallback-')
+        ? await fetch(`${API_BASE_URL}/api/locations/geocode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: suggestion.description }),
+          })
+        : await fetch(`${API_BASE_URL}/api/locations/place/${suggestion.placeId}`);
       const details = await response.json();
 
       if (!response.ok) {
         throw new Error(details.error || 'Failed to get address details');
+      }
+
+      if (!details?.formattedAddress || !Number.isFinite(details.latitude) || !Number.isFinite(details.longitude)) {
+        throw new Error('Could not verify this address. Try a fuller address or postal code.');
       }
 
       setSelectedAddress(details);
@@ -161,7 +158,7 @@ export const useGoogleMapsAutocomplete = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [API_BASE_URL, toast]);
 
   /**
    * Geocode an address string

@@ -121,7 +121,7 @@ public class GoogleMapsService {
                 dto.setSecondaryText(prediction.path("structured_formatting").path("secondary_text").asText());
                 result.add(dto);
             }
-            return result;
+            return result.isEmpty() ? fallbackAutocompleteSuggestions(input) : result;
 
         } catch (Exception e) {
             logger.error("Error getting autocomplete suggestions: {}", input, e);
@@ -467,29 +467,23 @@ public class GoogleMapsService {
     }
 
     private boolean matchesFallbackLocation(String normalizedInput, String lowerLocation) {
-        if (normalizedInput.isEmpty()) {
-            return true;
-        }
+        String query = normalizedInput.trim();
+        if (query.isEmpty()) return false;
+        if (query.matches("\\d{3,5}")) return lowerLocation.contains(query);
 
-        if (normalizedInput.matches("\\d{3,5}")) {
-            return lowerLocation.contains(normalizedInput);
-        }
+        String searchable = lowerLocation.replace("&", "and")
+                .replaceAll("[^a-z0-9 ]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        String[] locationTokens = searchable.split(" ");
+        String[] queryTokens = Arrays.stream(query.split("\\s+"))
+            .filter(token -> token.length() > 1)
+            .toArray(String[]::new);
+        if (queryTokens.length == 0) return false;
 
-        String[] searchableTokens = {
-            "cape town", "cbd", "city bowl", "waterfront", "castle", "greenmarket",
-            "company gardens", "table mountain", "signal hill", "long street", "bree street",
-            "adderley", "loop street", "kloof street", "gardens", "bo kaap", "district six",
-            "zonnebloem", "de waterkant", "observatory", "mowbray", "rondebosch", "claremont",
-            "uct", "newlands", "camps bay", "sea point", "green point", "8001", "8002", "7925", "7700"
-        };
-
-        for (String token : searchableTokens) {
-            if (normalizedInput.contains(token) || token.contains(normalizedInput) || lowerLocation.contains(normalizedInput) || lowerLocation.contains(token)) {
-                return true;
-            }
-        }
-
-        return lowerLocation.contains(normalizedInput);
+        return Arrays.stream(queryTokens)
+                .allMatch(queryToken -> Arrays.stream(locationTokens)
+                        .anyMatch(locationToken -> locationToken.startsWith(queryToken)));
     }
 
     /**
