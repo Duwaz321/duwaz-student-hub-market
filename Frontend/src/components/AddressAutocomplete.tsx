@@ -197,7 +197,7 @@ export const AddressAutocomplete = React.forwardRef<
             }}
             onFocus={handleFocus}
             placeholder={placeholder}
-            disabled={disabled || isLoading}
+            disabled={disabled}
             className={cn(
               'w-full h-11 pl-10 pr-12 rounded-lg border border-border bg-background text-foreground',
               'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-offset-0',
