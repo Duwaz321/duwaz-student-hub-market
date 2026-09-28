@@ -121,7 +121,22 @@ public class GoogleMapsService {
                 dto.setSecondaryText(prediction.path("structured_formatting").path("secondary_text").asText());
                 result.add(dto);
             }
-            return result.isEmpty() ? fallbackAutocompleteSuggestions(input) : result;
+            List<AddressSuggestionDto> fallbackSuggestions = fallbackAutocompleteSuggestions(input);
+            if (result.isEmpty()) return fallbackSuggestions;
+
+            Set<String> existingDescriptions = new HashSet<>();
+            for (AddressSuggestionDto suggestion : result) {
+                if (suggestion.getDescription() != null) {
+                    existingDescriptions.add(suggestion.getDescription().toLowerCase(Locale.ROOT));
+                }
+            }
+            for (AddressSuggestionDto suggestion : fallbackSuggestions) {
+                if (suggestion.getDescription() != null
+                        && existingDescriptions.add(suggestion.getDescription().toLowerCase(Locale.ROOT))) {
+                    result.add(suggestion);
+                }
+            }
+            return result;
 
         } catch (Exception e) {
             logger.error("Error getting autocomplete suggestions: {}", input, e);
@@ -394,7 +409,8 @@ public class GoogleMapsService {
             return new ArrayList<>();
         }
 
-        String normalizedInput = input.trim().toLowerCase(Locale.ROOT).replace("&", "and");
+        String normalizedInput = input.trim().toLowerCase(Locale.ROOT).replace("&", "and")
+            .replaceAll("\\balt river\\b", "salt river");
         String sanitizedInput = normalizedInput.replaceAll("[^a-z0-9 ]", "").trim();
         List<AddressSuggestionDto> suggestions = new ArrayList<>();
 
@@ -433,6 +449,8 @@ public class GoogleMapsService {
             "District Six, 8000, Cape Town, South Africa",
             "Salt River, 7925, Cape Town, South Africa",
             "Woodstock, 7925, Cape Town, South Africa",
+            "10 Dorset Street, New Market Junction, Woodstock, 7925, Cape Town, South Africa",
+            "10 Browning Road, Salt River, 7925, Cape Town, South Africa",
             "Observatory, 7925, Cape Town, South Africa",
             "Mowbray, 7700, Cape Town, South Africa",
             "Rondebosch, 7700, Cape Town, South Africa",
@@ -473,7 +491,11 @@ public class GoogleMapsService {
             if (matchesFallbackLocation(sanitizedInput, lowerLocation)) {
                 AddressSuggestionDto suggestion = new AddressSuggestionDto();
                 suggestion.setDescription(location);
-                suggestion.setMainText(location.split(",")[0]);
+                String[] addressParts = location.split(",", 2);
+                suggestion.setMainText(addressParts[0].trim());
+                if (addressParts.length > 1) {
+                    suggestion.setSecondaryText(addressParts[1].trim());
+                }
                 suggestion.setPlaceId("fallback-" + location.hashCode());
                 suggestions.add(suggestion);
             }

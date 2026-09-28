@@ -95,5 +95,23 @@ class GoogleMapsServiceTest {
         assertFalse(buitenkantSuggestions.isEmpty());
         assertTrue(buitenkantSuggestions.stream().anyMatch(s ->
                 s.getDescription() != null && s.getDescription().toLowerCase().contains("buitenkant street 12")));
+
+        var newMarketJunctionSuggestions = service.getAddressAutocompleteSuggestions(
+                "10 Dorset Street Woodstock", null, null);
+        assertTrue(newMarketJunctionSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("new market junction")
+                        && s.getDescription().toLowerCase().contains("10 dorset street")
+                        && "10 Dorset Street".equals(s.getMainText())
+                        && s.getSecondaryText() != null
+                        && s.getSecondaryText().toLowerCase().contains("woodstock")));
+
+        var browningRoadSuggestions = service.getAddressAutocompleteSuggestions(
+                "10 Browning Road Cape Town Alt River", null, null);
+        assertTrue(browningRoadSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("10 browning road")
+                        && s.getDescription().toLowerCase().contains("salt river")
+                        && "10 Browning Road".equals(s.getMainText())
+                        && s.getSecondaryText() != null
+                        && s.getSecondaryText().toLowerCase().contains("salt river")));
     }
 }
