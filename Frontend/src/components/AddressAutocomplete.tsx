@@ -170,6 +170,17 @@ export const AddressAutocomplete = React.forwardRef<
               setShowSuggestions(true);
               setValidationResult(null);
             }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.stopPropagation();
+                if (showSuggestions && suggestions.length > 0) {
+                  void handleSelectSuggestion(suggestions[0]);
+                }
+              } else if (event.key === 'Escape') {
+                setShowSuggestions(false);
+              }
+            }}
             onFocus={handleFocus}
             placeholder={placeholder}
             disabled={disabled || isLoading}
