@@ -340,6 +340,26 @@ public class GoogleMapsService {
             address.setLatitude(-33.9250);
             address.setLongitude(18.4167);
             address.setFormattedAddress("CPUT City Campus, De Waterkant, Cape Town, South Africa");
+        } else if (lower.contains("bellville")) {
+            address.setLatitude(-33.9000);
+            address.setLongitude(18.6300);
+            address.setFormattedAddress("Bellville, Cape Town, South Africa");
+        } else if (lower.contains("parow")) {
+            address.setLatitude(-33.9050);
+            address.setLongitude(18.5900);
+            address.setFormattedAddress("Parow, Cape Town, South Africa");
+        } else if (lower.contains("tygerberg")) {
+            address.setLatitude(-33.9320);
+            address.setLongitude(18.6400);
+            address.setFormattedAddress("Tygerberg, Cape Town, South Africa");
+        } else if (lower.contains("wellington")) {
+            address.setLatitude(-33.6400);
+            address.setLongitude(19.0100);
+            address.setFormattedAddress("Wellington, Western Cape, South Africa");
+        } else if (lower.contains("rosebank")) {
+            address.setLatitude(-33.9560);
+            address.setLongitude(18.4680);
+            address.setFormattedAddress("Rosebank, Cape Town, South Africa");
         } else if (lower.contains("salt river") || lower.contains("woodstock")) {
             address.setLatitude(-33.9470);
             address.setLongitude(18.4560);
@@ -417,7 +437,31 @@ public class GoogleMapsService {
             "UCT, 7700, Rondebosch, Cape Town, South Africa",
             "Camps Bay, 8040, Cape Town, South Africa",
             "Newlands, 7700, Cape Town, South Africa",
-            "Totara Park, 7700, Rondebosch, Cape Town, South Africa"
+            "Totara Park, 7700, Rondebosch, Cape Town, South Africa",
+            "Avenue Road Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Baxter Hall Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Clarinus Village Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "College House Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Fuller Hall Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Glendower Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Graca Machel Hall Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Kopano Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Smuts Hall Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Tugwell Hall Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "University House Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Forest Hill Residence, UCT, Mowbray, 7700, Cape Town, South Africa",
+            "Liesbeeck Gardens Residence, UCT, Mowbray, 7700, Cape Town, South Africa",
+            "Groote Schuur Flats, UCT, Observatory, 7925, Cape Town, South Africa",
+            "Medical Residence, UCT, Observatory, 7925, Cape Town, South Africa",
+            "Meulenhof Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "The Woolsack Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "University Cottage Residence, UCT, Rondebosch, 7700, Cape Town, South Africa",
+            "Harold Cressy Hall, UCT, Gardens, 8001, Cape Town, South Africa",
+            "Bellville, 7530, Cape Town, South Africa",
+            "Parow, 7500, Cape Town, South Africa",
+            "Tygerberg, 7505, Cape Town, South Africa",
+            "Wellington, 7655, Western Cape, South Africa",
+            "Rosebank, 7700, Cape Town, South Africa"
         };
 
         for (String location : commonLocations) {
@@ -490,7 +534,8 @@ public class GoogleMapsService {
             .toArray(String[]::new);
         if (queryTokens.length == 0) return false;
 
-        if (query.contains("residence") || query.contains("residences")) {
+        if ((query.contains("residence") || query.contains("residences"))
+            && (query.contains("cput") || query.contains("zonnebloem"))) {
             return query.contains("cput") && (searchable.contains("cput") || searchable.contains("zonnebloem"))
                     || query.contains("zonnebloem") && searchable.contains("zonnebloem");
         }

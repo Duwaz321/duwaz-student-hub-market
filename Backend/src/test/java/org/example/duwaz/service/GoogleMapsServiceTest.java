@@ -58,4 +58,26 @@ class GoogleMapsServiceTest {
                 s.getDescription() != null && s.getDescription().toLowerCase().contains("zonnebloem")
                         && s.getDescription().toLowerCase().contains("residence")));
     }
+
+    @Test
+    void fallbackSuggestionsIncludeOtherCapeTownResidencesAndCampusAreas() {
+        GoogleMapsService service = new GoogleMapsService();
+        ReflectionTestUtils.setField(service, "googleMapsEnabled", false);
+
+        var residenceSuggestions = service.getAddressAutocompleteSuggestions("tugwell residence", null, null);
+        assertTrue(residenceSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("tugwell")));
+
+        var residenceNameSuggestions = service.getAddressAutocompleteSuggestions("liesbeeck gardens", null, null);
+        assertTrue(residenceNameSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("liesbeeck gardens")));
+
+        var bellvilleSuggestions = service.getAddressAutocompleteSuggestions("bellville", null, null);
+        assertTrue(bellvilleSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("bellville")));
+
+        var bellvilleAddress = service.geocodeAddress("Bellville, 7530, Cape Town, South Africa");
+        assertTrue(bellvilleAddress.getFormattedAddress().toLowerCase().contains("bellville"));
+        assertFalse(bellvilleAddress.getFormattedAddress().toLowerCase().contains("cbd"));
+    }
 }
