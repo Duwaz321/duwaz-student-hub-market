@@ -214,6 +214,7 @@ export function useNotifications({
         window.clearInterval(alertLoopRef.current);
         alertLoopRef.current = null;
       }
+      clearAttentionBadge();
       return;
     }
 
