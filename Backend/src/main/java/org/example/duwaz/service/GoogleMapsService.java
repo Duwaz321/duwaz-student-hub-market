@@ -332,6 +332,10 @@ public class GoogleMapsService {
             address.setLatitude(-33.9636);
             address.setLongitude(18.4133);
             address.setFormattedAddress("CPUT, Zonnebloem Campus, Cape Town, South Africa");
+        } else if (lower.contains("cput residence") || lower.contains("cput residences") || lower.contains("zonnebloem residence") || lower.contains("zonnebloem residences")) {
+            address.setLatitude(-33.9636);
+            address.setLongitude(18.4133);
+            address.setFormattedAddress("CPUT Residence, Zonnebloem Campus, Cape Town, South Africa");
         } else if (lower.contains("city campus") || lower.contains("de waterkant") || lower.contains("prestwich street")) {
             address.setLatitude(-33.9250);
             address.setLongitude(18.4167);
@@ -398,6 +402,8 @@ public class GoogleMapsService {
             "City Hall, 8001, Cape Town, South Africa",
             "Signal Hill, 8001, Cape Town, South Africa",
             "CPUT, Zonnebloem Campus, 8000, Cape Town, South Africa",
+            "CPUT Residence, Zonnebloem Campus, 8000, Cape Town, South Africa",
+            "Zonnebloem Residence, 8000, Cape Town, South Africa",
             "Wale Street, 8001, Cape Town, South Africa",
             "Hanover Street, 8001, Cape Town, South Africa",
             "District Six, 8000, Cape Town, South Africa",
@@ -433,6 +439,7 @@ public class GoogleMapsService {
             "cbd", "city bowl", "castle", "greenmarket", "company gardens", "waterfront",
             "table mountain", "long street", "bree street", "kloof street",
             "gardens", "bo kaap", "uct", "university of cape town", "observatory",
+            "cput residence", "cput residences", "zonnebloem residence", "zonnebloem residences",
             "8001", "8002", "7925", "7700"
         };
 
@@ -451,6 +458,8 @@ public class GoogleMapsService {
                     case "bo kaap" -> "Bo-Kaap, 8001, Cape Town, South Africa";
                     case "uct", "university of cape town" -> "University of Cape Town, 7700, Rondebosch, Cape Town, South Africa";
                     case "cbd", "city bowl" -> "Cape Town CBD, 8001, South Africa";
+                    case "cput residence", "cput residences" -> "CPUT Residence, Zonnebloem Campus, 8000, Cape Town, South Africa";
+                    case "zonnebloem residence", "zonnebloem residences" -> "Zonnebloem Residence, 8000, Cape Town, South Africa";
                     case "8001", "8002", "7925", "7700" -> "Cape Town CBD, " + alias + ", South Africa";
                     default -> "Cape Town CBD, 8001, South Africa";
                 };
@@ -480,6 +489,11 @@ public class GoogleMapsService {
             .filter(token -> token.length() > 1)
             .toArray(String[]::new);
         if (queryTokens.length == 0) return false;
+
+        if (query.contains("residence") || query.contains("residences")) {
+            return query.contains("cput") && (searchable.contains("cput") || searchable.contains("zonnebloem"))
+                    || query.contains("zonnebloem") && searchable.contains("zonnebloem");
+        }
 
         return Arrays.stream(queryTokens)
                 .allMatch(queryToken -> Arrays.stream(locationTokens)

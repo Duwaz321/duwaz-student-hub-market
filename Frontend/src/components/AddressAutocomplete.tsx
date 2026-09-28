@@ -88,9 +88,23 @@ export const AddressAutocomplete = React.forwardRef<
     }
   }, [selectedAddress]);
 
+  // Keep suggestions visible while the user is typing so the list stays responsive.
+  useEffect(() => {
+    if (disabled || selectedAddress) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (input.trim().length > 0) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [input, selectedAddress, disabled]);
+
   // Handle input focus
   const handleFocus = () => {
-    if (suggestions.length > 0) {
+    if (!disabled && !selectedAddress && input.trim().length > 0) {
       setShowSuggestions(true);
     }
   };

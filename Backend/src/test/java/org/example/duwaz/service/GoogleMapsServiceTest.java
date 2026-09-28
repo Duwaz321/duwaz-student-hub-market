@@ -40,4 +40,22 @@ class GoogleMapsServiceTest {
         var shortTokenSuggestions = service.getAddressAutocompleteSuggestions("x y", null, null);
         assertTrue(shortTokenSuggestions.isEmpty());
     }
+
+    @Test
+    void fallbackSuggestionsIncludeCputResidences() {
+        GoogleMapsService service = new GoogleMapsService();
+        ReflectionTestUtils.setField(service, "googleMapsEnabled", false);
+
+        var cputResidenceSuggestions = service.getAddressAutocompleteSuggestions("cput residence", null, null);
+        assertFalse(cputResidenceSuggestions.isEmpty());
+        assertTrue(cputResidenceSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("cput")
+                        && s.getDescription().toLowerCase().contains("residence")));
+
+        var zonnebloemResidenceSuggestions = service.getAddressAutocompleteSuggestions("zonnebloem residence", null, null);
+        assertFalse(zonnebloemResidenceSuggestions.isEmpty());
+        assertTrue(zonnebloemResidenceSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("zonnebloem")
+                        && s.getDescription().toLowerCase().contains("residence")));
+    }
 }
