@@ -238,36 +238,36 @@ export const AddressAutocomplete = React.forwardRef<
             {error}
           </div>
         )}
-      </div>
 
-      {/* Suggestions Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div
-          ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
-        >
-          {suggestions.map((suggestion, idx) => (
-            <button
-              key={`${suggestion.placeId}-${idx}`}
-              onClick={() => handleSelectSuggestion(suggestion)}
-              className={cn(
-                'w-full text-left px-4 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors',
-                'flex flex-col gap-0.5'
-              )}
-              type="button"
-            >
-              <div className="font-medium text-sm text-foreground">
-                {suggestion.mainText}
-              </div>
-              {suggestion.secondaryText && (
-                <div className="text-xs text-muted-foreground">
-                  {suggestion.secondaryText}
+        {/* Suggestions Dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div
+            ref={suggestionsRef}
+            className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+          >
+            {suggestions.map((suggestion, idx) => (
+              <button
+                key={`${suggestion.placeId}-${idx}`}
+                onClick={() => handleSelectSuggestion(suggestion)}
+                className={cn(
+                  'w-full text-left px-4 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors',
+                  'flex flex-col gap-0.5'
+                )}
+                type="button"
+              >
+                <div className="font-medium text-sm text-foreground">
+                  {suggestion.mainText}
                 </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+                {suggestion.secondaryText && (
+                  <div className="text-xs text-muted-foreground">
+                    {suggestion.secondaryText}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Selected Address Details */}
       {selectedAddress && (
