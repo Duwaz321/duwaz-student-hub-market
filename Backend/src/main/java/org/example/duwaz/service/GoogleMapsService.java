@@ -401,9 +401,13 @@ public class GoogleMapsService {
         String[] commonLocations = {
             "Cape Town CBD, 8001, South Africa",
             "Long Street, 8001, Cape Town, South Africa",
+            "Long Street 42, 8001, Cape Town, South Africa",
             "Bree Street, 8001, Cape Town, South Africa",
             "Loop Street, 8001, Cape Town, South Africa",
             "Adderley Street, 8001, Cape Town, South Africa",
+            "Adderley Street 45, 8001, Cape Town, South Africa",
+            "Buitenkant Street, 8001, Cape Town, South Africa",
+            "Buitenkant Street 12, 8001, Cape Town, South Africa",
             "Greenmarket Square, 8001, Cape Town, South Africa",
             "Castle of Good Hope, 8001, Cape Town, South Africa",
             "Company Gardens, 8001, Cape Town, South Africa",
@@ -530,7 +534,7 @@ public class GoogleMapsService {
                 .trim();
         String[] locationTokens = searchable.split(" ");
         String[] queryTokens = Arrays.stream(query.split("\\s+"))
-            .filter(token -> token.length() > 1)
+            .filter(token -> token.length() > 1 && !token.matches("\\d+"))
             .toArray(String[]::new);
         if (queryTokens.length == 0) return false;
 

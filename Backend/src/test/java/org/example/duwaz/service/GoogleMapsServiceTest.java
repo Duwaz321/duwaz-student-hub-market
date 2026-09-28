@@ -80,4 +80,20 @@ class GoogleMapsServiceTest {
         assertTrue(bellvilleAddress.getFormattedAddress().toLowerCase().contains("bellville"));
         assertFalse(bellvilleAddress.getFormattedAddress().toLowerCase().contains("cbd"));
     }
+
+    @Test
+    void fallbackSuggestionsIncludeStreetNamesAndBuildingNumbers() {
+        GoogleMapsService service = new GoogleMapsService();
+        ReflectionTestUtils.setField(service, "googleMapsEnabled", false);
+
+        var longStreetSuggestions = service.getAddressAutocompleteSuggestions("Long Street 42", null, null);
+        assertFalse(longStreetSuggestions.isEmpty());
+        assertTrue(longStreetSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("long street 42")));
+
+        var buitenkantSuggestions = service.getAddressAutocompleteSuggestions("Buitenkant Street 12", null, null);
+        assertFalse(buitenkantSuggestions.isEmpty());
+        assertTrue(buitenkantSuggestions.stream().anyMatch(s ->
+                s.getDescription() != null && s.getDescription().toLowerCase().contains("buitenkant street 12")));
+    }
 }
