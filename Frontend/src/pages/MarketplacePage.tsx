@@ -33,6 +33,8 @@ const MarketplacePage = () => {
       // Support both flat DTO (businessName/businessId) and nested (business.*)
       shopName: product.business?.businessName ?? product.businessName ?? product.category?.name ?? product.categoryName ?? '',
       shopId: product.business?.id ?? product.businessId,
+      productType: product.productType ?? 'PRODUCT',
+      stockQuantity: Number(product.stockQuantity ?? 0),
     });
     toast({ title: 'Added to cart', description: `${product.name} added.`, duration: 2000 });
   };

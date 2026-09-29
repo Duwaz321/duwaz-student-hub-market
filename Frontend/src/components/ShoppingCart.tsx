@@ -112,8 +112,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ isOpen, onClose }) =
                     <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
+                      disabled={item.stockQuantity !== undefined && item.quantity >= item.stockQuantity}
                       aria-label="Increase quantity"
-                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                      className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <Plus className="h-3 w-3" />
                     </button>

@@ -12,7 +12,7 @@ import ImageWithFallback from '@/components/ImageWithFallback';
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const { isAuthenticated, user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
@@ -71,6 +71,9 @@ const ProductDetailPage = () => {
     : [];
 
   const displayImage = allImages[activeImage] ?? '/placeholder.svg';
+  const cartQuantity = cartItems.find(item => item.id === product?.id)?.quantity ?? 0;
+  const maxQuantity = product ? Math.max(0, (product.stockQuantity ?? 0) - cartQuantity) : 0;
+  const selectedQuantity = Math.min(quantity, maxQuantity);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -79,7 +82,7 @@ const ProductDetailPage = () => {
       toast({ title: 'Contact the seller', description: 'Click "Message Seller" to arrange service details.', variant: 'default' });
       return;
     }
-    for (let i = 0; i < quantity; i++) {
+    for (let i = 0; i < selectedQuantity; i++) {
       addItem({
         id: product.id,
         name: product.name,
@@ -87,10 +90,13 @@ const ProductDetailPage = () => {
         image: allImages[0] ?? '/placeholder.svg',
         shopName: product.business?.businessName ?? product.category?.name ?? '',
         shopId: product.business?.id,
-        productType: (product as any).productType,  // Include service type
+        productType: product.productType,
+        stockQuantity: product.stockQuantity ?? 0,
       });
     }
-    toast({ title: `${product.name} added!`, description: `Qty: ${quantity}`, duration: 2500 });
+    if (selectedQuantity > 0) {
+      toast({ title: `${product.name} added!`, description: `Qty: ${selectedQuantity}`, duration: 2500 });
+    }
   };
 
   if (isLoading) return (
@@ -240,11 +246,12 @@ const ProductDetailPage = () => {
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
-                  <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
+                  <span className="w-8 text-center text-sm font-semibold">{selectedQuantity}</span>
                   <button
-                    onClick={() => setQuantity(q => q + 1)}
+                    onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
+                    disabled={selectedQuantity >= maxQuantity}
                     aria-label="Increase quantity"
-                    className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -274,10 +281,11 @@ const ProductDetailPage = () => {
                   // PRODUCT: Show "Add to Cart" button
                   <button
                     onClick={handleAddToCart}
+                    disabled={selectedQuantity === 0}
                     className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl bg-duwaz-brown text-white font-semibold text-sm shadow-sm hover:bg-duwaz-brown/90 active:scale-[0.98] transition-all duration-200"
                   >
                     <ShoppingBag className="h-4 w-4" />
-                    Add to Cart — R{(Number(product.price) * quantity).toFixed(2)}
+                    {selectedQuantity === 0 ? 'Out of Stock' : `Add to Cart — R${(Number(product.price) * selectedQuantity).toFixed(2)}`}
                   </button>
                 )}
                 <button

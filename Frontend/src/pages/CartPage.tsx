@@ -183,6 +183,7 @@ const CartPage = () => {
       shopName: product.businessName ?? product.business?.businessName ?? 'Duwaz Shop',
       shopId: product.businessId ?? product.business?.id,
       productType: (product as any).productType ?? 'PRODUCT',
+      stockQuantity: Number(product.stockQuantity ?? 0),
     });
     toast({ title: 'Added suggestion', description: `${product.name} was added to your cart.` });
   };
@@ -357,7 +358,7 @@ const CartPage = () => {
                     <div className="flex items-center gap-1 bg-muted/50 border border-border/60 rounded-full px-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white" onClick={() => updateQuantity(item.id, -1)}>-</Button>
                       <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white" onClick={() => updateQuantity(item.id, 1)}>+</Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white" onClick={() => updateQuantity(item.id, 1)} disabled={item.stockQuantity !== undefined && item.quantity >= item.stockQuantity}>+</Button>
                     </div>
                     <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-7 px-3 text-xs" onClick={() => handleRemove(item.id, item.name)}>
                       <Trash className="h-3 w-3 mr-1" />Remove

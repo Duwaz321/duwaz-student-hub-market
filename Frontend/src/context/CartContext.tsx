@@ -6,9 +6,9 @@ interface CartContextValue {
   items: CartItem[];
   totalItems: number;
   subtotal: number;
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: Omit<CartItem, 'quantity'>) => boolean;
   removeItem: (id: number) => void;
-  updateQuantity: (id: number, change: number) => void;
+  updateQuantity: (id: number, change: number, stockLimit?: number) => void;
   clearCart: () => void;
 }
 
@@ -41,25 +41,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, user?.userId]);
 
   const addItem = useCallback((newItem: Omit<CartItem, 'quantity'>) => {
+    let wasAdded = false;
     setItems((prev) => {
       const existing = prev.find((i) => i.id === newItem.id);
+      const stockLimit = newItem.stockQuantity;
+      if (stockLimit !== undefined && stockLimit <= 0) return prev;
+      if (stockLimit !== undefined && existing && existing.quantity >= stockLimit) {
+        if (existing.quantity === stockLimit && existing.stockQuantity === stockLimit) return prev;
+        return prev.map((i) => i.id === newItem.id
+          ? { ...i, ...newItem, quantity: Math.min(i.quantity, stockLimit) }
+          : i);
+      }
+
+      wasAdded = true;
       if (existing) {
         return prev.map((i) =>
-          i.id === newItem.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === newItem.id ? { ...i, ...newItem, quantity: i.quantity + 1 } : i
         );
       }
       return [...prev, { ...newItem, quantity: 1 }];
     });
+    return wasAdded;
   }, []);
 
   const removeItem = useCallback((id: number) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
-  const updateQuantity = useCallback((id: number, change: number) => {
+  const updateQuantity = useCallback((id: number, change: number, stockLimit?: number) => {
     setItems((prev) =>
       prev
-        .map((i) => (i.id === id ? { ...i, quantity: i.quantity + change } : i))
+        .map((i) => {
+          if (i.id !== id) return i;
+          const maxStock = stockLimit ?? i.stockQuantity;
+          if (change > 0 && maxStock !== undefined && i.quantity >= maxStock) return i;
+          return {
+            ...i,
+            ...(stockLimit !== undefined ? { stockQuantity: stockLimit } : {}),
+            quantity: i.quantity + change,
+          };
+        })
         .filter((i) => i.quantity > 0)
     );
   }, []);

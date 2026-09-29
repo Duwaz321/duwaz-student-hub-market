@@ -117,6 +117,8 @@ const HomePage = () => {
       image: product.imageUrl ?? '/placeholder.svg',
       shopName: product.businessName ?? product.business?.businessName ?? product.categoryName ?? product.category?.name ?? '',
       shopId: product.businessId ?? product.business?.id,
+      productType: product.productType ?? 'PRODUCT',
+      stockQuantity: Number(product.stockQuantity ?? 0),
     });
     toast({ title: 'Added to cart', description: `${product.name} added.`, duration: 2500 });
   };

@@ -27,6 +27,8 @@ const ShopPage = () => {
       image: product.imageUrl ?? '/placeholder.svg',
       shopName: shop?.businessName ?? '',
       shopId: shop?.id,
+      productType: product.productType ?? 'PRODUCT',
+      stockQuantity: Number(product.stockQuantity ?? 0),
     });
     toast({ title: 'Added to cart', description: `${product.name} added.`, duration: 2500 });
   };
