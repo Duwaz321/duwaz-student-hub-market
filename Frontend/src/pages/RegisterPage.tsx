@@ -67,6 +67,7 @@ const RegisterPage = () => {
     studentName: '', studentNumber: '', email: '',
     password: '', confirmPassword: '', locationAddress: '',
   });
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -93,6 +94,9 @@ const RegisterPage = () => {
   // ── Step 1: submit registration form ──────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedLegal) {
+      toast({ title: 'Please accept the Privacy Policy and Terms & Conditions', variant: 'destructive' }); return;
+    }
     if (formData.password !== formData.confirmPassword) {
       toast({ title: 'Passwords do not match', variant: 'destructive' }); return;
     }
@@ -340,6 +344,22 @@ const RegisterPage = () => {
               />
               <p className="text-xs text-muted-foreground mt-1">Used as your default delivery address. You can update this later.</p>
             </div>
+
+            <label className="flex items-start gap-2.5 text-sm text-foreground/80">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedLegal}
+                onChange={e => setAcceptedLegal(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-duwaz-brown"
+              />
+              <span>
+                I agree to the{' '}
+                <Link to="/privacy" className="font-medium text-duwaz-brown underline underline-offset-2">Privacy Policy</Link>
+                {' '}and{' '}
+                <Link to="/terms" className="font-medium text-duwaz-brown underline underline-offset-2">Terms & Conditions</Link>.
+              </span>
+            </label>
 
             <button
               type="submit" disabled={isLoading}
