@@ -244,6 +244,12 @@ export const messagesApi = {
     request<StoreMessage>('/api/messages/send', { method: 'POST', body: JSON.stringify({ subject, content }) }),
   sendServiceInquiry: (businessId: number, subject: string, content: string) =>
     request<StoreMessage>(`/api/messages/service-inquiry/${businessId}`, { method: 'POST', body: JSON.stringify({ subject, content }) }),
+  getMyServiceInquiries: () => request<StoreMessage[]>('/api/messages/service-inquiries/mine'),
+  getServiceConversation: (messageId: number) => request<StoreMessage[]>(`/api/messages/service-inquiry/${messageId}`),
+  markServiceConversationRead: (messageId: number) =>
+    request<{ markedAsReadCount: number }>(`/api/messages/service-inquiry/${messageId}/read`, { method: 'POST' }),
+  replyToServiceInquiry: (messageId: number, content: string) =>
+    request<StoreMessage>(`/api/messages/service-inquiry/${messageId}/reply`, { method: 'POST', body: JSON.stringify({ content }) }),
   requestDelivery: (orderId: number) =>
     request<StoreMessage>(`/api/messages/request-delivery/${orderId}`, { method: 'POST' }),
   getMyMessages: () => request<StoreMessage[]>('/api/messages/mine'),

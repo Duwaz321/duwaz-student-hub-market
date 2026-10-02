@@ -172,13 +172,16 @@ export interface DeliveryAssignment {
   otpVerified?: boolean;
 }
 
-export type MessageType = 'MESSAGE' | 'DELIVERY_REQUEST' | 'ADMIN_REPLY' | 'DRIVER_MESSAGE' | 'DRIVER_REPLY';
+export type MessageType = 'MESSAGE' | 'DELIVERY_REQUEST' | 'ADMIN_REPLY' | 'DRIVER_MESSAGE' | 'DRIVER_REPLY' | 'SERVICE_INQUIRY';
 export type MessageStatus = 'UNREAD' | 'READ' | 'REPLIED' | 'RESOLVED';
 
 export interface StoreMessage {
   id: number;
   business?: Business;
+  customer?: Student;
   driver?: DeliveryDriver;
+  conversationRootId?: number;
+  fromCustomer: boolean;
   order?: Order;
   messageType: MessageType;
   status: MessageStatus;
@@ -199,6 +202,7 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  stockQuantity?: number;
   image: string;
   shopName: string;
   shopId?: number;

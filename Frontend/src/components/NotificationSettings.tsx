@@ -6,7 +6,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 const NotificationSettings = () => {
   const { toast } = useToast();
-  const { isSupported, isSubscribed, subscribeToPushNotifications, unsubscribeFromPushNotifications, showNotification } =
+  const { isSupported, isSubscribed, subscribeToPushNotifications, unsubscribeFromPushNotifications, sendTestPushNotification } =
     usePushNotifications();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -45,12 +45,10 @@ const NotificationSettings = () => {
             description: 'You will now receive push notifications for orders and messages.',
           });
 
-          // Show test notification
-          await showNotification({
-            title: '🎉 Notifications enabled!',
-            body: 'You will now get alerts for orders, messages, and updates.',
-            tag: 'test-notification',
-          });
+          const testSent = await sendTestPushNotification();
+          toast(testSent
+            ? { title: 'Test alert sent', description: 'Check this device for a Duwaz notification.' }
+            : { title: 'Push test could not be sent', description: 'Check that VAPID keys are configured on the server.', variant: 'destructive' });
         } else {
           toast({
             title: 'Failed to enable notifications',

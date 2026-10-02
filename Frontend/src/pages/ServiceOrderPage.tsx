@@ -66,7 +66,7 @@ const ServiceOrderPage = () => {
         ? `Service Inquiry: ${serviceItems.map(i => i.name).join(', ')}`
         : 'Service Inquiry';
 
-      await messagesApi.sendServiceInquiry(shopId, subject, messageContent);
+      const inquiry = await messagesApi.sendServiceInquiry(shopId, subject, messageContent);
 
       toast({
         title: '✅ Message sent!',
@@ -76,9 +76,9 @@ const ServiceOrderPage = () => {
       // Clear form
       setMessageContent('');
       
-      // Redirect to marketplace after short delay
+      // Open the new thread so the customer can continue the conversation.
       setTimeout(() => {
-        navigate('/marketplace');
+        navigate(`/account?tab=service-messages&message=${inquiry.id}`);
       }, 1500);
     } catch (err: any) {
       toast({

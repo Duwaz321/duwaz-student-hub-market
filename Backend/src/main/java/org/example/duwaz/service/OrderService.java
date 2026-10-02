@@ -8,6 +8,7 @@ import org.example.duwaz.classesFolder.Student;
 import org.example.duwaz.repo.OrderRepository;
 import org.example.duwaz.repo.ProductRepository;
 import org.example.duwaz.repo.StudentRepository;
+import org.example.duwaz.dto.PushNotificationDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,15 +29,18 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final StudentRepository studentRepository;
     private final EmailService emailService;
+    private final PushNotificationService pushNotificationService;
 
     public OrderService(OrderRepository orderRepository,
                        ProductRepository productRepository,
                        StudentRepository studentRepository,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       PushNotificationService pushNotificationService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.studentRepository = studentRepository;
         this.emailService = emailService;
+        this.pushNotificationService = pushNotificationService;
     }
 
     public Order createOrder(Order order) {
@@ -70,6 +74,16 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         if (savedOrder.getBusiness() != null && savedOrder.getBusiness().getStudent() != null) {
+            Student shopOwner = savedOrder.getBusiness().getStudent();
+            PushNotificationDto push = new PushNotificationDto(
+                "New order #" + savedOrder.getId(),
+                "You have a new order from " + (savedOrder.getStudent() != null
+                    ? savedOrder.getStudent().getStudentName() : "a customer"),
+                "order",
+                savedOrder.getId());
+            push.setShopId(savedOrder.getBusiness().getId());
+            pushNotificationService.sendNotificationToStudent(shopOwner.getId(), push);
+
             var shopOwnerEmail = savedOrder.getBusiness().getStudent().getEmail();
             if (shopOwnerEmail != null && !shopOwnerEmail.isBlank()) {
                 emailService.sendNewOrderEmailToShopOwner(

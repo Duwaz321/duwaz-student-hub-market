@@ -8,7 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+    @Index(name = "idx_orders_student_date", columnList = "student_id, order_date"),
+    @Index(name = "idx_orders_business_date", columnList = "business_id, order_date"),
+    @Index(name = "idx_orders_status_date", columnList = "status, order_date"),
+    @Index(name = "idx_orders_yoco_checkout", columnList = "yoco_checkout_id"),
+    @Index(name = "idx_orders_yoco_webhook", columnList = "yoco_webhook_id", unique = true)
+})
 public class Order {
 
     public enum OrderStatus {
@@ -66,6 +72,9 @@ public class Order {
     @Column(name = "yoco_checkout_id")
     private String yocoCheckoutId;
 
+    @Column(name = "yoco_webhook_id", unique = true)
+    private String yocoWebhookId;
+
     /** The delivery fee component (charged separately, goes to driver + ops) */
     @Column(name = "delivery_fee", precision = 10, scale = 2)
     private BigDecimal deliveryFee = BigDecimal.ZERO;
@@ -120,6 +129,9 @@ public class Order {
 
     public String getYocoCheckoutId() { return yocoCheckoutId; }
     public void setYocoCheckoutId(String yocoCheckoutId) { this.yocoCheckoutId = yocoCheckoutId; }
+
+    public String getYocoWebhookId() { return yocoWebhookId; }
+    public void setYocoWebhookId(String yocoWebhookId) { this.yocoWebhookId = yocoWebhookId; }
 
     public BigDecimal getDeliveryFee() { return deliveryFee != null ? deliveryFee : BigDecimal.ZERO; }
     public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }

@@ -35,6 +35,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countByBusinessIdAndStatus(Long businessId, Order.OrderStatus status);
 
     Optional<Order> findByYocoCheckoutId(String yocoCheckoutId);
+    Optional<Order> findByYocoWebhookId(String yocoWebhookId);
 
     @Query("SELECT COUNT(DISTINCT o.student.id) FROM Order o")
     long countDistinctStudents();

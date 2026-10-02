@@ -6,11 +6,23 @@ import org.example.duwaz.dto.PushNotificationDto;
 import org.example.duwaz.dto.PushSubscriptionDto;
 import org.example.duwaz.repo.PushSubscriptionRepository;
 import org.example.duwaz.repo.StudentRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import nl.martijndwars.webpush.Notification;
+import nl.martijndwars.webpush.PushService;
+import org.apache.http.HttpResponse;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.security.Security;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PushNotificationService {
@@ -19,11 +31,52 @@ public class PushNotificationService {
 
     private final PushSubscriptionRepository subscriptionRepository;
     private final StudentRepository studentRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${app.push.vapid.public-key:}")
+    private String vapidPublicKey;
+
+    @Value("${app.push.vapid.private-key:}")
+    private String vapidPrivateKey;
+
+    @Value("${app.push.vapid.subject:mailto:support@duwaz.co.za}")
+    private String vapidSubject;
+
+    private PushService pushService;
 
     public PushNotificationService(PushSubscriptionRepository subscriptionRepository,
                                    StudentRepository studentRepository) {
         this.subscriptionRepository = subscriptionRepository;
         this.studentRepository = studentRepository;
+    }
+
+    @PostConstruct
+    void initializeWebPush() {
+        if (vapidPublicKey == null || vapidPublicKey.isBlank()
+                || vapidPrivateKey == null || vapidPrivateKey.isBlank()) {
+            logger.warn("Web Push is disabled: configure APP_PUSH_VAPID_PUBLIC_KEY and APP_PUSH_VAPID_PRIVATE_KEY.");
+            return;
+        }
+
+        try {
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+            pushService = new PushService(vapidPublicKey, vapidPrivateKey, vapidSubject);
+            logger.info("Web Push initialized with VAPID configuration.");
+        } catch (Exception e) {
+            logger.error("Web Push VAPID configuration could not be initialized.", e);
+        }
+    }
+
+    public String getVapidPublicKey() {
+        return pushService == null ? null : vapidPublicKey;
+    }
+
+    public boolean hasActiveSubscription(Long studentId) {
+        return studentRepository.findById(studentId)
+                .map(student -> !subscriptionRepository.findByStudentAndActiveTrue(student).isEmpty())
+                .orElse(false);
     }
 
     /**
@@ -74,6 +127,7 @@ public class PushNotificationService {
      * - Amazon SNS
      * - Custom VAPID implementation with WebPush library
      */
+    @Async
     public void sendNotificationToStudent(Long studentId, PushNotificationDto notification) {
         try {
             Student student = studentRepository.findById(studentId)
@@ -126,24 +180,40 @@ public class PushNotificationService {
      * In production, this would use WebPush protocol or a service like FCM
      */
     private void sendPushToSubscription(PushSubscription subscription, PushNotificationDto notification) {
+        if (pushService == null) return;
         try {
-            // TODO: Implement actual push delivery using:
-            // 1. WebPush library with VAPID keys
-            // 2. Firebase Cloud Messaging
-            // 3. Other push notification service
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("title", notification.getTitle());
+            payload.put("body", notification.getBody());
+            payload.put("tag", notification.getType() + "-" + notification.getTargetId());
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("type", notification.getType());
+            data.put("targetId", notification.getTargetId());
+            data.put("shopId", notification.getShopId());
+            if ("order".equals(notification.getType())) data.put("orderId", notification.getTargetId());
+            if ("message".equals(notification.getType())) data.put("messageId", notification.getTargetId());
+            payload.put("data", data);
 
-            // For now, log the notification
-            logger.info("Pushing notification to endpoint: {} - Title: {}", 
-                    subscription.getEndpoint(), notification.getTitle());
-
-            // Update last active timestamp
+            Notification webPush = new Notification(
+                    subscription.getEndpoint(),
+                    subscription.getP256dhKey(),
+                    subscription.getAuthKey(),
+                    objectMapper.writeValueAsString(payload).getBytes(StandardCharsets.UTF_8),
+                    60 * 60 * 12);
+            HttpResponse response = pushService.send(webPush);
+            int status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status >= 300) {
+                logger.warn("Push provider returned HTTP {} for subscription {}", status, subscription.getId());
+                if (status == 404 || status == 410) {
+                    subscription.setActive(false);
+                    subscriptionRepository.save(subscription);
+                }
+                return;
+            }
             subscription.setLastActive(java.time.LocalDateTime.now());
             subscriptionRepository.save(subscription);
         } catch (Exception e) {
-            logger.error("Failed to push notification to endpoint: {}", subscription.getEndpoint(), e);
-            // Mark subscription as inactive if push fails (endpoint expired)
-            subscription.setActive(false);
-            subscriptionRepository.save(subscription);
+            logger.error("Failed to send Web Push notification for subscription {}", subscription.getId(), e);
         }
     }
 

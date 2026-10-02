@@ -2,6 +2,7 @@ package org.example.duwaz.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.duwaz.security.JwtAuthFilter;
+import org.example.duwaz.security.ApiRateLimitFilter;
 import org.example.duwaz.service.StudentUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +24,9 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -32,6 +35,12 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
+
+    @Autowired
+    private ApiRateLimitFilter apiRateLimitFilter;
+
+    @Value("${app.cors.allowed-origins:https://duwaz.co.za,https://www.duwaz.co.za}")
+    private String allowedOrigins;
 
     @Autowired
     private StudentUserDetailsService userDetailsService;
@@ -100,6 +109,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
+            .addFilterBefore(apiRateLimitFilter, JwtAuthFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -108,14 +118,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of(
-            "http://localhost:*",
-            "https://localhost:*",
-            "https://*.duwaz.co.za",
-            "http://*.duwaz.co.za",
-            "https://duwaz.co.za",
-            "https://www.duwaz.co.za"
-        ));
+        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(origin -> !origin.isBlank())
+            .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-CSRF-Token"));
         config.setExposedHeaders(List.of("Authorization"));

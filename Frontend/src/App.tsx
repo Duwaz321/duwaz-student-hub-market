@@ -41,6 +41,7 @@ const CategoryListPage    = lazy(() => import('./pages/CategoryListPage'));
 const ServiceListPage     = lazy(() => import('./pages/ServiceListPage'));
 const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
 const ServiceOrderPage    = lazy(() => import('./pages/ServiceOrderPage'));
+const ShopAppEntryPage     = lazy(() => import('./pages/ShopAppEntryPage'));
 
 // Minimal fallback shown while a lazy page chunk loads (< 200ms on fast connections)
 const PageSkeleton = () => (
@@ -76,6 +77,10 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/driver/login" element={<DriverLoginPage />} />
+
+          {/* Installable seller dashboard — intentionally outside the marketplace shell */}
+          <Route path="/shop-app" element={<ProtectedRoute><ShopAppEntryPage /></ProtectedRoute>} />
+          <Route path="/shop-app/:shopId" element={<ProtectedRoute><ErrorBoundary><ShopDashboardPage /></ErrorBoundary></ProtectedRoute>} />
 
           {/* Payment redirect pages — no Layout (full-screen feedback) */}
           <Route path="/payment/success" element={<PaymentSuccessPage />} />

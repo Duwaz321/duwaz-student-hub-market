@@ -7,6 +7,7 @@ import org.example.duwaz.repo.DeliverDriverRepository;
 import org.example.duwaz.repo.DeliveryAssignmentRepository;
 import org.example.duwaz.repo.OrderRepository;
 import org.example.duwaz.repo.StoreMessageRepository;
+import org.example.duwaz.dto.PushNotificationDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +23,18 @@ public class StoreMessageService {
     private final OrderRepository orderRepository;
     private final DeliverDriverRepository driverRepository;
     private final DeliveryAssignmentRepository assignmentRepository;
+    private final PushNotificationService pushNotificationService;
 
     public StoreMessageService(StoreMessageRepository messageRepository,
                                 OrderRepository orderRepository,
                                 DeliverDriverRepository driverRepository,
-                                DeliveryAssignmentRepository assignmentRepository) {
+                                DeliveryAssignmentRepository assignmentRepository,
+                                PushNotificationService pushNotificationService) {
         this.messageRepository = messageRepository;
         this.orderRepository = orderRepository;
         this.driverRepository = driverRepository;
         this.assignmentRepository = assignmentRepository;
+        this.pushNotificationService = pushNotificationService;
     }
 
     // ── Shop owner → Admin ────────────────────────────────────────────────────
@@ -55,7 +59,76 @@ public class StoreMessageService {
         msg.setContent(content);
         msg.setStatus(MessageStatus.UNREAD);
         msg.setFromAdmin(false);
-        return messageRepository.save(msg);
+        msg.setFromCustomer(true);
+        StoreMessage saved = messageRepository.save(msg);
+        notifyServiceConversationParticipant(saved, business.getStudent(), true);
+        return saved;
+    }
+
+    public List<StoreMessage> getServiceInquiriesForCustomer(Long customerId) {
+        return messageRepository.findByCustomerIdAndMessageTypeAndConversationRootIsNullOrderBySentAtDesc(
+                customerId, MessageType.SERVICE_INQUIRY);
+    }
+
+    public StoreMessage getServiceInquiryRoot(Long messageId) {
+        StoreMessage message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Service inquiry not found"));
+        if (message.getMessageType() != MessageType.SERVICE_INQUIRY) {
+            throw new RuntimeException("Message is not a service inquiry");
+        }
+        return message.getConversationRoot() != null ? message.getConversationRoot() : message;
+    }
+
+    public List<StoreMessage> getServiceInquiryConversation(Long rootId) {
+        return messageRepository.findConversation(rootId);
+    }
+
+    public StoreMessage replyToServiceInquiry(StoreMessage root, Student sender, String content) {
+        StoreMessage reply = new StoreMessage();
+        reply.setBusiness(root.getBusiness());
+        reply.setCustomer(root.getCustomer());
+        reply.setConversationRoot(root);
+        reply.setMessageType(MessageType.SERVICE_INQUIRY);
+        reply.setSubject(root.getSubject());
+        reply.setContent(content);
+        reply.setStatus(MessageStatus.UNREAD);
+        reply.setFromAdmin(false);
+        reply.setFromCustomer(sender.getId().equals(root.getCustomer().getId()));
+        StoreMessage saved = messageRepository.save(reply);
+        Student recipient = saved.isFromCustomer()
+            ? root.getBusiness().getStudent()
+            : root.getCustomer();
+        notifyServiceConversationParticipant(saved, recipient, saved.isFromCustomer());
+        return saved;
+    }
+
+        private void notifyServiceConversationParticipant(StoreMessage message, Student recipient, boolean shopOwnerRecipient) {
+        if (recipient == null) return;
+        String shopName = message.getBusiness() != null && message.getBusiness().getBusinessName() != null
+            ? message.getBusiness().getBusinessName() : "service shop";
+        PushNotificationDto notification = new PushNotificationDto(
+            shopOwnerRecipient ? "New service message" : "Service shop replied",
+            shopOwnerRecipient ? "A customer sent a message to " + shopName : shopName + " sent you a message",
+            "message",
+            message.getConversationRoot() != null ? message.getConversationRoot().getId() : message.getId());
+        if (message.getBusiness() != null) notification.setShopId(message.getBusiness().getId());
+        pushNotificationService.sendNotificationToStudent(recipient.getId(), notification);
+        }
+
+    public int markServiceInquiryRead(StoreMessage root, Student reader, boolean adminReader) {
+        boolean customerIsReader = reader.getId().equals(root.getCustomer().getId());
+        List<StoreMessage> conversation = messageRepository.findConversation(root.getId());
+        int updated = 0;
+        for (StoreMessage message : conversation) {
+                if ((adminReader || message.isFromCustomer() != customerIsReader)
+                    && message.getStatus() == MessageStatus.UNREAD) {
+                message.setStatus(MessageStatus.READ);
+                message.setReadAt(LocalDateTime.now());
+                messageRepository.save(message);
+                updated++;
+            }
+        }
+        return updated;
     }
 
     public StoreMessage requestDelivery(Business business, Long orderId) {

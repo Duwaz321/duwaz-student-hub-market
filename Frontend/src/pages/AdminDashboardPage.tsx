@@ -165,6 +165,12 @@ const AdminDashboardPage = () => {
   const { data: allShops = [] } = useQuery({ queryKey: ['admin', 'shops'], queryFn: businessesApi.getAll, refetchInterval: 15000 });
   const { data: categories = [] } = useCategories();
   const { data: messages = [], isLoading: messagesLoading } = useQuery({ queryKey: ['admin', 'messages', messageFilter], queryFn: () => messagesApi.getAll(messageFilter), refetchInterval: 5000 });
+  const { data: viewingServiceConversation = [], isLoading: viewingServiceConversationLoading } = useQuery({
+    queryKey: ['admin', 'service-thread', viewingMessage?.id],
+    queryFn: () => messagesApi.getServiceConversation(viewingMessage!.id),
+    enabled: viewingMessage?.messageType === 'SERVICE_INQUIRY',
+    refetchInterval: 10000,
+  });
   const { data: unreadData } = useQuery({ queryKey: ['admin', 'messages', 'unread-count'], queryFn: messagesApi.getUnreadCount, refetchInterval: 5000 });
   const getSeenMessageIds = (): Set<number> => {
     try {
@@ -650,7 +656,7 @@ const AdminDashboardPage = () => {
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${sColors[msg.status] ?? ''}`}>{msg.status}</span>
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); markMessageSeen(msg.id); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}>View</Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setViewingMessage(msg); markMessageSeen(msg.id); if (msg.messageType === 'SERVICE_INQUIRY') { messagesApi.markServiceConversationRead(msg.id).then(() => queryClient.invalidateQueries({ queryKey: ['admin', 'messages'] })).catch(() => {}); } else if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}>View</Button>
                           {msg.status !== 'RESOLVED' && <Button size="sm" variant="outline" className="h-7 text-xs border-blue-300 text-blue-600" onClick={() => { setReplyingTo(msg); setReplyContent(''); markMessageSeen(msg.id); if (msg.status !== 'READ' && msg.status !== 'REPLIED' && msg.status !== 'RESOLVED') markReadMutation.mutate(msg.id); }}><Send className="h-3 w-3 mr-1" />Reply</Button>}
                           {isDelivery && msg.order && (
                             msg.status === 'RESOLVED' ? (
@@ -736,13 +742,30 @@ const AdminDashboardPage = () => {
           <DialogHeader><DialogTitle>{viewingMessage?.subject ?? 'Message'}</DialogTitle></DialogHeader>
           {viewingMessage && (
             <div className="space-y-4 py-2 max-h-[65vh] overflow-y-auto">
+              {viewingMessage.messageType === 'SERVICE_INQUIRY' ? (
+                <>
+                  <p className="text-xs text-gray-500">Customer: {viewingMessage.customer?.studentName ?? 'Customer'} · Shop: {viewingMessage.business?.businessName ?? '—'}</p>
+                  {viewingServiceConversationLoading ? <p className="text-sm text-muted-foreground">Loading conversation…</p> : viewingServiceConversation.map(message => (
+                    <div key={message.id} className={`rounded-lg p-3 ${message.fromCustomer ? 'bg-gray-50' : 'bg-blue-50'}`}>
+                      <div className="mb-1 flex justify-between gap-2 text-xs text-gray-500">
+                        <span>{message.fromCustomer ? message.customer?.studentName ?? 'Customer' : message.business?.businessName ?? 'Shop owner'}</span>
+                        <span>{new Date(message.sentAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  ))}
+                </>
+              ) : (
+              <>
               <p className="text-xs text-gray-400">From: <span className="font-medium">{viewingMessage.business?.businessName}</span> · {new Date(viewingMessage.sentAt).toLocaleString()}</p>
               <div className="bg-gray-50 rounded-lg p-3"><pre className="text-sm whitespace-pre-wrap font-sans">{viewingMessage.content}</pre></div>
               {viewingMessage.replyContent && <div className="bg-blue-50 rounded-lg p-3 border border-blue-200"><p className="text-xs font-semibold text-blue-600 mb-1">YOUR REPLY</p><p className="text-sm">{viewingMessage.replyContent}</p></div>}
+              </>
+              )}
             </div>
           )}
           <DialogFooter className="gap-2">
-            {viewingMessage?.status !== 'RESOLVED' && (
+            {viewingMessage?.messageType !== 'SERVICE_INQUIRY' && viewingMessage?.status !== 'RESOLVED' && (
               <><Button variant="outline" onClick={() => { setReplyingTo(viewingMessage); setViewingMessage(null); setReplyContent(''); }}><Send className="h-4 w-4 mr-1" />Reply</Button><Button variant="outline" className="text-green-600" onClick={() => viewingMessage && resolveMutation.mutate(viewingMessage.id)}>✓ Resolve</Button></>
             )}
             <Button variant="outline" onClick={() => setViewingMessage(null)}>Close</Button>

@@ -7,6 +7,7 @@ public class PushNotificationDto {
     private String type;      // e.g., "order", "message", "reward"
     private Long targetId;     // e.g., orderId, messageId
     private Long recipientId;  // Student ID to receive notification
+    private Long shopId;
 
     public PushNotificationDto() {}
 
@@ -57,4 +58,8 @@ public class PushNotificationDto {
     public void setRecipientId(Long recipientId) {
         this.recipientId = recipientId;
     }
+
+    public Long getShopId() { return shopId; }
+
+    public void setShopId(Long shopId) { this.shopId = shopId; }
 }

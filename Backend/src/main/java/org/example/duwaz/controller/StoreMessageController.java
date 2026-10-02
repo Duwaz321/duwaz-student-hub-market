@@ -21,7 +21,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/messages")
-@CrossOrigin(origins = "*")
 public class StoreMessageController {
 
     private final StoreMessageService messageService;
@@ -40,6 +39,7 @@ public class StoreMessageController {
     }
 
     private boolean isAdmin(Authentication auth) {
+        if (auth == null) return false;
         Student s = studentRepository.findByEmail(auth.getName()).orElse(null);
         return s != null && s.isAdmin();
     }
@@ -50,6 +50,12 @@ public class StoreMessageController {
 
     private Optional<DeliverDriver> getDriverFromAuth(Authentication auth) {
         return driverRepository.findByEmail(auth.getName());
+    }
+
+    private boolean isServiceInquiryParticipant(StoreMessage root, Student student) {
+        return root.getCustomer() != null && root.getCustomer().getId().equals(student.getId())
+                || root.getBusiness() != null && root.getBusiness().getStudent() != null
+                && root.getBusiness().getStudent().getId().equals(student.getId());
     }
 
     // ── Shop owner endpoints ──────────────────────────────────────────────────
@@ -80,6 +86,67 @@ public class StoreMessageController {
         String subject = body.getOrDefault("subject", "Service Inquiry");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(messageService.sendServiceInquiry(business, customer, subject, content.trim()));
+    }
+
+    @GetMapping("/service-inquiries/mine")
+    public ResponseEntity<?> getMyServiceInquiries(Authentication auth) {
+        Student customer = studentRepository.findByEmail(auth.getName()).orElse(null);
+        if (customer == null) return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Customer access required");
+        return ResponseEntity.ok(messageService.getServiceInquiriesForCustomer(customer.getId()));
+    }
+
+    @GetMapping("/service-inquiry/{messageId}")
+    public ResponseEntity<?> getServiceInquiryConversation(@PathVariable Long messageId, Authentication auth) {
+        try {
+            StoreMessage root = messageService.getServiceInquiryRoot(messageId);
+            Student requester = studentRepository.findByEmail(auth.getName()).orElse(null);
+            if (!isAdmin(auth) && (requester == null || !isServiceInquiryParticipant(root, requester))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+            return ResponseEntity.ok(messageService.getServiceInquiryConversation(root.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/service-inquiry/{messageId}/reply")
+    public ResponseEntity<?> replyToServiceInquiry(@PathVariable Long messageId,
+                                                    @RequestBody Map<String, String> body,
+                                                    Authentication auth) {
+        try {
+            StoreMessage root = messageService.getServiceInquiryRoot(messageId);
+            Student sender = studentRepository.findByEmail(auth.getName()).orElse(null);
+            String content = body.get("content");
+            if (sender == null || !isServiceInquiryParticipant(root, sender)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only the customer or shop owner can reply");
+            }
+            if (content == null || content.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Content required");
+            }
+            if (content.trim().length() > 5000) {
+                return ResponseEntity.badRequest().body("Message must be 5000 characters or fewer");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(messageService.replyToServiceInquiry(root, sender, content.trim()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/service-inquiry/{messageId}/read")
+    public ResponseEntity<?> markServiceInquiryRead(@PathVariable Long messageId, Authentication auth) {
+        try {
+            StoreMessage root = messageService.getServiceInquiryRoot(messageId);
+            Student requester = studentRepository.findByEmail(auth.getName()).orElse(null);
+            if (!isAdmin(auth) && (requester == null || !isServiceInquiryParticipant(root, requester))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+            if (requester == null) return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+                return ResponseEntity.ok(Map.of(
+                    "markedAsReadCount", messageService.markServiceInquiryRead(root, requester, isAdmin(auth))));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/request-delivery/{orderId}")

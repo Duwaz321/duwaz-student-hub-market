@@ -31,17 +31,30 @@ self.addEventListener('push', event => {
     notificationData.body = event.data.text();
   }
 
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, {
+  event.waitUntil((async () => {
+    const windows = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const visibleShopApp = windows.find(client =>
+      client.visibilityState === 'visible'
+      && new URL(client.url).origin === self.location.origin
+      && new URL(client.url).pathname.startsWith('/shop-app')
+    );
+
+    if (visibleShopApp) {
+      visibleShopApp.postMessage({ type: 'DUWAZ_PUSH', notification: notificationData });
+      return;
+    }
+
+    await self.registration.showNotification(notificationData.title, {
       body: notificationData.body,
       icon: notificationData.icon,
       badge: notificationData.badge,
       tag: notificationData.tag,
       requireInteraction: notificationData.requireInteraction,
       vibrate: notificationData.vibrate || [500, 180, 500, 180, 900],
+      silent: false,
       data: notificationData.data,
-    })
-  );
+    });
+  })());
 });
 
 // Handle notification click
@@ -49,13 +62,19 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   const notificationData = event.notification.data || {};
-  let urlToOpen = '/';
+  let urlToOpen = '/shop-app';
 
   // Route based on notification type
   if (notificationData.type === 'order') {
-    urlToOpen = `/order/${notificationData.orderId}/track`;
+    urlToOpen = notificationData.shopId
+      ? `/shop-app/${notificationData.shopId}`
+      : '/shop-app';
   } else if (notificationData.type === 'message') {
-    urlToOpen = `/admin`; // Messages page (admin/shop owner)
+    urlToOpen = notificationData.shopId
+      ? `/shop-app/${notificationData.shopId}`
+      : '/shop-app';
+  } else if (notificationData.url) {
+    urlToOpen = notificationData.url;
   }
 
   event.waitUntil(
@@ -63,8 +82,8 @@ self.addEventListener('notificationclick', event => {
       // Check if a window already exists
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+          return client.navigate(urlToOpen).then(() => client.focus());
         }
       }
       // If not, open a new window

@@ -10,6 +10,19 @@ export interface PushNotificationOptions {
   requireInteraction?: boolean;
 }
 
+function decodeBase64Url(value: string): Uint8Array {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  return Uint8Array.from(atob(padded), character => character.charCodeAt(0));
+}
+
+function encodeBase64Url(value: ArrayBuffer | null): string {
+  if (!value) return '';
+  const bytes = new Uint8Array(value);
+  let binary = '';
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
 export const usePushNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -71,19 +84,20 @@ export const usePushNotifications = () => {
         return false;
       }
 
+      const keyResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/notifications/vapid-public-key`);
+      if (!keyResponse.ok) throw new Error('Push notification keys are not configured on the server yet.');
+      const { publicKey } = await keyResponse.json() as { publicKey?: string };
+      if (!publicKey) throw new Error('Push notification keys are not configured on the server yet.');
+
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        // Note: applicationServerKey should be set when using VAPID
-        // For now, we'll skip it and handle notifications server-side
+        applicationServerKey: decodeBase64Url(publicKey),
       });
 
+      await sendSubscriptionToBackend(subscription);
       setSubscription(subscription);
       setIsSubscribed(true);
-      console.log('Subscribed to push notifications:', subscription);
-
-      // Send subscription to backend
-      await sendSubscriptionToBackend(subscription);
       return true;
     } catch (err) {
       console.error('Failed to subscribe to push notifications:', err);
@@ -137,35 +151,44 @@ export const usePushNotifications = () => {
     }
   };
 
-  // Send subscription endpoint to backend
-  const sendSubscriptionToBackend = async (sub: PushSubscription): Promise<void> => {
+  const sendTestPushNotification = async (): Promise<boolean> => {
     try {
       const token = localStorage.getItem('duwaz_token');
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/notifications/subscribe`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            endpoint: sub.endpoint,
-            keys: {
-              p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh') || []))),
-              auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth') || []))),
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to send subscription: ${response.status}`);
-      }
-
-      console.log('Subscription sent to backend');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/notifications/test`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.ok;
     } catch (err) {
-      console.error('Failed to send subscription to backend:', err);
+      console.error('Failed to send test push notification:', err);
+      return false;
+    }
+  };
+
+  // Send subscription endpoint to backend
+  const sendSubscriptionToBackend = async (sub: PushSubscription): Promise<void> => {
+    const token = localStorage.getItem('duwaz_token');
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/notifications/subscribe`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: encodeBase64Url(sub.getKey('p256dh')),
+            auth: encodeBase64Url(sub.getKey('auth')),
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      await sub.unsubscribe().catch(() => undefined);
+      throw new Error(`Failed to register this device for push notifications (${response.status}).`);
     }
   };
 
@@ -205,5 +228,6 @@ export const usePushNotifications = () => {
     subscribeToPushNotifications,
     unsubscribeFromPushNotifications,
     showNotification,
+    sendTestPushNotification,
   };
 };

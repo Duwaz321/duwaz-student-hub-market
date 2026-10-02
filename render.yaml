@@ -8,3 +8,39 @@ services:
     envVars:
       - key: JAVA_VERSION
         value: "21"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_MAPS_ENABLED
+        value: "false"
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: AT_USERNAME
+        value: "sandbox"
+      - key: AT_API_KEY
+        sync: false
+      - key: YOCO_SECRET_KEY
+        sync: false
+      - key: YOCO_WEBHOOK_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: "https://duwaz.co.za"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://duwaz.co.za,https://www.duwaz.co.za"
+      - key: SENTRY_DSN
+        sync: false
+      - key: APP_ENVIRONMENT
+        value: "production"
+      - key: AUDIT_RETENTION_DAYS
+        value: "730"

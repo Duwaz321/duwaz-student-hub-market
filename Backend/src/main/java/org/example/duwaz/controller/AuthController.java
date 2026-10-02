@@ -30,6 +30,7 @@ public class AuthController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private EmailService emailService;
     @Autowired private OtpService otpService;
+    @Autowired private org.example.duwaz.service.AuditLogService auditLogService;
 
     private String roleName(Student s) {
         return s.getRole() != null ? s.getRole().name() : "CUSTOMER";
@@ -56,10 +57,11 @@ public class AuthController {
         }
         try {
             studentRepository.save(student);
+            auditLogService.record(request.getEmail(), "ACCOUNT_REGISTERED", "STUDENT", null, "email_verification_pending");
         } catch (Exception e) {
             System.err.println("[AuthController] Failed to save student: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Failed to create account: " + e.getMessage());
+            return ResponseEntity.status(500).body("Failed to create account");
         }
 
         try {
@@ -70,7 +72,7 @@ public class AuthController {
         } catch (RuntimeException e) {
             System.err.println("[AuthController] Registration error for " + request.getEmail() + ": " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).body(e.getMessage());
+            return ResponseEntity.status(500).body("Registration service temporarily unavailable");
         }
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -112,6 +114,7 @@ public class AuthController {
         studentRepository.save(student);
 
         String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
+        auditLogService.record(student.getEmail(), "AUTH_LOGIN", "STUDENT", String.valueOf(student.getId()), "success");
         return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
     }
 
@@ -131,7 +134,7 @@ public class AuthController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(429).body(e.getMessage());
         } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body(e.getMessage());
+            return ResponseEntity.status(500).body("Verification email service temporarily unavailable");
         }
 
         return ResponseEntity.ok(Map.of(
@@ -142,7 +145,7 @@ public class AuthController {
 
     // ── Login ─────────────────────────────────────────────────────────────────
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())

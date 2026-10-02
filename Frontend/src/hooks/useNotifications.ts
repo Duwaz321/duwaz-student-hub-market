@@ -110,22 +110,21 @@ function showBrowserNotification(title: string, body: string) {
     try { navigator.vibrate([200, 120, 240, 120, 600]); } catch { /* ignore */ }
   }
 
-  if (!('Notification' in window)) return;
-  const send = () => {
-    try {
-      new Notification(title, {
-        body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'duwaz-attention',
-        requireInteraction: true,
-        silent: false,
-      });
-    } catch { /* ignore */ }
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const options: NotificationOptions = {
+    body,
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: `duwaz-${Date.now()}`,
+    requireInteraction: true,
+    silent: true,
   };
-  if (Notification.permission === 'granted') send();
-  else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(p => { if (p === 'granted') send(); });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready
+      .then(registration => registration.showNotification(title, options))
+      .catch(() => undefined);
+  } else {
+    try { new Notification(title, options); } catch { /* ignore */ }
   }
 }
 
@@ -187,14 +186,37 @@ export function useNotifications({
   const prevOrders   = useRef<number | null>(null);
   const prevMessages = useRef<number | null>(null);
   const prevDelivery = useRef<number | null>(null);
-  const alertLoopRef = useRef<number | null>(null);
 
-  // Request permission once on mount
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type !== 'DUWAZ_PUSH') return;
+      const notification = event.data.notification as { title?: string; body?: string; tag?: string; data?: Record<string, unknown> };
+      const kind = notification?.data?.type;
+      const targetId = Number(notification?.data?.targetId);
 
+      if (kind === 'order' && Number.isFinite(targetId)) {
+        const key = getSeenStorageKey('orders');
+        writeSeenIds(key, [...readSeenIds(key), targetId]);
+      } else if (kind === 'message' && prevMessages.current !== null) {
+        prevMessages.current += 1;
+      } else if (kind === 'delivery' && Number.isFinite(targetId)) {
+        const key = getSeenStorageKey('deliveries');
+        writeSeenIds(key, [...readSeenIds(key), targetId]);
+      }
+
+      if (!document.hidden) {
+        const sound = kind === 'order' ? 'order' : kind === 'delivery' ? 'delivery' : 'message';
+        playSound(sound);
+        showBrowserNotification(notification?.title ?? 'Duwaz alert', notification?.body ?? 'You have a new update.');
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+  }, []);
+  // Audio is unlocked after the user's first interaction; notification permission
+  // is requested explicitly by the push settings control, never on page load.
+  useEffect(() => {
     const unlock = () => unlockAudioContext();
     const events = ['pointerdown', 'keydown', 'touchstart', 'click'];
     events.forEach((eventName) => window.addEventListener(eventName, unlock, { passive: true }));
@@ -203,57 +225,12 @@ export function useNotifications({
     };
   }, []);
 
-  // Keep the alert active until the issue is resolved, so the shop/admin/driver
-  // keeps hearing a clear signal while there is still pending work to act on.
+  // Keep the badge in sync with unresolved work, but only sound/notify when a new
+  // order, message, or delivery arrives (not repeatedly every few seconds).
   useEffect(() => {
     const activeAlertCount = (newOrderCount || 0) + (newDeliveryCount || 0) + (newMessageCount || 0);
-    const hasActiveAlert = activeAlertCount > 0;
-
-    if (!hasActiveAlert) {
-      if (alertLoopRef.current !== null) {
-        window.clearInterval(alertLoopRef.current);
-        alertLoopRef.current = null;
-      }
-      clearAttentionBadge();
-      return;
-    }
-
-    const playActiveAlert = () => {
-      const title = newOrderCount > 0
-        ? `You have ${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} waiting.`
-        : newDeliveryCount > 0
-          ? `You have ${newDeliveryCount} delivery assignment${newDeliveryCount > 1 ? 's' : ''} waiting.`
-          : `You have ${newMessageCount} unread message${newMessageCount > 1 ? 's' : ''}.`;
-
-      if (newOrderCount > 0) playSound('order');
-      else if (newDeliveryCount > 0) playSound('delivery');
-      else if (newMessageCount > 0) playSound('message');
-
-      showBrowserNotification('Duwaz needs your attention', title);
-      setAttentionBadge(activeAlertCount);
-
-      const previousTitle = document.title;
-      const hasVisibleTitle = document.visibilityState === 'visible';
-      if (hasVisibleTitle) {
-        document.title = `(${activeAlertCount}) Duwaz`;
-        window.setTimeout(() => { document.title = previousTitle; }, 1800);
-      }
-    };
-
-    // Always render the badge for active work on first load so unread messages and
-    // pending orders are visible immediately instead of waiting for a later count change.
-    setAttentionBadge(activeAlertCount);
-    // Keep the attention alarm running until the live order/message is handled.
-    // This gives a strong persistent signal for pending work instead of a one-off beep.
-    playActiveAlert();
-    alertLoopRef.current = window.setInterval(playActiveAlert, 3000);
-
-    return () => {
-      if (alertLoopRef.current !== null) {
-        window.clearInterval(alertLoopRef.current);
-        alertLoopRef.current = null;
-      }
-    };
+    if (activeAlertCount > 0) setAttentionBadge(activeAlertCount);
+    else clearAttentionBadge();
   }, [newOrderCount, newDeliveryCount, newMessageCount]);
 
   // Orders: compare IDs so we only flag truly new pending orders.

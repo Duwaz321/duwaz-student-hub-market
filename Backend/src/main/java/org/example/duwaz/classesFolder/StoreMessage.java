@@ -2,10 +2,17 @@ package org.example.duwaz.classesFolder;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "store_messages")
+@Table(name = "store_messages", indexes = {
+    @Index(name = "idx_store_messages_business_sent", columnList = "business_id, sent_at"),
+    @Index(name = "idx_store_messages_customer_sent", columnList = "customer_id, sent_at"),
+    @Index(name = "idx_store_messages_status_sent", columnList = "status, sent_at"),
+    @Index(name = "idx_store_messages_root_sent", columnList = "conversation_root_id, sent_at")
+})
 public class StoreMessage {
 
     public enum MessageType {
@@ -36,6 +43,14 @@ public class StoreMessage {
     @JoinColumn(name = "customer_id")
     @JsonIgnoreProperties({"password", "businesses", "hibernateLazyInitializer", "handler"})
     private Student customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversation_root_id")
+    @JsonIgnore
+    private StoreMessage conversationRoot;
+
+    @Column(name = "from_customer")
+    private boolean fromCustomer;
 
     /** The driver involved — nullable for shop-only messages */
     @ManyToOne(fetch = FetchType.EAGER)
@@ -95,6 +110,17 @@ public class StoreMessage {
 
     public Student getCustomer() { return customer; }
     public void setCustomer(Student customer) { this.customer = customer; }
+
+    public StoreMessage getConversationRoot() { return conversationRoot; }
+    public void setConversationRoot(StoreMessage conversationRoot) { this.conversationRoot = conversationRoot; }
+
+    @JsonProperty("conversationRootId")
+    public Long getConversationRootId() { return conversationRoot != null ? conversationRoot.getId() : null; }
+
+    public boolean isFromCustomer() {
+        return fromCustomer || (messageType == MessageType.SERVICE_INQUIRY && conversationRoot == null);
+    }
+    public void setFromCustomer(boolean fromCustomer) { this.fromCustomer = fromCustomer; }
 
     public DeliverDriver getDriver() { return driver; }
     public void setDriver(DeliverDriver driver) { this.driver = driver; }

@@ -18,6 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import NotificationSettings from '@/components/NotificationSettings';
+import InstallShopAppButton from '@/components/InstallShopAppButton';
+import ShopPwaManifest from '@/components/ShopPwaManifest';
 import { useUpdateBusiness } from '@/hooks/useBusinesses';
 import { useBusinessProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useAdjustStock } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
@@ -291,11 +294,32 @@ const ShopDashboardPage = () => {
   const [composeContent, setComposeContent] = useState('');
   const [requestDeliveryOrderId, setRequestDeliveryOrderId] = useState<number | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<StoreMessage | null>(null);
+  const [serviceReply, setServiceReply] = useState('');
+  const { data: serviceConversation = [], isLoading: serviceConversationLoading } = useQuery({
+    queryKey: ['messages', 'service-thread', selectedMessage?.id],
+    queryFn: () => messagesApi.getServiceConversation(selectedMessage!.id),
+    enabled: selectedMessage?.messageType === 'SERVICE_INQUIRY',
+    refetchInterval: 10000,
+  });
+  const serviceReplyMutation = useMutation({
+    mutationFn: () => messagesApi.replyToServiceInquiry(selectedMessage!.id, serviceReply.trim()),
+    onSuccess: () => {
+      setServiceReply('');
+      qc.invalidateQueries({ queryKey: ['messages', 'mine'] });
+      qc.invalidateQueries({ queryKey: ['messages', 'service-thread', selectedMessage?.id] });
+      toast({ title: 'Reply sent to customer' });
+    },
+    onError: (err: Error) => toast({ title: 'Reply failed', description: err.message, variant: 'destructive' }),
+  });
 
   const handleOpenMessage = (msg: StoreMessage) => {
     setSelectedMessage(msg);
     markMessageSeen(msg.id);
-    if (msg.status === 'UNREAD') {
+    if (msg.messageType === 'SERVICE_INQUIRY') {
+      messagesApi.markServiceConversationRead(msg.id)
+        .then(() => qc.invalidateQueries({ queryKey: ['messages', 'mine'] }))
+        .catch(() => {});
+    } else if (msg.status === 'UNREAD') {
       markMessageReadMutation.mutate(msg.id);
     }
   };
@@ -452,6 +476,7 @@ const ShopDashboardPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      <ShopPwaManifest />
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -464,6 +489,7 @@ const ShopDashboardPage = () => {
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0">
+          <InstallShopAppButton />
           {/* Open / Closed toggle */}
           <Button
             variant="outline"
@@ -748,8 +774,9 @@ const ShopDashboardPage = () => {
             </CardContent></Card>
           ) : (
             <div className="space-y-3">
-              {myMessages.map(msg => {
+              {myMessages.filter(msg => msg.messageType !== 'SERVICE_INQUIRY' || !msg.conversationRootId).map(msg => {
                 const isDeliveryReq = msg.messageType === 'DELIVERY_REQUEST';
+                const isServiceInquiry = msg.messageType === 'SERVICE_INQUIRY';
                 const hasReply = !!msg.replyContent;
                 const statusColors: Record<string, string> = {
                   UNREAD: 'bg-yellow-100 text-yellow-700',
@@ -766,6 +793,7 @@ const ShopDashboardPage = () => {
                             {isDeliveryReq && <Truck className="h-4 w-4 text-duwaz-brown flex-shrink-0" />}
                             <p className="font-semibold text-sm truncate">{msg.subject ?? 'No subject'}</p>
                           </div>
+                          {isServiceInquiry && <p className="text-xs text-duwaz-brown">Service conversation · {msg.customer?.studentName ?? 'Customer'}</p>}
                           <p className="text-xs text-gray-500">{new Date(msg.sentAt).toLocaleString()}</p>
                           {hasReply && (
                             <p className="text-xs text-blue-600 mt-1 font-medium">✓ Admin replied</p>
@@ -783,6 +811,7 @@ const ShopDashboardPage = () => {
 
         {/* ── Settings Tab ── */}
         <TabsContent value="settings">
+          <div className="space-y-4">
           <Card>
             <CardHeader><CardTitle>Store Profile</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -805,6 +834,11 @@ const ShopDashboardPage = () => {
               <Button className="bg-duwaz-brown hover:bg-duwaz-brown/90" onClick={openEditShop}><Pencil className="h-4 w-4 mr-2" />Edit Store Profile</Button>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader><CardTitle>Shop app notifications</CardTitle></CardHeader>
+            <CardContent><NotificationSettings /></CardContent>
+          </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -1033,6 +1067,28 @@ const ShopDashboardPage = () => {
           <DialogHeader><DialogTitle>{selectedMessage?.subject ?? 'Message'}</DialogTitle></DialogHeader>
           {selectedMessage && (
             <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto">
+              {selectedMessage.messageType === 'SERVICE_INQUIRY' ? (
+                <>
+                  {serviceConversationLoading ? <p className="text-sm text-muted-foreground">Loading conversation…</p> : serviceConversation.map(message => (
+                    <div key={message.id} className={`rounded-lg p-3 ${message.fromCustomer ? 'bg-gray-50' : 'bg-blue-50'}`}>
+                      <div className="mb-1 flex justify-between gap-2 text-xs text-gray-500">
+                        <span>{message.fromCustomer ? message.customer?.studentName ?? 'Customer' : 'You'}</span>
+                        <span>{new Date(message.sentAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  ))}
+                  <Textarea value={serviceReply} onChange={event => setServiceReply(event.target.value)} maxLength={5000} placeholder="Reply to the customer…" />
+                  <Button
+                    className="bg-duwaz-brown hover:bg-duwaz-brown/90"
+                    disabled={!serviceReply.trim() || serviceReplyMutation.isPending}
+                    onClick={() => serviceReplyMutation.mutate()}
+                  >
+                    <Send className="mr-2 h-4 w-4" />{serviceReplyMutation.isPending ? 'Sending…' : 'Send reply'}
+                  </Button>
+                </>
+              ) : (
+              <>
               <div>
                 <p className="text-xs text-gray-400 mb-2">{new Date(selectedMessage.sentAt).toLocaleString()}</p>
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -1049,6 +1105,8 @@ const ShopDashboardPage = () => {
               )}
               {!selectedMessage.replyContent && (
                 <p className="text-sm text-gray-400 text-center py-2">Awaiting Admin response...</p>
+              )}
+              </>
               )}
             </div>
           )}

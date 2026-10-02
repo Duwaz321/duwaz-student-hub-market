@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,21 +7,25 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Upload, X, Navigation, TrendingUp, Star, Receipt, Bell } from 'lucide-react';
+import { Camera, Upload, X, Navigation, TrendingUp, Star, Receipt, Bell, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStudent, useUpdateStudent } from '@/hooks/useStudents';
-import { useQuery } from '@tanstack/react-query';
-import { ordersApi, transactionsApi } from '@/services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { messagesApi, ordersApi, transactionsApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getStatusBadge } from '@/lib/orderUtils';
 import NotificationSettings from '@/components/NotificationSettings';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { Textarea } from '@/components/ui/textarea';
+import type { StoreMessage } from '@/types';
 
 const AccountPage = () => {
   const { toast } = useToast();
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const CURRENT_STUDENT_ID = user?.userId ?? 0;
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +37,42 @@ const AccountPage = () => {
     queryKey: ['orders', 'my'],
     queryFn: ordersApi.getMyOrders,
   });
+
+  const { data: serviceInquiries = [], isLoading: serviceInquiriesLoading } = useQuery({
+    queryKey: ['messages', 'service', 'mine'],
+    queryFn: messagesApi.getMyServiceInquiries,
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
+  const [selectedServiceInquiry, setSelectedServiceInquiry] = useState<StoreMessage | null>(null);
+  const [serviceReply, setServiceReply] = useState('');
+  const { data: serviceConversation = [], isLoading: serviceConversationLoading } = useQuery({
+    queryKey: ['messages', 'service-thread', selectedServiceInquiry?.id],
+    queryFn: () => messagesApi.getServiceConversation(selectedServiceInquiry!.id),
+    enabled: !!selectedServiceInquiry,
+    refetchInterval: 10000,
+  });
+  const replyToServiceMutation = useMutation({
+    mutationFn: () => messagesApi.replyToServiceInquiry(selectedServiceInquiry!.id, serviceReply.trim()),
+    onSuccess: () => {
+      setServiceReply('');
+      queryClient.invalidateQueries({ queryKey: ['messages', 'service-thread', selectedServiceInquiry?.id] });
+      queryClient.invalidateQueries({ queryKey: ['messages', 'service', 'mine'] });
+      toast({ title: 'Reply sent to shop' });
+    },
+    onError: (error: Error) => toast({ title: 'Could not send reply', description: error.message, variant: 'destructive' }),
+  });
+  useEffect(() => {
+    const requestedId = Number(searchParams.get('message'));
+    if (!requestedId || selectedServiceInquiry?.id === requestedId) return;
+    const inquiry = serviceInquiries.find(message => message.id === requestedId);
+    if (inquiry) {
+      setSelectedServiceInquiry(inquiry);
+      messagesApi.markServiceConversationRead(inquiry.id)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['messages', 'service', 'mine'] }))
+        .catch(() => {});
+    }
+  }, [searchParams, selectedServiceInquiry?.id, serviceInquiries]);
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['transactions', 'summary'],
@@ -206,10 +246,11 @@ const AccountPage = () => {
 
         {/* ── Tabs ── */}
         <div className="flex-1">
-          <Tabs defaultValue="profile">
-            <TabsList className="mb-6">
+          <Tabs defaultValue={searchParams.get('tab') === 'service-messages' ? 'service-messages' : 'profile'}>
+            <TabsList className="mb-6 flex-wrap h-auto">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="service-messages">Service messages</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="rewards">Rewards</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -336,6 +377,77 @@ const AccountPage = () => {
                     </Button>
                   )}
                 </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="service-messages">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Service messages</CardTitle>
+                  <CardDescription>Continue conversations with service shop owners.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {serviceInquiriesLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading service messages…</p>
+                  ) : serviceInquiries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">No service conversations yet.</p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                      <div className="space-y-2">
+                        {serviceInquiries.map(inquiry => (
+                          <button
+                            key={inquiry.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedServiceInquiry(inquiry);
+                              setSearchParams({ tab: 'service-messages', message: String(inquiry.id) });
+                              messagesApi.markServiceConversationRead(inquiry.id).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['messages', 'service', 'mine'] });
+                                queryClient.invalidateQueries({ queryKey: ['messages', 'service-thread', inquiry.id] });
+                              }).catch(() => {});
+                            }}
+                            className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedServiceInquiry?.id === inquiry.id ? 'border-duwaz-brown bg-duwaz-cream/30' : 'border-border hover:bg-muted/40'}`}
+                          >
+                            <span className="block text-sm font-medium">{inquiry.business?.businessName ?? 'Service shop'}</span>
+                            <span className="mt-1 block truncate text-xs text-muted-foreground">{inquiry.subject ?? 'Service inquiry'}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{new Date(inquiry.sentAt).toLocaleString()}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {selectedServiceInquiry && (
+                        <div className="space-y-3">
+                          <div className="max-h-80 space-y-3 overflow-y-auto rounded-lg border border-border p-3">
+                            {serviceConversationLoading ? <p className="text-sm text-muted-foreground">Loading conversation…</p> : serviceConversation.map(message => (
+                              <div key={message.id} className={`rounded-lg p-3 ${message.fromCustomer ? 'bg-duwaz-cream/30' : 'bg-blue-50'}`}>
+                                <div className="mb-1 flex justify-between gap-2 text-xs text-muted-foreground">
+                                  <span>{message.fromCustomer ? 'You' : selectedServiceInquiry.business?.businessName ?? 'Shop owner'}</span>
+                                  <span>{new Date(message.sentAt).toLocaleString()}</span>
+                                </div>
+                                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <Textarea
+                            value={serviceReply}
+                            onChange={event => setServiceReply(event.target.value)}
+                            maxLength={5000}
+                            placeholder="Write a reply to the shop owner…"
+                            className="min-h-24"
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={() => replyToServiceMutation.mutate()}
+                              disabled={!serviceReply.trim() || replyToServiceMutation.isPending}
+                              className="bg-duwaz-brown hover:bg-duwaz-brown/90"
+                            >
+                              <Send className="mr-2 h-4 w-4" />{replyToServiceMutation.isPending ? 'Sending…' : 'Send reply'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             </TabsContent>
 

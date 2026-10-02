@@ -6,7 +6,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "push_subscriptions")
+@Table(name = "push_subscriptions", indexes = {
+    @Index(name = "idx_push_subscriptions_student_active", columnList = "student_id, active"),
+    @Index(name = "idx_push_subscriptions_endpoint", columnList = "endpoint", unique = true)
+})
 public class PushSubscription {
 
     @Id

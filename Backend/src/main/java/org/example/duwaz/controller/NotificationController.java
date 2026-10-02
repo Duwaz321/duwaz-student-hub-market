@@ -21,9 +21,19 @@ public class NotificationController {
     private final JwtUtil jwtUtil;
 
     public NotificationController(PushNotificationService notificationService,
-                                  JwtUtil jwtUtil) {
+            JwtUtil jwtUtil) {
         this.notificationService = notificationService;
         this.jwtUtil = jwtUtil;
+    }
+
+    @GetMapping("/vapid-public-key")
+    public ResponseEntity<?> getVapidPublicKey() {
+        String publicKey = notificationService.getVapidPublicKey();
+        if (publicKey == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new ErrorResponse("Web Push is not configured"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("publicKey", publicKey));
     }
 
     /**
@@ -52,6 +62,36 @@ public class NotificationController {
             logger.error("Failed to subscribe to notifications", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Failed to subscribe: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/test")
+    public ResponseEntity<?> sendTestNotification(@RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replaceFirst("(?i)^Bearer\\s+", "");
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Long userId = ((Number) claims.get("userId")).longValue();
+            if (notificationService.getVapidPublicKey() == null) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(new ErrorResponse("Web Push is not configured on the server"));
+            }
+            if (!notificationService.hasActiveSubscription(userId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new ErrorResponse("This device is not subscribed to push notifications"));
+            }
+
+            PushNotificationDto test = new PushNotificationDto(
+                    "Duwaz Shop test alert",
+                    "This device is ready to receive order and message alerts.",
+                    "message",
+                    0L);
+            test.setRecipientId(userId);
+            notificationService.sendNotificationToStudent(userId, test);
+            return ResponseEntity.accepted().body(new SuccessResponse("Test push queued for this device"));
+        } catch (Exception e) {
+            logger.error("Failed to send test push notification", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Could not send test notification"));
         }
     }
 
@@ -154,7 +194,8 @@ public class NotificationController {
     public static class UnsubscribeRequest {
         private String endpoint;
 
-        public UnsubscribeRequest() {}
+        public UnsubscribeRequest() {
+        }
 
         public UnsubscribeRequest(String endpoint) {
             this.endpoint = endpoint;
