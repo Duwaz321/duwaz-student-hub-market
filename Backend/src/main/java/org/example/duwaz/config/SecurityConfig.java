@@ -33,126 +33,133 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthFilter jwtAuthFilter;
+        @Autowired
+        private JwtAuthFilter jwtAuthFilter;
 
-    @Autowired
-    private ApiRateLimitFilter apiRateLimitFilter;
+        @Autowired
+        private ApiRateLimitFilter apiRateLimitFilter;
 
-    @Value("${app.cors.allowed-origins:https://duwaz.co.za,https://www.duwaz.co.za}")
-    private String allowedOrigins;
+        @Value("${app.cors.allowed-origins:https://duwaz.co.za,https://www.duwaz.co.za}")
+        private String allowedOrigins;
 
-    @Autowired
-    private StudentUserDetailsService userDetailsService;
+        @Autowired
+        private StudentUserDetailsService userDetailsService;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .headers(headers -> headers
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .maxAgeInSeconds(31536000)
-                                .includeSubDomains(true)
-                                .preload(true))
-                        .frameOptions(frame -> frame.deny())
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives(
-                                        "default-src 'self'; " +
-                                                "img-src 'self' data: https://*.duwaz.co.za https://*.googleapis.com https://*.gstatic.com; "
-                                                +
-                                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                                "font-src 'self' data: https://fonts.gstatic.com; " +
-                                                "connect-src 'self' https://api.duwaz.co.za https://*.duwaz.co.za https://*.googleapis.com https://*.gstatic.com; "
-                                                +
-                                                "upgrade-insecure-requests"))
-                        .referrerPolicy(ref -> ref
-                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .permissionsPolicy(policy -> policy
-                                .policy("camera=(), microphone=(), geolocation=(), interest-cohort=()")))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Return 401 JSON instead of redirecting to /error
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\"}");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Forbidden\"}");
-                        }))
-                .authorizeHttpRequests(auth -> auth
-                        // Permit Spring's error endpoint
-                        .requestMatchers("/error").permitAll()
-                        // Permit CORS preflight
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Auth endpoints — fully public
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // Yoco webhook — must be public (Yoco calls it server-to-server, no JWT)
-                        .requestMatchers(HttpMethod.POST, "/api/payment/webhook").permitAll()
-                        // Catalog endpoints — public (categories, services, products)
-                        .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
-                        // Address search and geocoding are needed before sign-in on registration
-                        .requestMatchers("/api/locations/**").permitAll()
-                        // Legacy product endpoints
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/businesses").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/businesses/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
-                        // Everything else requires authentication
-                        .anyRequest().authenticated())
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(apiRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .headers(headers -> headers
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .maxAgeInSeconds(31536000)
+                                                                .includeSubDomains(true)
+                                                                .preload(true))
+                                                .frameOptions(frame -> frame.deny())
+                                                .contentSecurityPolicy(csp -> csp
+                                                                .policyDirectives(
+                                                                                "default-src 'self'; " +
+                                                                                                "img-src 'self' data: https://*.duwaz.co.za https://*.googleapis.com https://*.gstatic.com; "
+                                                                                                +
+                                                                                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                                                                                                +
+                                                                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                                                                                                +
+                                                                                                "font-src 'self' data: https://fonts.gstatic.com; "
+                                                                                                +
+                                                                                                "connect-src 'self' https://api.duwaz.co.za https://*.duwaz.co.za https://*.googleapis.com https://*.gstatic.com; "
+                                                                                                +
+                                                                                                "upgrade-insecure-requests"))
+                                                .referrerPolicy(ref -> ref
+                                                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                                                .permissionsPolicy(policy -> policy
+                                                                .policy("camera=(), microphone=(), geolocation=(), interest-cohort=()")))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // Return 401 JSON instead of redirecting to /error
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint((request, response, authException) -> {
+                                                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                                                })
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write("{\"error\": \"Forbidden\"}");
+                                                }))
+                                .authorizeHttpRequests(auth -> auth
+                                                // Permit Spring's error endpoint
+                                                .requestMatchers("/error").permitAll()
+                                                // Permit CORS preflight
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                // Auth endpoints — fully public
+                                                .requestMatchers("/api/auth/**").permitAll()
+                                                // Yoco webhook — must be public (Yoco calls it server-to-server, no
+                                                // JWT)
+                                                .requestMatchers(HttpMethod.POST, "/api/payment/webhook").permitAll()
+                                                // Catalog endpoints — public (categories, services, products)
+                                                .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
+                                                // Address search and geocoding are needed before sign-in on
+                                                // registration
+                                                .requestMatchers("/api/locations/**").permitAll()
+                                                // Legacy product endpoints
+                                                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/businesses").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/businesses/{id}").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
+                                                // Everything else requires authentication
+                                                .anyRequest().authenticated())
+                                .authenticationProvider(authenticationProvider())
+                                .addFilterBefore(apiRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isBlank())
-                .toList());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
-        config.setAllowedHeaders(
-                List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-CSRF-Token"));
-        config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(false);
-        config.setMaxAge(3600L);
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(origin -> !origin.isBlank())
+                                .toList());
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+                config.setAllowedHeaders(
+                                List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
+                                                "X-CSRF-Token"));
+                config.setExposedHeaders(List.of("Authorization"));
+                config.setAllowCredentials(false);
+                config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", config);
+                return source;
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
+        @Bean
+        public AuthenticationProvider authenticationProvider() {
+                DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+                provider.setUserDetailsService(userDetailsService);
+                provider.setPasswordEncoder(passwordEncoder());
+                return provider;
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+                        throws Exception {
+                return config.getAuthenticationManager();
+        }
 
-    @Bean
-    public org.springframework.web.client.RestTemplate restTemplate() {
-        return new org.springframework.web.client.RestTemplate();
-    }
+        @Bean
+        public org.springframework.web.client.RestTemplate restTemplate() {
+                return new org.springframework.web.client.RestTemplate();
+        }
 }

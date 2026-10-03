@@ -18,19 +18,27 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired private AuthenticationManager authenticationManager;
-    @Autowired private StudentRepository studentRepository;
-    @Autowired private JwtUtil jwtUtil;
-    @Autowired private PasswordEncoder passwordEncoder;
-    @Autowired private EmailService emailService;
-    @Autowired private OtpService otpService;
-    @Autowired private org.example.duwaz.service.AuditLogService auditLogService;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private StudentRepository studentRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private OtpService otpService;
+    @Autowired
+    private org.example.duwaz.service.AuditLogService auditLogService;
 
     private String roleName(Student s) {
         return s.getRole() != null ? s.getRole().name() : "CUSTOMER";
@@ -39,7 +47,8 @@ public class AuthController {
     // ── Step 1: validate, save as unverified, send OTP to email ──────────────
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        if (studentRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (studentRepository.existsByEmail(normalizedEmail)) {
             return ResponseEntity.badRequest().body("Email already registered");
         }
         if (studentRepository.existsByStudentNumber(request.getStudentNumber())) {
@@ -49,7 +58,7 @@ public class AuthController {
         Student student = new Student();
         student.setStudentName(request.getStudentName());
         student.setStudentNumber(request.getStudentNumber());
-        student.setEmail(request.getEmail());
+        student.setEmail(normalizedEmail);
         student.setPassword(passwordEncoder.encode(request.getPassword()));
         student.setEmailVerified(false);
         if (request.getLocationAddress() != null && !request.getLocationAddress().isBlank()) {
@@ -57,7 +66,8 @@ public class AuthController {
         }
         try {
             studentRepository.save(student);
-            auditLogService.record(request.getEmail(), "ACCOUNT_REGISTERED", "STUDENT", null, "email_verification_pending");
+            auditLogService.record(request.getEmail(), "ACCOUNT_REGISTERED", "STUDENT", null,
+                    "email_verification_pending");
         } catch (Exception e) {
             System.err.println("[AuthController] Failed to save student: " + e.getMessage());
             e.printStackTrace();
@@ -79,26 +89,28 @@ public class AuthController {
                 .body(Map.of(
                         "message", "OTP sent to " + request.getEmail(),
                         "email", request.getEmail(),
-                        "otpExpiresInSeconds", otpService.secondsRemaining(request.getEmail())
-                ));
+                        "otpExpiresInSeconds", otpService.secondsRemaining(request.getEmail())));
     }
 
     // ── Step 2: verify OTP → activate → return JWT ───────────────────────────
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         String email = body.get("email");
-        String otp   = body.get("otp");
+        String otp = body.get("otp");
 
         if (email == null || otp == null || email.isBlank() || otp.isBlank()) {
             return ResponseEntity.badRequest().body("Email and OTP are required");
         }
 
+        email = email.trim().toLowerCase(Locale.ROOT);
         Student student = studentRepository.findByEmail(email).orElse(null);
-        if (student == null) return ResponseEntity.badRequest().body("Account not found");
+        if (student == null)
+            return ResponseEntity.badRequest().body("Account not found");
 
         if (student.isEmailVerified()) {
             String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
-            return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+            return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(),
+                    student.getEmail(), roleName(student), student.getLocationAddress()));
         }
 
         boolean valid;
@@ -108,25 +120,31 @@ public class AuthController {
             return ResponseEntity.status(400).body(e.getMessage());
         }
 
-        if (!valid) return ResponseEntity.status(400).body("Incorrect OTP. Please try again.");
+        if (!valid)
+            return ResponseEntity.status(400).body("Incorrect OTP. Please try again.");
 
         student.setEmailVerified(true);
         studentRepository.save(student);
 
         String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
         auditLogService.record(student.getEmail(), "AUTH_LOGIN", "STUDENT", String.valueOf(student.getId()), "success");
-        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(),
+                roleName(student), student.getLocationAddress()));
     }
 
     // ── Resend OTP ────────────────────────────────────────────────────────────
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
         String email = body.get("email");
-        if (email == null || email.isBlank()) return ResponseEntity.badRequest().body("Email is required");
+        if (email == null || email.isBlank())
+            return ResponseEntity.badRequest().body("Email is required");
 
+        email = email.trim().toLowerCase(Locale.ROOT);
         Student student = studentRepository.findByEmail(email).orElse(null);
-        if (student == null) return ResponseEntity.badRequest().body("Account not found");
-        if (student.isEmailVerified()) return ResponseEntity.ok(Map.of("message", "Account already verified"));
+        if (student == null)
+            return ResponseEntity.badRequest().body("Account not found");
+        if (student.isEmailVerified())
+            return ResponseEntity.ok(Map.of("message", "Account already verified"));
 
         try {
             String otp = otpService.generateOtp(email);
@@ -139,23 +157,26 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "New OTP sent to " + email,
-                "otpExpiresInSeconds", otpService.secondsRemaining(email)
-        ));
+                "otpExpiresInSeconds", otpService.secondsRemaining(email)));
     }
 
     // ── Login ─────────────────────────────────────────────────────────────────
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
+        String email = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String password = request.getPassword();
+
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+                    new UsernamePasswordAuthenticationToken(email, password));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         }
 
-        Student student = studentRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        Student student = studentRepository.findByEmail(email).orElse(null);
+        if (student == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+        }
 
         if (!student.isEmailVerified()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -163,6 +184,7 @@ public class AuthController {
         }
 
         String token = jwtUtil.generateToken(student.getEmail(), student.getId(), roleName(student));
-        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(), roleName(student), student.getLocationAddress()));
+        return ResponseEntity.ok(new AuthResponse(token, student.getId(), student.getStudentName(), student.getEmail(),
+                roleName(student), student.getLocationAddress()));
     }
 }
