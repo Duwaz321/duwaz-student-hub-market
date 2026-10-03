@@ -32,10 +32,10 @@ public class OrderService {
     private final PushNotificationService pushNotificationService;
 
     public OrderService(OrderRepository orderRepository,
-                       ProductRepository productRepository,
-                       StudentRepository studentRepository,
-                       EmailService emailService,
-                       PushNotificationService pushNotificationService) {
+            ProductRepository productRepository,
+            StudentRepository studentRepository,
+            EmailService emailService,
+            PushNotificationService pushNotificationService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.studentRepository = studentRepository;
@@ -50,18 +50,19 @@ public class OrderService {
             for (OrderItem item : order.getItems()) {
                 Product product = productRepository.findById(item.getProduct().getId())
                         .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProduct().getId()));
-                
+
                 // Only check stock for PRODUCT type (not SERVICE)
                 if (product.getProductType() == Product.ProductType.PRODUCT) {
                     if (product.getStockQuantity() < item.getQuantity()) {
-                        throw new RuntimeException("Insufficient stock for " + product.getName() + 
+                        throw new RuntimeException("Insufficient stock for " + product.getName() +
                                 ". Available: " + product.getStockQuantity() + ", Requested: " + item.getQuantity());
                     }
                 }
-                
+
                 // Link each item back to the order
                 item.setOrder(order);
-                productSubtotal = productSubtotal.add(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                productSubtotal = productSubtotal
+                        .add(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             }
         }
         boolean deliveryRequired = order.getDeliveryAddress() != null
@@ -76,11 +77,12 @@ public class OrderService {
         if (savedOrder.getBusiness() != null && savedOrder.getBusiness().getStudent() != null) {
             Student shopOwner = savedOrder.getBusiness().getStudent();
             PushNotificationDto push = new PushNotificationDto(
-                "New order #" + savedOrder.getId(),
-                "You have a new order from " + (savedOrder.getStudent() != null
-                    ? savedOrder.getStudent().getStudentName() : "a customer"),
-                "order",
-                savedOrder.getId());
+                    "New order #" + savedOrder.getId(),
+                    "You have a new order from " + (savedOrder.getStudent() != null
+                            ? savedOrder.getStudent().getStudentName()
+                            : "a customer"),
+                    "order",
+                    savedOrder.getId());
             push.setShopId(savedOrder.getBusiness().getId());
             pushNotificationService.sendNotificationToStudent(shopOwner.getId(), push);
 
@@ -91,8 +93,7 @@ public class OrderService {
                         savedOrder.getBusiness().getBusinessName(),
                         savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
                         savedOrder.getId(),
-                        savedOrder.getTotalAmount()
-                );
+                        savedOrder.getTotalAmount());
             }
         }
 
@@ -106,8 +107,7 @@ public class OrderService {
                     savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
                     savedOrder.getId(),
                     savedOrder.getTotalAmount(),
-                    adminEmails
-            );
+                    adminEmails);
         }
 
         return savedOrder;
@@ -148,6 +148,13 @@ public class OrderService {
     public Order updateStatus(Long orderId, OrderStatus newStatus, String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (newStatus == OrderStatus.CONFIRMED
+                && "YOCO".equalsIgnoreCase(order.getPaymentMethod())
+                && order.getPaymentStatus() != Order.PaymentStatus.PAID) {
+            throw new RuntimeException("Order cannot be confirmed before payment is received.");
+        }
+
         order.setStatus(newStatus);
         if (reason != null && !reason.isEmpty()) {
             order.setCancellationReason(reason);
@@ -156,7 +163,8 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         String shopOwnerEmail = savedOrder.getBusiness() != null && savedOrder.getBusiness().getStudent() != null
-                ? savedOrder.getBusiness().getStudent().getEmail() : null;
+                ? savedOrder.getBusiness().getStudent().getEmail()
+                : null;
         if (shopOwnerEmail != null && !shopOwnerEmail.isBlank()) {
             emailService.sendOrderStatusEmailToShopOwner(
                     shopOwnerEmail,
@@ -164,8 +172,7 @@ public class OrderService {
                     savedOrder.getStudent() != null ? savedOrder.getStudent().getStudentName() : "Customer",
                     savedOrder.getId(),
                     savedOrder.getStatus().name(),
-                    reason
-            );
+                    reason);
         }
 
         List<String> adminEmails = studentRepository.findByRole(Student.Role.ADMIN).stream()
@@ -179,8 +186,7 @@ public class OrderService {
                     savedOrder.getId(),
                     savedOrder.getStatus().name(),
                     reason,
-                    adminEmails
-            );
+                    adminEmails);
         }
 
         return savedOrder;

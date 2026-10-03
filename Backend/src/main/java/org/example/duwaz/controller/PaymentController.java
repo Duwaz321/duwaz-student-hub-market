@@ -32,16 +32,24 @@ import javax.crypto.spec.SecretKeySpec;
 @RequestMapping("/api/payment")
 public class PaymentController {
 
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private StudentRepository studentRepository;
-    @Autowired private BusinessRepository businessRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private TransactionService transactionService;
-    @Autowired private RestTemplate restTemplate;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private org.example.duwaz.service.AuditLogService auditLogService;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private StudentRepository studentRepository;
+    @Autowired
+    private BusinessRepository businessRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private TransactionService transactionService;
+    @Autowired
+    private RestTemplate restTemplate;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private org.example.duwaz.service.AuditLogService auditLogService;
 
-    @Value("${yoco.secret.key}")
+    @Value("${yoco.secret.key:}")
     private String yocoSecretKey;
 
     @Value("${app.frontend.url:https://duwaz.co.za}")
@@ -71,12 +79,13 @@ public class PaymentController {
             order.setStudent(student);
             order.setBusiness(business);
             order.setDeliveryAddress(req.getDeliveryAddress());
-            BigDecimal productSubtotal = req.getItems() == null ? BigDecimal.ZERO : req.getItems().stream()
-                     .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal productSubtotal = req.getItems() == null ? BigDecimal.ZERO
+                    : req.getItems().stream()
+                            .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
             boolean deliveryRequired = req.getDeliveryAddress() != null
-                     && !"COLLECTION".equalsIgnoreCase(req.getDeliveryAddress())
-                     && !"SERVICE_NO_DELIVERY".equalsIgnoreCase(req.getDeliveryAddress());
+                    && !"COLLECTION".equalsIgnoreCase(req.getDeliveryAddress())
+                    && !"SERVICE_NO_DELIVERY".equalsIgnoreCase(req.getDeliveryAddress());
             BigDecimal deliveryFee = deliveryRequired ? OrderService.MIN_DELIVERY_FEE : BigDecimal.ZERO;
             order.setDeliveryFee(deliveryFee);
             order.setTotalAmount(productSubtotal.add(deliveryFee));
@@ -104,7 +113,8 @@ public class PaymentController {
                     }
                     if (product.getProductType() == Product.ProductType.SERVICE
                             || product.getProductStatus() != Product.ProductStatus.AVAILABLE) {
-                        return ResponseEntity.badRequest().body("Product is not available for purchase: " + product.getName());
+                        return ResponseEntity.badRequest()
+                                .body("Product is not available for purchase: " + product.getName());
                     }
                     if (quantity > product.getStockQuantity()) {
                         return ResponseEntity.badRequest().body("Insufficient stock for: " + product.getName());
@@ -131,7 +141,7 @@ public class PaymentController {
             yocoPayload.put("amount", amountInCents);
             yocoPayload.put("currency", "ZAR");
             yocoPayload.put("successUrl", frontendUrl + "/payment/success?orderId=" + savedOrder.getId());
-            yocoPayload.put("cancelUrl",  frontendUrl + "/payment/cancel?orderId=" + savedOrder.getId());
+            yocoPayload.put("cancelUrl", frontendUrl + "/payment/cancel?orderId=" + savedOrder.getId());
             yocoPayload.put("failureUrl", frontendUrl + "/payment/cancel?orderId=" + savedOrder.getId());
             // Metadata lets you match the webhook back to your order
             Map<String, Object> metadata = new LinkedHashMap<>();
@@ -149,7 +159,7 @@ public class PaymentController {
                     YOCO_CHECKOUT_URL, entity, String.class);
 
             JsonNode yocoJson = objectMapper.readTree(yocoResponse.getBody());
-            String checkoutId  = yocoJson.path("id").asText();
+            String checkoutId = yocoJson.path("id").asText();
             String redirectUrl = yocoJson.path("redirectUrl").asText();
 
             if (checkoutId.isBlank() || redirectUrl.isBlank()) {
@@ -206,8 +216,7 @@ public class PaymentController {
                     "orderId", order.getId(),
                     "paymentStatus", "PAID",
                     "orderStatus", "CONFIRMED",
-                    "message", "Cash payment confirmed"
-            ));
+                    "message", "Cash payment confirmed"));
 
         } catch (Exception e) {
             System.err.println("[PaymentController] confirm-cash error: " + e.getMessage());
@@ -253,8 +262,7 @@ public class PaymentController {
                     "orderId", order.getId(),
                     "paymentStatus", "PAID",
                     "orderStatus", "CONFIRMED",
-                    "message", "Collection order confirmed — ready for pickup"
-            ));
+                    "message", "Collection order confirmed — ready for pickup"));
 
         } catch (Exception e) {
             System.err.println("[PaymentController] confirm-collection error: " + e.getMessage());
@@ -277,7 +285,8 @@ public class PaymentController {
             }
 
             JsonNode event = objectMapper.readTree(rawBody);
-            System.out.println("[Yoco Webhook] Received: " + event.path("event_type").asText(event.path("type").asText()));
+            System.out.println(
+                    "[Yoco Webhook] Received: " + event.path("event_type").asText(event.path("type").asText()));
 
             String eventType = event.path("event_type").asText(event.path("type").asText());
             System.out.println("[Yoco Webhook] Event type: " + eventType);
@@ -297,7 +306,8 @@ public class PaymentController {
             if (!orderIdStr.isBlank()) {
                 try {
                     order = orderRepository.findById(Long.parseLong(orderIdStr)).orElse(null);
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
 
             // Fallback: find by yocoCheckoutId
@@ -306,7 +316,8 @@ public class PaymentController {
             }
 
             if (order == null) {
-                System.err.println("[Yoco Webhook] Could not match order. checkoutId=" + checkoutId + " orderId=" + orderIdStr);
+                System.err.println(
+                        "[Yoco Webhook] Could not match order. checkoutId=" + checkoutId + " orderId=" + orderIdStr);
                 return ResponseEntity.ok("order not found");
             }
 
@@ -324,7 +335,8 @@ public class PaymentController {
 
             // Record transaction and revenue split
             transactionService.createDeliveryTransaction(order);
-            auditLogService.record(order.getStudent().getEmail(), "PAYMENT_WEBHOOK_PROCESSED", "ORDER", String.valueOf(order.getId()), webhookId);
+            auditLogService.record(order.getStudent().getEmail(), "PAYMENT_WEBHOOK_PROCESSED", "ORDER",
+                    String.valueOf(order.getId()), webhookId);
 
             System.out.println("[Yoco Webhook] Order #" + order.getId() + " marked PAID + CONFIRMED");
             return ResponseEntity.ok("ok");
@@ -337,17 +349,19 @@ public class PaymentController {
     }
 
     private boolean verifyYocoWebhook(String rawBody, String webhookId,
-                                      String webhookTimestamp, String webhookSignature) {
+            String webhookTimestamp, String webhookSignature) {
         if (yocoWebhookSecret == null || yocoWebhookSecret.isBlank()
                 || webhookId == null || webhookTimestamp == null || webhookSignature == null) {
             return false;
         }
         try {
             long timestamp = Long.parseLong(webhookTimestamp);
-            if (Math.abs(Instant.now().getEpochSecond() - timestamp) > 180) return false;
+            if (Math.abs(Instant.now().getEpochSecond() - timestamp) > 180)
+                return false;
 
             String encodedSecret = yocoWebhookSecret.startsWith("whsec_")
-                    ? yocoWebhookSecret.substring("whsec_".length()) : yocoWebhookSecret;
+                    ? yocoWebhookSecret.substring("whsec_".length())
+                    : yocoWebhookSecret;
             byte[] secret = Base64.getDecoder().decode(encodedSecret);
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret, "HmacSHA256"));
@@ -358,7 +372,8 @@ public class PaymentController {
             for (String candidate : webhookSignature.split("\\s+")) {
                 if (candidate.startsWith("v1,")) {
                     String supplied = candidate.substring(3);
-                    if (MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8))) {
+                    if (MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                            supplied.getBytes(StandardCharsets.UTF_8))) {
                         return true;
                     }
                 }
@@ -373,7 +388,8 @@ public class PaymentController {
     @GetMapping("/status/{orderId}")
     public ResponseEntity<?> getPaymentStatus(@PathVariable Long orderId, Authentication auth) {
         Order order = orderRepository.findById(orderId).orElse(null);
-        if (order == null) return ResponseEntity.notFound().build();
+        if (order == null)
+            return ResponseEntity.notFound().build();
 
         // Verify ownership
         if (!order.getStudent().getEmail().equals(auth.getName())) {

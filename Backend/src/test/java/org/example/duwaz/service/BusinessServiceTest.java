@@ -39,12 +39,14 @@ class BusinessServiceTest {
 
     @BeforeAll
     static void setUp() {
-         Student student = new Student();
+        Student student = new Student();
         student.setStudentNumber("221145687");
         student.setStudentName("John");
+        student.setEmail("john@example.com");
+        student.setPassword("password123");
+        student.setRole(Student.Role.CUSTOMER);
 
         business = new Business();
-        business.setId(2L);
         business.setName("DOAS");
         business.setStudent(student);
     }
@@ -53,10 +55,9 @@ class BusinessServiceTest {
     @Order(1)
     void testSaveBusiness() {
 
-
         studentService.saveStudent(business.getStudent());
-         saved = businessService.saveBusiness(business);
-        System.out.println("saved: "+ saved);
+        saved = businessService.saveBusiness(business);
+        System.out.println("saved: " + saved);
         assertNotNull(saved);
     }
 
@@ -67,7 +68,6 @@ class BusinessServiceTest {
         assertNotNull(found);
         System.out.println(found);
     }
-
 
     @Test
     @Order(3)
@@ -80,7 +80,6 @@ class BusinessServiceTest {
 
         System.out.println(updated);
     }
-
 
     @Test
     @Order(4)
@@ -98,5 +97,3 @@ class BusinessServiceTest {
     }
 
 }
-
-
